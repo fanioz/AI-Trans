@@ -1,4 +1,4 @@
-/*  09.08.07 - road_pf.nut
+/*  10.03.01 - road_pf.nut
  *
  *  This file is part of Trans AI
  *
@@ -33,7 +33,7 @@ class Road_PF extends Road_PT
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
 		local pp_tile = prev_tile ? (parn.GetParent() ? parn.GetParent().GetTile() : null) : null;
-		//Debug.Sign(cur_node, path.GetCost());
+		Debug.Sign(cur_node, "R");
 		/* Check if the current tile is part of a bridge or tunnel. */
 		if (XTile.IsBridgeTunnel (cur_node) && AIRoad.HasRoadType(cur_node, AIRoad.GetCurrentRoadType())) {
 			if (prev_tile && _CheckTunnelBridge (prev_tile, cur_node)) {
