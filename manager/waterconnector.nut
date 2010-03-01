@@ -1,4 +1,4 @@
-/*  10.02.27 - waterconnector.nut
+/*  10.03.01 - waterconnector.nut
  *
  *  This file is part of Trans AI
  *
@@ -42,7 +42,10 @@ class WaterConnector extends Connector
 			_Engine_A = -1;
 			_Mgr_A = null;
 			_LastSuccess = AIDate.GetCurrentDate() + 90;
+		} else if (IsWaitingPath(this)) {
+		
 		} else if (_Route_Found) {
+			Info ("route found");
 			if (!Money.Get(GetTotalCost(this))) return;
 			_Start_Point = _Line.GetFirstTile();
 			_End_Point = _Line.GetTile();
@@ -50,12 +53,14 @@ class WaterConnector extends Connector
 			_Route_Built = BuildInfrastructure();
 			_Line = null;
 			Info ("water route building:",  _Route_Built);
-		} else if (IsWaitingPath(this)) {
 		} else {
-			if (_Mgr_B == null) SelectDest(this);			
-			if (_Mgr_A == null) return SelectSource(this);
-			Info ("selected destination:", _Mgr_B.GetName());
-			Info ("selected source:", _Mgr_A.GetName());
+			Info ("Initialize service");
+			if (_Mgr_B == null) SelectDest(this);		
+			if (_Mgr_A == null) {
+				return SelectSource(this);
+			} else {
+				Info ("selected source:", _Mgr_A.GetName());
+			}
 			switch (InitService()) {
 				case 1 : _Mgr_A = null; break;
 				case 2 : _Mgr_B = null; break;
@@ -66,6 +71,7 @@ class WaterConnector extends Connector
 	
 	function InitService() {
 		_Route_Found = false;
+		_Line = false;
 		if (!_Mgr_A.AllowTryStation (_S_Type)) return 1;
 		if (!_Mgr_B.AllowTryStation (_S_Type)) return 2;
 		local dpoint = _Mgr_B.GetWaterPoint();
