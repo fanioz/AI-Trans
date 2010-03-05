@@ -1,3 +1,12 @@
+/*  10.03.01 - xtown.nut
+ *
+ *  This file is part of Trans AI
+ *
+ *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *
+ *  @see license.txt
+ */
+
 /**
  * XTown class
  * an AITown extension

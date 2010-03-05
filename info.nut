@@ -1,4 +1,4 @@
-/*  10.02.27 info.nut
+/*  10.03.07 info.nut
  *
  *  This file is part of Trans AI
  *
@@ -12,7 +12,7 @@ class Trans10 extends AIInfo
     function GetName() { return "Trans"; }
     function GetShortName() { return "FTAI"; }
     function GetDescription(){ return "Trans is an effort to be a transporter ;-) "; }
-	function GetVersion() { return 100227; }
+	function GetVersion() { return 100307; }
 	function GetAPIVersion() { return "1.0"; }
     /* only change the version if the structure is changed */
 	function MinVersionToLoad() { return 1; }
@@ -35,52 +35,52 @@ class Trans10 extends AIInfo
 		AddSetting( {
 			name = "allow_pax",
 			description = "Allow pax cargo",
-			easy_value = 1, 
-			medium_value = 1, 
-			hard_value = 1, 
-			custom_value = 1, 
+			easy_value = 1,
+			medium_value = 1,
+			hard_value = 1,
+			custom_value = 1,
 			flags = AICONFIG_BOOLEAN
 		});
 		AddSetting({
 			name = "allow_freight",
 			description = "Allow freight cargo",
-			easy_value = 1, 
-			medium_value = 1, 
-			hard_value = 1, 
-			custom_value = 1, 
+			easy_value = 1,
+			medium_value = 1,
+			hard_value = 1,
+			custom_value = 1,
 			flags = AICONFIG_BOOLEAN
 		});
 
 		AddSetting({
-			name = "last_transport", 
-			description = "percent of last month transported cargo. Trans AI won't compete above this value", 
-			min_value = 0, 
-			max_value = 100, 
-			easy_value = 60, 
-			medium_value = 80, 
-			hard_value = 100, 
-			custom_value = 100, 
-			step_size = 10, 
+			name = "last_transport",
+			description = "percent of last month transported cargo. Trans AI won't compete above this value",
+			min_value = 0,
+			max_value = 100,
+			easy_value = 60,
+			medium_value = 80,
+			hard_value = 100,
+			custom_value = 100,
+			step_size = 10,
 			flags = 0
 		});
 		AddSetting({
-			name = "loop_time", 
-			description = "Trans AI processing speed", 
-			min_value = 1, 
-			max_value = 5, 
+			name = "loop_time",
+			description = "Trans AI processing speed",
+			min_value = 1,
+			max_value = 5,
 			easy_value = 5,
 			medium_value = 3,
-			hard_value = 1, 
-			custom_value = 1, 
+			hard_value = 1,
+			custom_value = 1,
 			flags = 0
 		});
 		AddSetting({
-			name = "debug_signs", 
+			name = "debug_signs",
 			description = "Build Signs",
-			easy_value = 0, 
-			medium_value = 0, 
-			hard_value = 0, 
-			custom_value = 0, 
+			easy_value = 0,
+			medium_value = 0,
+			hard_value = 0,
+			custom_value = 0,
 			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
 		});
 		AddSetting( {

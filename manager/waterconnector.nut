@@ -55,6 +55,7 @@ class WaterConnector extends Connector
 			Info ("water route building:",  _Route_Built);
 		} else {
 			Info ("Initialize service");
+			_Line = false;
 			if (_Mgr_B == null) SelectDest(this);		
 			if (_Mgr_A == null) {
 				return SelectSource(this);
@@ -70,22 +71,24 @@ class WaterConnector extends Connector
 	}	
 	
 	function InitService() {
-		_Route_Found = false;
-		_Line = false;
 		if (!_Mgr_A.AllowTryStation (_S_Type)) return 1;
 		if (!_Mgr_B.AllowTryStation (_S_Type)) return 2;
 		local dpoint = _Mgr_B.GetWaterPoint();
-		if (dpoint.IsEmpty()) return 2;
+		if (dpoint.IsEmpty()) {
+			Warn ("couldn't got a start point at dest");
+			return 2;
+		}
 		local spoint = _Mgr_A.GetWaterPoint();
-		if (spoint.IsEmpty()) return 1;
-		
+		if (spoint.IsEmpty()) {
+			Warn ("couldn't got a start point at source");
+			return 1;
+		}
 		_PF.InitializePath (spoint.GetItemArray(), dpoint.GetItemArray(), []);
 		return 0;
 	}
 	
 	function BuildInfrastructure() {
 		local dests = CLList();
-		local to_ign = CLList();
 		
 		Info ("finding depot in", _Mgr_B.GetName());
 		_D_Depot = _Mgr_B.GetWaterDepot(); 
@@ -111,7 +114,7 @@ class WaterConnector extends Connector
 		if (!AIMap.IsValidTile (_D_Station)) {
 			dests.AddList(_Mgr_B.GetAreaForDock(_Cargo_ID, false));
 			if (dests.IsEmpty()) return false;
-			_D_Station = XMarine.BuilderStation(_End_Point, dests, to_ign);
+			_D_Station = XMarine.BuilderStation(_End_Point, dests);
 			if (!AIMap.IsValidTile (_D_Station)) return false;
 		}
 		
@@ -121,7 +124,7 @@ class WaterConnector extends Connector
 		if (!AIMap.IsValidTile (_S_Station)) {
 			dests.AddList(_Mgr_A.GetAreaForDock (_Cargo_ID, true));
 			if (dests.IsEmpty()) return false;
-			_S_Station = XMarine.BuilderStation(_Start_Point, dests, to_ign);
+			_S_Station = XMarine.BuilderStation(_Start_Point, dests);
 			if (!AIMap.IsValidTile (_S_Station)) return false;
 		}		
 		return true;

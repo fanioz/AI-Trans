@@ -91,7 +91,8 @@ class Service
 			}
 			counter ++;
 		}
-		Info("destination not found");
+		//commit : Warn instead of Info
+		Warn ("destination not found");
 		return -1;
 	}
 
@@ -144,7 +145,8 @@ class Service
 			if (rr < Money.Inflated(1000)) continue;
 			ret.AddItem(loc, rr);
 		}
-		Info("source", ret.IsEmpty() ? "not" : "","found");
+		//commit : Warn instead of Info
+		Debug.Echo(ret.Count(), "source found");
 		return ret;
 	}
 }

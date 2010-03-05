@@ -39,22 +39,22 @@ class XRoad
 		return count;
 	}
 
-	function BuilderStation (tile, dtrs, type, area, restriction) {
+	function BuilderStation (tile, dtrs, type, area) {
 		Info ("Building new RoadStation");
+		local restriction = CLList();
 		local bt = AIRoad[(type == AIRoad.ROADVEHTYPE_BUS ? "BT_BUS_STOP" : "BT_TRUCK_STOP")];
+		local est_cost = AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), bt);
 		if (area.IsEmpty()) return -1;
 		foreach (body, v in area) {
 			local head = -1;
 			if (body == tile) continue;
 			local path = null;
-			if (AIMap.DistanceManhattan(body, tile) < 2) {
+			if (AIMap.DistanceManhattan(body, tile) == 1) {
 				head = tile;
 			} else {
 				path = XRoad.FindPath([tile], [body], restriction.GetItemArray());
 				if (path == null) continue;
-				local est_cost = path.GetCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), bt);
-				Info ("Est. Cost", est_cost);
-				if (!Money.Get(est_cost)) continue;
+				if (!Money.Get(est_cost + path.GetCost())) continue;
 				Info ("route len", path.GetLength());
 				local pf = AyPath.GetEndTiles(path);
 				assert(body == pf[0]);
@@ -203,16 +203,13 @@ class XRoad
 		local est_cost = path.GetCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), AIRoad.BT_DEPOT);
 		Info ("Est. Cost", est_cost);
 		if (!Money.Get(est_cost)) return -1;
-		local pf = AyPath.ToArray(path);
-		Info ("route len", pf.len());
-		local depots = XRoad.DepotOnPath(pf, 1);
-		local depot = -1;
-		if (depots.Count() > 0) {
-			depot = depots.Begin();
-			XRoad.BuildRoute(path, [depots.GetValue(depot)], [tile], [], 4);
+		local tiles = AyPath.GetStartTiles(path);
+		XRoad.BuildRoute(path, [tiles[1]], [tile], [], 4);
+		AITile.DemolishTile(tiles[0]);
+		if (AIRoad.BuildRoadDepot(tiles[0], tiles[1])) {
+			return tiles[0];
 		}
-		Money.Pay();
-		return depot;
+		return -1;
 	}
 
 	function IsConnectedTo(tile1, tile2) {
@@ -280,7 +277,8 @@ class XRoad
 				Info ("bridge/tunnel should have been built");
 			} else {
 				Debug.Sign(last_node, next.GetCost());
-				//build double straight tile
+				//build a long straight tile
+				// credit to : zuu (CluelessPlus)
 				Info ("build a road piece");
 				while(next.GetParent()) {
 					 local future_node = next.GetParent().GetTile();
@@ -293,7 +291,7 @@ class XRoad
 					/* An error occured while building a piece of road. TODO: handle it.
 					 * Note that is can also be the case that the road was already build. */
 					 //Debug.Halt(last_node);
-					 ignore.push(next_node);
+					 //ignore.push(next_node);
 					return XRoad.BuildRoute (null, start, finish, ignore, num);
 				}
 			}
@@ -301,26 +299,6 @@ class XRoad
 			next = next.GetParent();
 		}
 		return XRoad.IsConnectedTo(start, finish);
-	}
-	/**
-	 * Remove a road untill the road splits.
-	 * @param tile The road tile to start.
-	 */
-	function DeleteDeadEnd (tile) {
-		local offsets = [AIMap.GetTileIndex (0, 1), AIMap.GetTileIndex (0, -1),
-		                 AIMap.GetTileIndex (1, 0), AIMap.GetTileIndex (-1, 0) ];
-		for (local num_removed = 0; num_removed < 10; num_removed++) {
-			if (AIBridge.IsBridgeTile (tile) || AITunnel.IsTunnelTile (tile)) return;
-			local next_tile = null;
-			foreach (offset in offsets) {
-				if (AIRoad.AreRoadTilesConnected (tile, tile + offset) || AIRoad.AreRoadTilesConnected (tile + offset, tile)) {
-					if (next_tile != null) return;
-					next_tile = tile + offset;
-				}
-			}
-			if (!AITile.DemolishTile (tile) || next_tile == null || !AIRoad.RemoveRoad (tile, next_tile)) return;
-			tile = next_tile;
-		}
 	}
 
 	/**
@@ -330,32 +308,4 @@ class XRoad
 		if (AIRoad.AreRoadTilesConnected(prev, cur) && AIRoad.AreRoadTilesConnected(cur, next)) return true;
 		return (AIRoad.CanBuildConnectedRoadPartsHere(cur, prev, next) > 0);
 	}
-	
-	function DepotOnPath(path, number) {
-	local depots = CLList();
-	for (local i = 0; i < number; ++i) {
-		for (local j = i * path.len() / number + 1; j < path.len() - 1; ++j) {
-			local prev = path[j-1];
-			local tile = path[j];
-			local next = path[j+1];
-			local found = false;
-			foreach (depot in XTile.Adjacent(tile)) {
-				if (depot != prev && depot != next &&
-					XRoad.CanExit(prev, tile, depot) &&
-					XRoad.CanExit(next, tile, depot) &&
-					AIRoad.BuildRoadDepot(depot, tile) &&
-					XRoad.BuildStraight(tile, depot)) {
-					// we can build a road depot here that connects to the path
-					Info("Depot location found");
-					depots.AddItem(depot, tile);
-					found = true;
-					break;					
-				}
-			}
-			if (found) break;
-		}
-	}
-	return depots;
-}
-	
 }

@@ -65,13 +65,6 @@ class Assist
 		local mult = Service.GetSubsidyPrice(AITown.GetLocation(town1), loc2, cargoID);
 		return Assist.Estimate (product, distance, cargoID, engID, mult);
 	}
-	function IncomeIndustry (inds1, loc2, cargoID, engID) {
-		//print(AIIndustry.GetName(inds1) + ":to:" + AIIndustry.GetName(inds2));
-		local distance = AIIndustry.GetDistanceManhattanToTile (inds1, loc2) * 2;
-		local product = XIndustry.ProdValue (inds1, cargoID);
-		local mult = Service.GetSubsidyPrice(AIIndustry.GetLocation(inds1), loc2, cargoID);
-		return Assist.Estimate (product, distance, cargoID, engID, mult);
-	}
 	
 	function Estimate (product, distance, cargoID, engID, mult) {
 		local spd = AIEngine.GetMaxSpeed (engID);
@@ -103,9 +96,6 @@ class Assist
 		return (dist * 56.8347517166415 / speed).tointeger()
 	}	
 
-	function AntiDistance (a, b) {
-		return 100000 - AIMap.DistanceManhattan (a, b);
-	}
 	//return true if n is between n1 and n2 (exclusive)
 	function IsBetween (n, n1, n2) {
 		return (n1 < n) && (n < n2);
@@ -248,27 +238,6 @@ class Assist
 	 }
 	 
 	 /**
-	 * Check if parameter is not true
-	 * @param val val to evaluate
-	 * @return true if val is null
-	 */
-	function IsNot (val) {
-		return !val;
-	}
-
-	/**
-     * Lead a number with zero
-     * this will solve problem of '09' that displayed '9' only
-     * @param integer_number to convert
-     * @return number in string
-     * @note only for number below 10
-     */
-	function LeadZero (integer_number) {
-        if (integer_number > 9) return integer_number.tostring();
-        return "0" + integer_number;
-    }
-
-    /**
      * Convert date to it string representation in DD-MM-YYYY
      * @param date to convert
      * @return string representation in DD-MM-YYYY
@@ -276,40 +245,6 @@ class Assist
 	function DateStr (date) {
 		return Assist.Join ([AIDate.GetDayOfMonth (date), AIDate.GetMonth (date), AIDate.GetYear (date) ], "-");
     }
-
-    /**
-     * Hex to Decimal converter
-     * @param Hex_number in string to convert
-     * @return  number in integer
-     * @note max number is 255 or FF
-    */
-	function HexToDec (Hex_number) {
-        if (Hex_number.len() > 2) return 0;
-        local aSet = "0123456789ABCDEF";
-        return aSet.find(Hex_number.slice(0,1)).tointeger() * 16 + aSet.find(Hex_number.slice(1,2)).tointeger();
-    }
-
-	/**
-     * Decimal to Hex converter
-     * @param dec number to convert
-     * @return hex number in string
-    */
-	function DecToHex (dec) {
-		local aSet = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
-		local tmp = [];
-		local c = dec % 16;
-		while (true) {
-			tmp.push(aSet[c]);
-			if (dec < 16) break;
-			dec = (dec - c) / 16;
-			c = dec % 16;
-		}
-		if (tmp.len() == 1) tmp.push("0");
-		tmp.reverse();
-		local ret = "";
-		foreach (idx, val in tmp) ret += val;
-		return ret;
-	}
 }
 
 function min (x, y) { 

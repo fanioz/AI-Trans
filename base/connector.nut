@@ -138,6 +138,7 @@ class Connector extends DailyTask
     	if (cargoes.IsEmpty()) {
     		self._Blocked_Cargo.Clear();
     		self.Warn("cargo selection empty");
+    		self._Track = -1;
     		return;
     	}
     	cargoes.Valuate(XCargo.MatchSetting);
@@ -151,7 +152,7 @@ class Connector extends DailyTask
     	self._S_Type = XStation.GetTipe(self._V_Type, self._Cargo_ID);
     	self._Blocked_Cargo.AddItem(self._Cargo_ID, 0);
     	self._Possible_Sources[self._Cargo_ID] <- CLList();
-    	self._Engine_A = -1
+		self._Engine_A = -1;
     }
 	/**
 	 * selecting current engine id for further process
@@ -192,7 +193,6 @@ class Connector extends DailyTask
 			self.Warn ("failed on build vehicle");
 		}
 		Money.Pay();
-		Assist.RemoveAllSigns();
 		return self._VhcManager.IsBuilt();
 	}
 	/**
@@ -224,12 +224,14 @@ class Connector extends DailyTask
     	if (typeof self._Line == "instance") {
 	    	self._RouteCost = _Line.GetCost();
 	    	self._Route_Found = true;
+	    	Assist.RemoveAllSigns();
     	} else if (self._Line == null) {
     		self._RouteCost = 0;
 	    	self._Route_Found = false;
 	    	self._Mgr_A = null;
-    	}
     	Assist.RemoveAllSigns();
+    	}
+    	//not removing sign if line = false
     	Info ("route found", self._Route_Found);
     	return false;
     }
@@ -258,12 +260,15 @@ class Connector extends DailyTask
 		if (self._Mgr_B == null) return;
 		Info ("finding source from selected destination:", _Mgr_B.GetName());
 		if (!self._Possible_Sources[self._Cargo_ID].IsEmpty()) {
+			Info ("pair left", self._Possible_Sources[self._Cargo_ID].Count());
 			self._Mgr_A = Assist.GetManager(self._Possible_Sources[self._Cargo_ID].Pop());
 		}
 		if (self._Mgr_A == null) {
 			self._Mgr_B = null;
+			Warn ("Couldn't find it pair");
 		} else {
-			self._Skip_Src.AddItem(_Mgr_A.GetLocation(), 0);
+			Info ("selecting source:", _Mgr_A.GetName());
+			self._Skip_Src.AddItem(self._Mgr_A.GetLocation(), 0);
 		}
 	}
 }

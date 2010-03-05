@@ -99,9 +99,9 @@ class AirConnector extends Connector
 			}
 			if (!AIMap.IsValidTile (_S_Station)) {
 				if (JustMake (this)) continue;
-				if (!manager.AllowTryAirport (_Airport)) continue;
+				if (!manager.AllowTryAirport (_Airport)) return;
 				_S_Station = manager.TryBuildAirport (_Airport, _Cargo_ID, eng_cost);
-				if (!AIMap.IsValidTile (_S_Station)) continue;
+				if (!AIMap.IsValidTile (_S_Station)) return;
 				_Source_ID = town_from;
 				Info("we've just built an airport at", manager.GetName());
 			}

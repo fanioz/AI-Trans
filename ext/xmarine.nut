@@ -50,7 +50,8 @@ class XMarine {
 		return (typeof pf.FindPath (-1)) == "instance";
 	}
 	
-	function BuilderStation (tile, area, restriction) {
+	function BuilderStation (tile, area) {
+		local restriction = CLList();
 		Info ("Building new Dock");
 		if (area.IsEmpty()) return -1;
 		foreach (body, v in area) {

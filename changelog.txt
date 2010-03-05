@@ -102,3 +102,17 @@ Feature: Aircraft (passenger only) service
 Feature: Ship service
 Feature: Tram service
 
+* 100307
+Fix: Invalidate engine on invalidated cargo
+Fix: Pathfinder's
+Fix: Water connector logic failed
+Codechange: Road connector
+Codechange: Air connector
+Codechange: [Debug] Remove sign only if we've found the path
+Codechange: CleanUp Unused code
+Change: Update URL to download libraries that would needed to run Trans AI
+Add: [Debug] more descriptive message
+Add: [Debug] Remove Sign on successful build
+Add: [Debug] show destination name
+Add: [Debug] Build sign while pathfinding
+

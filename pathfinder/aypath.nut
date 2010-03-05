@@ -22,12 +22,14 @@ class AyPath
 	_length = null;
 	_first = null;
 	_count = null;
+	_last_cost = null;
 
 	constructor(old_path, new_tile, new_direction, cost)
 	{
 		_prev = old_path;
 		_tile = new_tile;
 		_direction = new_direction;
+		_last_cost = cost;
 		if (old_path == null) {
 			_length = 0;
 			_cost = cost;
@@ -69,6 +71,10 @@ class AyPath
 	 */
 	function GetFirstTile() { return _first; }
 	
+	/**
+	 * return the last cost added
+	 */
+	 function GetLastCost() { return _last_cost; }
 	/**
 	 * Return the number of node in this path.
 	 * @note if path no longer has a parent, it would return 1

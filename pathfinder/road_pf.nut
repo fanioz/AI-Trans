@@ -68,9 +68,9 @@ class Road_PF extends Road_PT
 					n_tiles.extend(GetTunnels(prev_tile, cur_node, bridge_dir));
 				}
 				local tile = XTile.NextTile(prev_tile, cur_node);
-				local n_tile = XTile.NextTile(cur_node, tile);
-				if (AITile.HasTransportType(n_tile, AITile.TRANSPORT_RAIL) ||
-					(XTile.Height(n_tile) < XTile.Height(tile))) {
+				if (AITile.HasTransportType(tile, AITile.TRANSPORT_RAIL) ||
+					((XTile.Height(tile) < XTile.Height(cur_node)) &&
+					(!XTile.IsFlat(cur_node)))) {
 						n_tiles.extend(GetBridges(prev_tile, cur_node, bridge_dir));
 				}
 			}
@@ -100,10 +100,12 @@ class Road_PF extends Road_PT
 	function _Estimate (path, cur_tile) {
 		local leng = path.Count();
 		local cost = path.GetCost() / leng;
-		if (leng > 2) {
-			assert(path.GetTile() != cur_tile);
-			local prev = path.GetParent().GetTile();
-			if (!XTile.IsStraight(cur_tile, prev)) cost += (cost / 2).tointeger();
+		if (path.GetLastCost() > 0) {
+			if (leng > 2) {
+				assert(path.GetTile() != cur_tile);
+				local prev = path.GetParent().GetTile();
+				if (!XTile.IsStraight(cur_tile, prev)) cost *= 2;
+			}
 		}
 		return (Road_PT._Estimate(path, cur_tile) * cost * _estimate_multiplier).tointeger();
 	}

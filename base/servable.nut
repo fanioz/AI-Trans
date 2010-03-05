@@ -36,10 +36,11 @@ class Servable extends CIDLocation
 	function GetStations(s_type) {
 		local ret = CLList();
 		local gets = GetStationTiles(s_type);
-		gets.SortItemDescending();
+		//gets.SortItemDescending();
 		foreach (loc, id in gets) {
 			ret.AddItem(id, loc);
 		}
+		Info (ret.Count(), "station id's found");
 		return ret;
 	}
     
@@ -48,11 +49,12 @@ class Servable extends CIDLocation
 		tiles.Valuate(AITile.IsStationTile);
 		tiles.KeepValue(1);
 		tiles.Valuate(AIStation.GetStationID);
-		local ret = CLList();
+		local retst = CLList();
 		foreach (loc, id in tiles) {
-			if (AIStation.HasStationType(id, s_type)) ret.AddItem(loc, id);
+			if (AIStation.HasStationType(id, s_type)) retst.AddItem(loc, id);
 		}
-		return ret;
+		Info (retst.Count(), "station tiles found");
+		return retst;
 	}
 
 	function ValidateCoast() {
@@ -109,9 +111,9 @@ class Servable extends CIDLocation
 			local station = XStation.GetManager (id, AIStation.STATION_DOCK);
 			if (!station.HasDock()) continue;
 			if (is_source) {
-				if (station.GetProduction(cargo) < 10) continue;
+				if (station.GetProduction(cargo) < 8) continue;
 			} else {
-				if (station.GetAcceptance(cargo) < 10) continue;
+				if (station.GetAcceptance(cargo) < 8) continue;
 			}
 			return station.GetLocation();
 		}
@@ -131,12 +133,24 @@ class Servable extends CIDLocation
 	}
 
 	function AllowTryStation (s_type) {
-		if (!Money.Get (Money.Inflated(10000))) return false;
+		if (!Money.Get (Money.Inflated(10000))) {
+			Warn ("we haven't enough money");
+			return false;
+		}
 		if (_Tried_Station.HasItem (s_type)) {
-			if (_Tried_Station.GetValue (s_type) > AIDate.GetCurrentDate()) return false;
+			if (_Tried_Station.GetValue (s_type) > AIDate.GetCurrentDate()) {
+				Warn ("we have just build a station there");
+				return false;
+			}
 		}
 		local sts = GetStationTiles(s_type);
-		return sts.IsEmpty() || GetArea().Count() > (sts.Count() / XStation.GetDivisorNum(s_type)).tointeger();
+		local allow = sts.IsEmpty() || (GetArea().Count() > (sts.Count() / XStation.GetDivisorNum(s_type)).tointeger());
+		if (allow) {
+			Info ("Allowed to try to build station");
+		} else {
+			Warn ("Station number exceeding limit");
+		}
+		return allow;
 	}
 
 	function AllowTryAirport (type) {

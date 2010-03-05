@@ -170,6 +170,8 @@ class AyStar extends Base
 		local test_mode = AITestMode();
 		Info ("path finding #", iterations);
 		while (_open.Count() > 0 && (iterations == -1 || iterations-- > 0)) {
+			//commit : Do we need to sleep first ?
+			AIController.Sleep(1);
 			//Info("Get the path with the best score so far");
 			local path = _open.Pop();
 			local cur_tile = path.GetTile();

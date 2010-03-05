@@ -17,15 +17,16 @@ class Water_PT extends Road_PT
 	{
 		Road_PT.constructor();
 		SetName("Water Tracker");
-		_vhc_max_spd = max(0, AIEngine.GetMaxSpeed(AIEngineList(AIVehicle.VT_WATER).Begin()));
+		/* not yet implemented */
+		//_vhc_max_spd = max(0, AIEngine.GetMaxSpeed(AIEngineList(AIVehicle.VT_WATER).Begin()));
 	}
-	/*
+	
 	function InitializePath (sources, goals, ignored_tiles) {
 		Road_PT.InitializePath(sources, goals, ignored_tiles);
 		_max_len = ((_max_len - 20) / 1.2 + 20).tointeger();
-		Info ("max len:", _max_len);
+		Info ("nautical max len:", _max_len);
 	}
-	*/
+	
 	function _Neighbours(path, cur_node) {
 		if (!AITile.HasTransportType(cur_node, AITile.TRANSPORT_WATER)) return [];
 		local tiles = [];

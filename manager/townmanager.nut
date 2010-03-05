@@ -179,7 +179,7 @@ class TownManager extends Servable
 		list.Valuate (XTile.IsFlat);
 		list.RemoveValue(0);
 		list.Valuate (fn, cargo, 1, 1, AIStation.GetCoverageRadius (AIStation.STATION_BUS_STOP));
-		list.KeepAboveValue (10);
+		list.KeepAboveValue (8);
 		return list;
 	}
 	

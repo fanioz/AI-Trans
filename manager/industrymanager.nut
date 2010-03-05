@@ -64,16 +64,6 @@ class IndustryManager extends Servable
 		return Servable.GetExistingAirport(plane_type, cargo);
 	}
 	
-	function AllowTryDock () {
-		if (AIIndustry.HasDock(GetID())) return false;
-		return Servable.AllowTryDock();
-	}
-	
-	function AllowTryRoadStop (s_type) {
-		if (AIIndustry.IsBuiltOnWater(GetID())) return false;
-		return Servable.AllowTryRoadStop(s_type);
-	}
-	
 	function AllowTryAirport (type) {
 		return false;
 	}
