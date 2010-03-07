@@ -1,4 +1,4 @@
-/*  10.02.27 - dependencies.nut
+/*  10.03.07 - dependencies.nut
  *
  *  This file is part of Trans AI
  *
@@ -9,7 +9,7 @@
 
 /*
  * Define all required files here.
- * 1 : use 'import' for files that available on Bananas
+ * 1 : use 'import' for files that is not included in distribution
  */
 
 try {
@@ -18,8 +18,9 @@ try {
 	import("AILib.List", "CLList", 1);
 } catch (idx) {
 	AILog.Warning ("you would need to download the libraries which is needed to run this AI.");
-	AILog.Warning ("Please goto http://www.tt-forums.net/viewtopic.php?f=65&t=42272");
-	throw (idx);
+	AILog.Warning ("Please goto http://www.tt-forums.net/viewtopic.php?p=771764#p771764");
+	AILog.Warning ("and check the libraries required to run");
+	throw "failed to import libraries";
 }
 
 /* ---------------- Own --------------- */
