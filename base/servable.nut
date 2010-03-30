@@ -1,5 +1,4 @@
-/*  10.02.27 - servable.nut
- *
+/* 
  *  This file is part of Trans AI
  *
  *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
@@ -181,5 +180,33 @@ class Servable extends CIDLocation
 		list.Valuate (fn, cargo, 1, 1, AIStation.GetCoverageRadius (AIStation.STATION_DOCK));
 		//list.KeepAboveValue (8);
 		return list;
-	}    
+    
+	function GetRoadDepot() {
+		return Assist.FindDepot(GetLocation(), AIVehicle.VT_ROAD, AIRoad.GetCurrentRoadType());
+	}
+	
+	function GetWaterDepot() {
+		return Assist.FindDepot(GetLocation(), AIVehicle.VT_WATER, 1);
+	}
+	
+	function RefreshStations () {
+		local area = GetArea();
+		local tiles = CLList(area);
+		local checked = CLList();
+		tiles.Valuate(AIStation.GetStationID);
+		foreach (tile, id in tiles) {
+			if (!AIStation.IsValidStation (id)) continue;
+			if (AIStation.HasStationType(id, AIStation.STATION_AIRPORT)) {
+				local type = 1 << AIAirport.GetAirportType(tile);
+				if (checked.HasItem(id) && Assist.HasBit(checked.GetValue(id), type)) continue;
+				checked.AddItem(id, checked.GetValue(id) | type);
+			}
+			if (AIStation.HasStationType(id, AIStation.STATION_TRAIN)) {
+				local type = 1 << AIRail.GetRailType(tile);
+				if (checked.HasItem(id) && Assist.HasBit(checked.GetValue(id), type)) continue;
+				checked.AddItem(id, checked.GetValue(id) | type);
+			}
+			_Stations.AddItem(tile, id);
+		}
+	}
 }

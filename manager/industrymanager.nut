@@ -44,13 +44,7 @@ class IndustryManager extends Servable
 		_Has_Coast[0].KeepBelowValue(AIStation.GetCoverageRadius (AIStation.STATION_DOCK));
 		return Servable.HasCoast();
 	}
-	function GetRoadDepot() {
-		return Assist.FindDepot(GetLocation(), AIVehicle.VT_ROAD, AIRoad.GetCurrentRoadType());
-	}
-	function GetWaterDepot() {
-		return Assist.FindDepot(GetLocation(), AIVehicle.VT_WATER, 1);
-	}
-	
+		
 	function GetExistingWaterStop (cargo, is_source) {
 		if (AIIndustry.HasDock(GetID())) return AIIndustry.GetDockLocation(GetID());
 		return Servable.GetExistingWaterStop(cargo, is_source);
@@ -71,26 +65,6 @@ class IndustryManager extends Servable
 	function TryBuildAirport (type, cargo, eng_cost) {
 		Info ("can't build an airport");
 		return -1;
-	}
-	function RefreshStations () {
-		local area = GetArea();
-		local tiles = CLList(area);
-		local checked = AIList();
-		tiles.Valuate(AIStation.GetStationID);
-		foreach (tile, id in tiles) {
-			if (!AIStation.IsValidStation (id)) continue;
-			if (AIStation.HasStationType(id, AIStation.STATION_TRAIN)) {
-				local type = 1 << AIRail.GetRailType(tile);
-				if (checked.HasItem(id) && Assist.HasBit(checked.GetValue(id), type)) continue;
-				checked.AddItem(id, type);
-			}
-			if (AIStation.HasStationType(id, AIStation.STATION_AIRPORT)) {
-				local type = 1 << AIAirport.GetAirportType(tile);
-				if (checked.HasItem(id) && Assist.HasBit(checked.GetValue(id), type)) continue;
-				checked.AddItem(id, type);
-			}
-			_Stations.AddItem(tile, id);
-		}
 	}
 	
 	function GetAreaForRoadStation(cargo, is_source) {

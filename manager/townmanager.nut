@@ -81,12 +81,6 @@ class TownManager extends Servable
 		}
 		return XTown.HasEnoughRating (GetID());
 	}
-	function GetRoadDepot() {
-		return Assist.FindDepot(GetLocation(), AIVehicle.VT_ROAD, AIRoad.GetCurrentRoadType());
-	}
-	function GetWaterDepot() {
-		return Assist.FindDepot(GetLocation(), AIVehicle.VT_WATER, 1);
-	}
 	
 	function TryBuildAirport (type, cargo, eng_cost) {
 		local est_cost = AIAirport.GetPrice (type) + eng_cost;
@@ -143,26 +137,6 @@ class TownManager extends Servable
 		}
 		Info ("can't build an airport");
 		return -1;
-	}
-	function RefreshStations () {
-		local area = GetArea();
-		local tiles = CLList(area);
-		local checked = CLList();
-		tiles.Valuate(AIStation.GetStationID);
-		foreach (tile, id in tiles) {
-			if (!AIStation.IsValidStation (id)) continue;
-			if (AIStation.HasStationType(id, AIStation.STATION_AIRPORT)) {
-				local type = 1 << AIAirport.GetAirportType(tile);
-				if (checked.HasItem(id) && Assist.HasBit(checked.GetValue(id), type)) continue;
-				checked.AddItem(id, checked.GetValue(id) | type);
-			}
-			if (AIStation.HasStationType(id, AIStation.STATION_TRAIN)) {
-				local type = 1 << AIRail.GetRailType(tile);
-				if (checked.HasItem(id) && Assist.HasBit(checked.GetValue(id), type)) continue;
-				checked.AddItem(id, checked.GetValue(id) | type);
-			}
-			_Stations.AddItem(tile, id);
-		}
 	}
 	
 	function GetAreaForRoadStation(cargo, is_source) {
