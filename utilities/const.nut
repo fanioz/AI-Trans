@@ -83,7 +83,7 @@ Const <- {
 	 StationType = [AIStation.STATION_TRAIN, AIStation.STATION_TRUCK_STOP, AIStation.STATION_BUS_STOP,
 					AIStation.STATION_AIRPORT, AIStation.STATION_DOCK],
 	/** possible name and gender */
-	Name = ["Sour", "Sweet", "Cool", "Hot", "Winter", "Summer", "Cute", "Chubby", "Continent", "Sea"]
+	Name = ["Sour", "Sweet", "Cool", "Hot", "Winter", "Summer", "Cute", "Chubby", "Continent", "Sea", "Sun", "Moon", "Angel", "Evil"]
 	Gender = ["GENDER_MALE", "GENDER_FEMALE"]
 }
 
