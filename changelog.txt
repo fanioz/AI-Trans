@@ -92,3 +92,7 @@ Fix: Engine selection fail
 Fix: [Road PF] avoid to build on rail track
 Fix: [Rail PF] avoid to build on road track
 
+* 090829
+Codechange: Minimum OpenTTD version allowed was 7.2
+Fix: Don't build unnecessary bridge
+
