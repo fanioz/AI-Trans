@@ -297,8 +297,9 @@ class BuildingHandler.rail {
 	
 	    local c = 0;
 	    while (path == false) {
-	    	Finder._max_bridge_length = max(5, c + 3);
-	    	if (c % 15 == 0) Finder._estimate_multiplier ++;
+	    	Finder._max_bridge_length = max(5, c);
+	    	Finder._cost_bridge_per_tile += 5;
+	    	if (c % 20 == 0) Finder._estimate_multiplier ++;
 	        path  = Finder.FindPath(service.Info.R_Distance);
 	        AIController.Sleep(1);
 	        if (Debug.ResultOf("Rail Pathfinding", c++) == 102) break;
