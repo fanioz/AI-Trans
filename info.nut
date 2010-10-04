@@ -24,7 +24,7 @@ class Trans extends AIInfo
 {
     version = null;
     constructor() {
-    	this.version = 090823;
+    	this.version = 090824;
         ::AIInfo.constructor();
     }
 

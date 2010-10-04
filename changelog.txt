@@ -87,3 +87,8 @@ Fix: Set to be compatible with 0.7.2
 Fix: Use random name from AI ID
 CodeChange: Optimize pathfinder
 
+* 090824
+Fix: Engine selection fail
+Fix: [Road PF] avoid to build on rail track
+Fix: [Rail PF] avoid to build on road track
+
