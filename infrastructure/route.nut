@@ -163,11 +163,6 @@ class Route.Finder
 			}
 		}
 		
-		/* Try to avoid road/rail crossing because busses/trucks will crash. */
-		if (self._cost_crossing && AIRail.IsLevelCrossingTile(new_tile)) {
-			cost += self._cost_crossing;
-		}
-	
     	/* dont call path.getcost */
 		return cost;
 	}
@@ -328,6 +323,12 @@ class Route.RoadFinder extends RoadPF_3
 		if (AIRoad.AreRoadTilesConnected(prev_tile, new_tile)) {
 			cost += -self._cost_tile;
 		}				
+
+		/* Try to avoid road/rail crossing because busses/trucks will crash. */
+		if (AITile.HasTransportType(new_tile, AITile.TRANSPORT_RAIL)) {
+			cost += self._cost_crossing;
+		}
+		
 		return cost;
 	}
 	
