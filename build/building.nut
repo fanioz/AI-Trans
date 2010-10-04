@@ -141,11 +141,11 @@ function BuildingHandler::RoadServicing(serv)
     AILog.Warning("Test Mode");
     this.State.TestMode = true;
     if (!this.Road.Vehicle(serv)) return false;
-    service_cost += this.State.LastCost;
+    service_cost += this.State.LastCost * 2;
     if (!Bank.Get(service_cost)) return false;
     //this.State.TestMode = false;
 
-    if (!this.Road.Path(serv, 0 false)) this.Road.Path(serv, 0, true);
+    if (!this.Road.Path(serv, 0 false)) if (!this.Road.Path(serv, 0, true)) return false;
     if (!this.Road.Track(serv, 0)) return false;
     service_cost += this.State.LastCost * 1.5;
     if (!Bank.Get(service_cost)) return false;
@@ -164,21 +164,6 @@ function BuildingHandler::RoadServicing(serv)
 
     if (!this.Road.Depot(serv, false)) return false;
     service_cost += this.State.LastCost;
-    if (!Bank.Get(service_cost)) return false;
-
-    //this.Road.Path(serv, 1, true);
-    //if (!this.Road.Track(serv, 1)) return false;
-    //service_cost += this.State.LastCost;
-    //if (!Bank.Get(service_cost * 1.2)) return false;
-
-    //this.Road.Path(serv, 2, true);
-    //if (!this.Road.Track(serv, 2)) return false;
-    //service_cost += this.State.LastCost;
-    //if (!Bank.Get(service_cost * 1.2)) return false;
-
-    //this.Road.Path(serv, 3, true);
-    //if (!this.Road.Track(serv, 3)) return false;
-    //service_cost += this.State.LastCost;
 
     /* don't continue if I've not enough money */
     if (!Bank.Get(service_cost)) return false;
@@ -254,22 +239,20 @@ function BuildingHandler::RailServicing(serv)
     //this.State.TestMode = false;
 
     if (!this.Rail.Station(serv, true)) return false;
-    service_cost += this.State.LastCost;
+    service_cost += this.State.LastCost * 1.5;
     if (!Bank.Get(service_cost)) return false;
 
     if (!this.Rail.Station(serv, false)) return false;
-    service_cost += this.State.LastCost;
+    service_cost += this.State.LastCost * 1.5;
     if (!Bank.Get(service_cost)) return false;
 
     this.Rail.Path(serv, 0, true);
-    if (!this.Rail.Track(serv, 0)) {
-        this.Rail.Path(serv, 0, true);
-        if (!this.Rail.Track(serv, 0)) return false;
-        this.Rail.Signal(serv, 0);
-    }
-    service_cost += this.State.LastCost * 2;
+    this.Rail.Track(serv, 0);
+    service_cost += this.State.LastCost;
     if (!Bank.Get(service_cost)) return false;
-
+    this.Rail.Signal(serv, 0);
+    service_cost += this.State.LastCost;
+    if (!Bank.Get(service_cost)) return false;
     if (!this.Rail.Depot(serv, true)) return false;
     service_cost += this.State.LastCost * 2;
 

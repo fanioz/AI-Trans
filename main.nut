@@ -95,7 +95,8 @@ function Trans::Save()
     save_table.Industry_Close <- this.manager.industry_will_close;
     save_table.Vehicle_Sent <- this.manager.vehicle_sent;
     //save_table.Rail_BackBones <- this.manager.rail_backbones;
-    return Debug.ResultOf("--- (partial) Save supported ---", save_table);
+    AILog.Info("--- (partial) Save supported ---");
+    return save_table;
 }
 
 /**

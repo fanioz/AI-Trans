@@ -28,9 +28,11 @@
 
 class BuildingHandler.rail {
   _mother = null; /// the mother instance
+  _service = null;
 
   constructor(main) {
     this._mother = main;
+    this._service = null;
   }
 
 /**
@@ -81,7 +83,7 @@ class BuildingHandler.rail {
 
 function BuildingHandler::rail::Depot(service, is_source)
 {
-    AILog.Info("Try to Build Depot");
+    AILog.Info("Try to Build Rail Depot");
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
     //local built_s = is_source ? service.Source.Depots : service.Destination.Depots;
@@ -120,7 +122,15 @@ function BuildingHandler::rail::Depot(service, is_source)
             pos = location[0][0];
             head = location[0][1];
         }
-        result = Debug.ResultOf("Build Depot at " + name, AIRail.BuildRailDepot(pos, head));
+        local addmoney = 0;
+        local wait_time = AIVehicleList().Count() * 100 + 5;
+        Debug.Sign(pos,"depot");
+        Debug.Sign(head,"head");
+        result = Debug.ResultOf("Build Rail Depot at " + name, AIRail.BuildRailDepot(pos, head));
+        while (!result && Bank.Get(addmoney += this._mother.ff_factor / 10)) {
+            AIController.Sleep(wait_time);
+            result = Debug.ResultOf("Build Rail Depot at " + name, AIRail.BuildRailDepot(pos, head));
+        }
         local exit_p = FrontMore(head, tip);
         AIRail.BuildRailTrack(head, AIRail.RAILTRACK_NE_SW);
         AIRail.BuildRailTrack(head, AIRail.RAILTRACK_NW_SE);
@@ -145,7 +155,7 @@ function BuildingHandler::rail::Depot(service, is_source)
     }
     while (c_pos = resume Gpos) {
         AIController.Sleep(1);
-        if (Debug.ResultOf("Build Depot at " + name, AIRail.BuildRailDepot(c_pos.GetBody(), c_pos.GetHead()))) {
+        if (Debug.ResultOf("Build Rail Depot at " + name, AIRail.BuildRailDepot(c_pos.GetBody(), c_pos.GetHead()))) {
             this._mother.State.LastCost = money_need.GetCosts();
             return true;
         } else {
@@ -158,88 +168,106 @@ function BuildingHandler::rail::Depot(service, is_source)
 
 function BuildingHandler::rail::Station(service, is_source)
 {
-    AILog.Info("Try to Build Station");
+    AILog.Info("Try to Build Rail Station");
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
-    local c_pos = Stations();
-    local prod_accept = false;
+    local stasiun = Stations();
+    local pos = Platform();
+    local check_fn = is_source ? AITile.GetCargoProduction : AITile.GetCargoAcceptance ;
     local validID = -1;
 
     /* if dir == NE_SW */
     local table_NE_SW = {
         x = 11,
-        y = 2,
-        opset = AIMap.GetTileIndex(4, 0),
-        head1 = [AIMap.GetTileIndex(0, 0), AIMap.GetTileIndex(1, 0)],
-        head2 = [AIMap.GetTileIndex(10, 1), AIMap.GetTileIndex(9, 1)],
-        depot1 = [AIMap.GetTileIndex(0, 1), AIMap.GetTileIndex(0, 0)],
-        depot2 = [AIMap.GetTileIndex(10, 0), AIMap.GetTileIndex(10, 1)],
-        depotside = [AIMap.GetTileIndex(-1, 1), AIMap.GetTileIndex(11, 0)],
+        xs = 2,
+        y = 3,
+        ys = 1,
+        opset = AIMap.GetTileIndex(-4, 0),
+        head1 = [AIMap.GetTileIndex(-4, 0), AIMap.GetTileIndex(-3, 0)],
+        head2 = [AIMap.GetTileIndex(6, 1), AIMap.GetTileIndex(5, 1)],
+        depot1 = AIMap.GetTileIndex(-4, 1),
+        depot2 = AIMap.GetTileIndex(6, 0),
+        depotside = [AIMap.GetTileIndex(-5, 1), AIMap.GetTileIndex(7, 0)],
+        range = [AIMap.GetTileIndex(-4, 0), AIMap.GetTileIndex(6, 1)],
     }
     local table_NW_SE = {
-        x = 2,
+        x = 3,
         y = 11,
-        opset = AIMap.GetTileIndex(0, 4),
-        head1 = [AIMap.GetTileIndex(1, 0), AIMap.GetTileIndex(1, 1)],
-        head2 = [AIMap.GetTileIndex(0, 10), AIMap.GetTileIndex(0, 9)],
-        depot1 = [AIMap.GetTileIndex(0, 0), AIMap.GetTileIndex(1, 0)],
-        depot2 = [AIMap.GetTileIndex(1, 10), AIMap.GetTileIndex(0, 10)],
-        depotside = [AIMap.GetTileIndex(-1, 0), AIMap.GetTileIndex(1, 11)],
+        xs = 1,
+        ys = 2,
+        opset = AIMap.GetTileIndex(0, -4),
+        head1 = [AIMap.GetTileIndex(1, -4), AIMap.GetTileIndex(1, -3)],
+        head2 = [AIMap.GetTileIndex(0, 6), AIMap.GetTileIndex(0, 5)],
+        depot1 = AIMap.GetTileIndex(0, -4),
+        depot2 = AIMap.GetTileIndex(1, 6),
+        depotside = [AIMap.GetTileIndex(0, -5), AIMap.GetTileIndex(1, 7)],
+        range = [AIMap.GetTileIndex(0, -4), AIMap.GetTileIndex(0, 6)],
     }
     local read_table = {};
     read_table[AIRail.RAILTRACK_NW_SE] <- table_NW_SE;
     read_table[AIRail.RAILTRACK_NE_SW] <- table_NE_SW;
 
-    local check_fn = is_source ? AITile.GetCargoProduction : AITile.GetCargoAcceptance ;
     local built_s = Tiles.StationOn(is_source ? service.Source.Location : service.Destination.Location);
+    local prodacc = Assist.GetMaxProd_Accept(is_source ? service.Source.Area : service.Destination.Area, service.Cargo, is_source);
     built_s.Valuate(check_fn, service.Cargo, 2, 3, Stations.RailRadius());
-    built_s.KeepAboveValue(6);
+    built_s.KeepAboveValue(prodacc - 1);
     /* check if i've one */
     while (built_s.Count() > 0) {
         AILog.Info("check existing");
         AIController.Sleep(1);
-        local pos = built_s.Begin();
+        local base = built_s.Begin();
         built_s.RemoveTop(1);
-        local posID = AIStation.GetStationID(pos);
+        local posID = AIStation.GetStationID(base);
+        if (!AIStation.HasStationType(posID, AIStation.STATION_TRAIN)) continue;
+        /*skip the same ID */
         if (posID == validID) continue;
         if (AIStation.IsValidStation(posID)) validID = posID;
         else continue;
-        pos = AIStation.GetLocation(posID);
-        if (!AIStation.HasStationType(posID, AIStation.STATION_TRAIN)) continue;
+        base = AIStation.GetLocation(posID);
         /* check if i really need to build other one */
         local train_here = AIVehicleList_Station(posID);
         train_here.Valuate(AIVehicle.GetVehicleType);
         train_here.KeepValue(AIVehicle.VT_RAIL);
         if (train_here.Count() > 0) continue;
-        Debug.Sign(pos, "stasion");
-        c_pos.SetID(posID);
-        local dir = AIRail.GetRailStationDirection(pos);
+        Debug.Sign(base, "stasion");
+        stasiun.SetID(posID);
+        local dir = AIRail.GetRailStationDirection(base);
         if (dir == 0) continue;
-        local _platform = Platform();
-        _platform.SetBody(pos);
-        _platform.SetHead(_platform.FindLastTile(dir, true, 1));
-        c_pos.SetPlatform(0, _platform);
-        c_pos.SetupAllPlatform();
-        local base = pos - read_table[dir].opset;
+        local start_pos = base + read_table[dir].opset;
+        if (dir == AIRail.RAILTRACK_NW_SE) {
+            if (!Platform.RailTemplateNW_SE(start_pos)) {
+                AllocateLand(start_pos, base + read_table[dir].range[1]);
+                continue;
+            }
+        }
+        if (dir == AIRail.RAILTRACK_NE_SW) {
+            if (!Platform.RailTemplateNE_SW(start_pos)) {
+                AllocateLand(start_pos, base + read_table[dir].range[1]);
+                continue;
+            }
+        }
+        pos.SetBody(base);
+        pos.SetHead(pos.FindLastTile(stasiun.GetDirection(), true, 1));
+        pos.SetBack(pos.FindLastTile(stasiun.GetDirection(), false, 0));
+        pos.SetBackHead(pos.FindLastTile(stasiun.GetDirection(), false, 1));
+        stasiun.SetPlatform(0, pos);
+        stasiun.SetupAllPlatform();
         local start_path = [];
         start_path.push([base + read_table[dir].head1[0], base + read_table[dir].head1[1]]);
         start_path.push([base + read_table[dir].head2[0], base + read_table[dir].head2[1]]);
         local depot_path = [];
-        depot_path.push([base + read_table[dir].depot1[0], base + read_table[dir].depot1[1]]);
-        depot_path.push([base + read_table[dir].depot2[0], base + read_table[dir].depot2[1]]);
-        local tiles = AITileList();
-        tiles.AddRectangle(base, base + AIMap.GetTileIndex(read_table[dir].x - 1, read_table[dir].y - 1));
-        tiles.RemoveTile(start_path[0][0]);
-        tiles.RemoveTile(start_path[1][0]);
-        tiles.AddTile(base + read_table[dir].depotside[0]);
-        tiles.AddTile(base + read_table[dir].depotside[1]);
-        service.IgnorePath <- tiles;
+        depot_path.push([base + read_table[dir].depot1, base + read_table[dir].head1[0]]);
+        depot_path.push([base + read_table[dir].depot2, base + read_table[dir].head2[0]]);
+        service.IgnorePath.RemoveTile(start_path[0][1]);
+        service.IgnorePath.RemoveTile(start_path[1][1]);
+        service.IgnorePath.AddTile(base + read_table[dir].depotside[0]);
+        service.IgnorePath.AddTile(base + read_table[dir].depotside[1]);
         if (is_source) {
-            service.SourceStation = c_pos;
+            service.SourceStation = stasiun;
             service.StartPath <- start_path;
             service.DepotStart <- depot_path;
         } else {
-            service.DestinationStation = c_pos;
+            service.DestinationStation  = stasiun;
             service.EndPath <- start_path;
             service.DepotEnd <- depot_path;
         }
@@ -249,70 +277,92 @@ function BuildingHandler::rail::Station(service, is_source)
     }
     /* find a good place */
     AILog.Info("find a good place");
-    local pos = null, name = "", areas = null, t_location = null, stasiun = null;
-    local saved = -1, location = null;
+    local name = "", areas = null, stasiun = null;
+    local location = null;
     if (is_source) {
         stasiun = service.SourceStation;
         name = service.Source.Name;
         areas = service.Source.Area;
-        t_location = service.Destination.Location;
         location = service.Source.Location;
-        if ("SavedSource" in service) saved = service.SavedSource;
     } else {
         stasiun = service.DestinationStation;
         name = service.Destination.Name;
         areas = service.Destination.Area;
-        t_location = service.Source.Location;
         location = service.Destination.Location;
-        if ("SavedDest" in service) saved = service.SavedDest;
     }
-    local pos = Platform();
-    local to_ignore = [];
+
     stasiun.SetWidth(2);
     stasiun.SetLength(3);
+    areas.Valuate(check_fn, service.Cargo, 2, 3, Stations.RailRadius());
+    areas.KeepAboveValue(prodacc - 2);
     areas.Valuate(AIMap.DistanceMax, location);
     areas.RemoveValue(0);
     areas.Sort(AIAbstractList.SORT_BY_VALUE, true);
     if (!AIStation.IsValidStation(validID)) validID = 0;
     for (local base = areas.Begin(); areas.HasNext(); base = areas.Next()) {
         AIController.Sleep(1);
-        if (AIMap.IsValidTile(saved)) base = saved;
-        saved = -1;
         pos.SetBody(base);
         local dir = pos.FindDirection(location);
-        if (check_fn(base + read_table[dir].opset, service.Cargo, 2, 3, Stations.RailRadius()) < 7) {
-            if (!this._mother.State.TestMode) continue;
-        }
-        if (!AITile.IsBuildableRectangle(base, read_table[dir].x, read_table[dir].y)) continue;
+        local start_pos = base + read_table[dir].opset;
+        if (!AITile.IsBuildableRectangle(start_pos, read_table[dir].x, read_table[dir].y)) continue;
         AILog.Info("Buildability Passed");
         local tiles = AITileList();
-        tiles.AddRectangle(base, base + AIMap.GetTileIndex(read_table[dir].x - 1, read_table[dir].y - 1));
-        local c = 0;
-        while ((tiles.Count() != Tiles.Flat(tiles).Count()) && c < 10) {
-            if (!this._mother.State.TestMode) {
-                Tiles.MakeLevel(tiles);
-            }
-            c++;
+        tiles.AddRectangle(base, base + AIMap.GetTileIndex(read_table[dir].xs, read_table[dir].ys));
+        if (tiles.Count() != Tiles.Flat(tiles).Count()) {
+            AILog.Info("Terraforming station...");
+            if (this._mother.State.TestMode) AITile.LevelTiles(base, base + AIMap.GetTileIndex(read_table[dir].xs, read_table[dir].ys));
+            else Tiles.MakeLevel(base, base + AIMap.GetTileIndex(read_table[dir].xs, read_table[dir].ys));
         }
-        if (!AITile.LevelTiles(base, base + AIMap.GetTileIndex(read_table[dir].x, read_table[dir].y))) continue;
-        if (!this._mother.State.TestMode && tiles.Count() != Tiles.Flat(tiles).Count()) continue;
-        AILog.Info("Flattening Passed");
+        //if (!this._mother.State.TestMode) if (tiles.Count() != Tiles.Flat(tiles).Count()) continue;
         stasiun.SetDirection(dir);
-        local result = AIRail.BuildNewGRFRailStation(base + read_table[dir].opset, dir, stasiun.GetWidth(), stasiun.GetLength(), AIStation.STATION_JOIN_ADJACENT || validID,
+        local result = AIRail.BuildNewGRFRailStation(base, dir, stasiun.GetWidth(), stasiun.GetLength(), AIStation.STATION_JOIN_ADJACENT || validID,
             service.Cargo, AIIndustry.GetIndustryType(service.Source.ID), AIIndustry.GetIndustryType(service.Destination.ID),
             service.Distance, is_source);
-        if (!result) result = AIRail.BuildRailStation(base + read_table[dir].opset, dir, stasiun.GetWidth(), stasiun.GetLength(), AIStation.STATION_JOIN_ADJACENT || validID);
+        if (!result) result = AIRail.BuildRailStation(base, dir, stasiun.GetWidth(), stasiun.GetLength(), AIStation.STATION_JOIN_ADJACENT || validID);
         if (Debug.ResultOf("Rail station at " + name, result)) {
-            if (is_source) service.SavedSource <- base;
-            else service.SavedDest <- base;
             if (!this._mother.State.TestMode) {
-                stasiun.SetID(AIStation.GetStationID(base + read_table[dir].opset));
+                stasiun.SetID(AIStation.GetStationID(base));
                 if (!AIStation.IsValidStation(stasiun.GetID())) {
                     continue;
                 }
-                if (dir == AIRail.RAILTRACK_NW_SE) Platform.RailTemplateNW_SE(base);
-                if (dir == AIRail.RAILTRACK_NE_SW) Platform.RailTemplateNE_SW(base);
-                pos.SetBody(base + read_table[dir].opset);
+                Debug.Sign(start_pos, "start");
+                if (dir == AIRail.RAILTRACK_NW_SE) {
+                    tiles.Clear();
+                    tiles.AddRectangle(base + AIMap.GetTileIndex(2, 0), base + read_table[dir].range[0]);
+                    if (tiles.Count() != Tiles.Flat(tiles).Count()) {
+                        AILog.Info("Terraforming NW station...");
+                        Tiles.MakeLevel(base + AIMap.GetTileIndex(2, 0), base + read_table[dir].range[0]);
+                    }
+                    tiles.Clear();
+                    tiles.AddRectangle(base + AIMap.GetTileIndex(2, 2), base + read_table[dir].depotside[1]);
+                    if (tiles.Count() != Tiles.Flat(tiles).Count()) {
+                        AILog.Info("Terraforming SE station...");
+                        Tiles.MakeLevel(base + AIMap.GetTileIndex(2, 2), base + read_table[dir].depotside[1]);
+                    }
+                    if (!Debug.ResultOf("Platform template", Platform.RailTemplateNW_SE(base + read_table[dir].range[0]))) {
+                        AllocateLand(start_pos, base + read_table[dir].range[1]);
+                        continue;
+                    }
+                }
+                if (dir == AIRail.RAILTRACK_NE_SW) {
+                    tiles.Clear();
+                    tiles.AddRectangle(base + AIMap.GetTileIndex(0, 2), base + read_table[dir].range[0]);
+                    if (tiles.Count() != Tiles.Flat(tiles).Count()) {
+                        AILog.Info("Terraforming NE station...");
+                        Tiles.MakeLevel(base + AIMap.GetTileIndex(0, 2), base + read_table[dir].range[0]);
+                    }
+                    tiles.Clear();
+                    tiles.AddRectangle(base + AIMap.GetTileIndex(2, 2), base + read_table[dir].depotside[1]);
+                    if (tiles.Count() != Tiles.Flat(tiles).Count()) {
+                        AILog.Info("Terraforming SW station...");
+                        Tiles.MakeLevel(base + AIMap.GetTileIndex(2, 2), base + read_table[dir].depotside[1]);
+                    }
+                    if (!Debug.ResultOf("Platform template", Platform.RailTemplateNE_SW(base + read_table[dir].range[0]))) {
+                        AllocateLand(start_pos, base + read_table[dir].range[1]);
+                        continue;
+                    }
+                }
+                pos.SetBody(base);
                 pos.SetHead(pos.FindLastTile(stasiun.GetDirection(), true, 1));
                 pos.SetBack(pos.FindLastTile(stasiun.GetDirection(), false, 0));
                 pos.SetBackHead(pos.FindLastTile(stasiun.GetDirection(), false, 1));
@@ -322,13 +372,12 @@ function BuildingHandler::rail::Station(service, is_source)
                 start_path.push([base + read_table[dir].head1[0], base + read_table[dir].head1[1]]);
                 start_path.push([base + read_table[dir].head2[0], base + read_table[dir].head2[1]]);
                 local depot_path = [];
-                depot_path.push([base + read_table[dir].depot1[0], base + read_table[dir].depot1[1]]);
-                depot_path.push([base + read_table[dir].depot2[0], base + read_table[dir].depot2[1]]);
-                tiles.RemoveTile(start_path[0][0]);
-                tiles.RemoveTile(start_path[1][0]);
-                tiles.AddTile(base + read_table[dir].depotside[0]);
-                tiles.AddTile(base + read_table[dir].depotside[1]);
-                service.IgnorePath <- tiles;
+                depot_path.push([base + read_table[dir].depot1, base + read_table[dir].head1[0]]);
+                depot_path.push([base + read_table[dir].depot2, base + read_table[dir].head2[0]]);
+                service.IgnorePath.RemoveTile(start_path[0][1]);
+                service.IgnorePath.RemoveTile(start_path[1][1]);
+                service.IgnorePath.AddTile(base + read_table[dir].depotside[0]);
+                service.IgnorePath.AddTile(base + read_table[dir].depotside[1]);
                 if (is_source) {
                     service.SourceStation = stasiun;
                     service.StartPath <- start_path;
@@ -355,7 +404,7 @@ function BuildingHandler::rail::Station(service, is_source)
 function BuildingHandler::rail::Path(service, number, is_finding = false)
 {
     local txt = (is_finding) ? " Finding:" : " Checking:" ;
-    AILog.Info("Path " + number + txt);
+    AILog.Info("Rail Path " + number + txt);
     local _from = [];
     local _to = [];
     local Finder = Rail();
@@ -363,15 +412,15 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
     local path = false;
     local ignored_tiles = [];
 
-    local tile_cost = 10;
-    Finder.cost.tile = tile_cost;
+    local tile_cost = 20;
+    Finder.cost.tile = 0.5 * tile_cost;
     //Finder.cost.max_cost = distance * tile_cost * 10;
     //Finder.cost.no_existing_rail = 2 * tile_cost;
-    Finder.cost.diagonal_tile =  0.7 * tile_cost;
-    Finder.cost.turn = 6 * tile_cost;
-    Finder.cost.slope =  2 * tile_cost;
-    Finder.cost.bridge_per_tile = 12 * tile_cost;
-    Finder.cost.tunnel_per_tile = 10 * tile_cost;
+    Finder.cost.diagonal_tile =  0.4 * tile_cost;
+    Finder.cost.turn = 4 * tile_cost;
+    Finder.cost.slope =  4 * tile_cost;
+    Finder.cost.bridge_per_tile = 8 * tile_cost;
+    Finder.cost.tunnel_per_tile = 6 * tile_cost;
     Finder.cost.coast = 8 * tile_cost;
     Finder.cost.crossing = 24 * tile_cost;
     //Finder.cost.NonFreeTile = 5 * tile_cost; //un implemented custom cost huh?
@@ -404,15 +453,15 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
         case 2:
             _from = service.DepotEnd;
             _to = service.DepotStart;
-            Finder.cost.estimate_multiplier = 2;
+            Finder.cost.estimate_multiplier = 1.2;
             break;
         default : Debug.DontCallMe("Path Selection", number);
     }
 
 
     if (is_finding) {
-        //ignored_tiles = Tiles.ToIgnore();
-        if (number != 2)  foreach (idx, val in service.IgnorePath) ignored_tiles.push(idx);
+        ignored_tiles = Tiles.ToIgnore();
+        if (number != 0)  foreach (idx, val in service.IgnorePath) ignored_tiles.push(idx);
     } else {
         /* if we are only check is it connected, do bread first search */
         Finder.cost.estimate_multiplier = 0;
@@ -432,11 +481,12 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
         return false;
     }
 
-    local c =   150;
+    local c =   200;
+    //local d = max(((1000 - distance) / 1000).tointeger(), 2);
     while (path == false && c-- > 0) {
         AIController.Sleep(1);
         path  = Finder.FindPath(distance);
-        if (c % 5 == 0) this._mother._commander.Evaluate();
+        if (c % 10 == 0) this._mother._commander.Evaluate();
     }
     result = Debug.ResultOf("Path " + txt + " stopped at "+ c, (path != null && path != false));
     switch (number) {
@@ -466,14 +516,13 @@ function BuildingHandler::rail::Track(service, number)
     }
     if (path == null || path == false) return false;
     local path_for_check = path;
-    AILog.Info("Build Track Length=" + path.GetLength() + txt);
+    AILog.Info("Build Rail Track Length=" + path.GetLength() + txt);
     local prev = null;
     local prevprev = null;
     while (path != null) {
         if (prevprev != null) {
             if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
                 /*if (AIMap.DistanceManhattan(prev, path.GetTile()) == 2) {
-
                 }*/
                 if (AITunnel.GetOtherTunnelEnd(prev) == path.GetTile()) {
                     if (!AITunnel.BuildTunnel(AIVehicle.VT_RAIL, prev)) {
@@ -492,6 +541,14 @@ function BuildingHandler::rail::Track(service, number)
                         /* error build bridge */
                         switch (AIError.GetLastError()) {
                             case AIError.ERR_PRECONDITION_FAILED : break;
+                            case AIError.ERR_NOT_ENOUGH_CASH:
+                                while (bridge_list.HasNext()) {
+                                    local bridge = bridge_list.Next();
+                                    if (!Bank.Get(AIBridge.GetPrice(bridge, AIMap.DistanceManhattan(path.GetTile(), prev) + 1))) continue;
+                                    if (AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge, path.GetTile(), prev)) break;
+                                }
+                                break;
+
                         }
                         service.IgnorePath.AddTile(prev);
                     }
@@ -561,7 +618,7 @@ function BuildingHandler::rail::Vehicle(service)
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
     this._mother.State.LastCost = 0;
-    AILog.Info("Build Vehicle ");
+    AILog.Info("Build Rail Vehicle ");
     if (AIVehicle.IsValidVehicle(service.MainVhcID)) {
         //activated if we use existing rail
         //local number = service.SourceIsTown ? AITown.GetMaxProduction(service.Source.ID, service.Cargo) :
@@ -582,12 +639,18 @@ function BuildingHandler::rail::Vehicle(service)
     while (locos.Count() > 0) {
         /* due to needed to check it price in Test Mode */
         local MainEngineID = locos.Pop();
-        local engine_name = Debug.ResultOf("Loco Name", AIEngine.GetName(MainEngineID));
+        local engine_name = AIEngine.GetName(MainEngineID);
         if (!AIEngine.CanPullCargo(MainEngineID, service.Cargo)) continue;
-        this._mother.State.LastCost = AIEngine.GetPrice(MainEngineID) * 1.2 ;
+        this._mother.State.LastCost = AIEngine.GetPrice(MainEngineID) * 1.5 ;
         if (this._mother.State.TestMode && this._mother.State.LastCost > 0) break;
-        /* and don't care with Exec Mode */
-        loco_id = AIVehicle.BuildVehicle(service.SourceDepot.GetBody(), MainEngineID);
+        local addmoney = AIEngine.GetPrice(MainEngineID);
+        local wait_time = AIVehicleList().Count() * 10 + 5;
+        loco_id = Debug.ResultOf("Try to buy " + engine_name, AIVehicle.BuildVehicle(service.SourceDepot.GetBody(), MainEngineID));
+        while (!AIVehicle.IsValidVehicle(loco_id) && Bank.Get(addmoney += this._mother.ff_factor / 10)) {
+            AIController.Sleep(wait_time);
+            loco_id = Debug.ResultOf("(retry buy " + engine_name, AIVehicle.BuildVehicle(service.SourceDepot.GetBody(), MainEngineID));
+            if (AIVehicle.IsValidVehicle(loco_id)) break;
+        }
         if (AIEngine.CanRefitCargo(MainEngineID, service.Cargo)) AIVehicle.RefitVehicle(loco_id, service.Cargo);
 
         /* ordering */
@@ -627,8 +690,8 @@ function BuildingHandler::rail::Vehicle(service)
     wagons = Vehicles.SortedEngines(wagons);
     while (wagons.Count() > 0) {
         local MainEngineID = wagons.Pop();
-        local wagon_name = Debug.ResultOf("Wagon Name", AIEngine.GetName(MainEngineID));
-        if (!Debug.ResultOf("cargo fit", IsCargoFit(MainEngineID, service.Cargo))) continue;
+        local wagon_name = AIEngine.GetName(MainEngineID);
+        if (!IsCargoFit(MainEngineID, service.Cargo)) continue;
         this._mother.State.LastCost += AIEngine.GetPrice(MainEngineID) * 6;
         if (this._mother.State.TestMode && this._mother.State.LastCost > 0) return true;
         local total_length = 0;
@@ -636,6 +699,7 @@ function BuildingHandler::rail::Vehicle(service)
         local max = service.SourceStation.GetLength() * 16;
         while (total_length < max) {
             wagon_id = AIVehicle.BuildVehicle(service.SourceDepot.GetBody(), MainEngineID);
+            if (!AIVehicle.IsValidVehicle(wagon_id)) break;
             if (AIEngine.GetCargoType(MainEngineID) != service.Cargo) AIVehicle.RefitVehicle(wagon_id, service.Cargo);
             if (AIEngine.GetCargoType(MainEngineID) != service.Cargo) {
                 AIVehicle.SellVehicle(wagon_id);
@@ -643,14 +707,14 @@ function BuildingHandler::rail::Vehicle(service)
             }
             if (AIVehicle.MoveWagon(wagon_id, 0, loco_id, 0)) wagon_count++;
             total_length = Debug.ResultOf("Loco len", AIVehicle.GetLength(loco_id));
-            if ((total_length / 16) >= service.SourceStation.GetLength()) {
-                if (total_length % max != 0) AIVehicle.SellWagon(loco_id, wagon_count);
-                service.MainVhcID = loco_id;
-                return true;
-            }
         }
+        if (total_length % max != 0) AIVehicle.SellWagon(loco_id, wagon_count);
     }
-    if (AIVehicle.GetLength(loco_id) == loco_len) AIVehicle.SellVehicle(loco_id);
+    if (AIVehicle.GetLength(loco_id) > loco_length) {
+        service.MainVhcID = loco_id;
+        return true;
+    }
+    AIVehicle.SellVehicle(loco_id);
     return false;
 }
 
@@ -676,7 +740,12 @@ function BuildingHandler::rail::Signal(service, number)
     while (path != null) {
         local parn = path.GetParent();
         if ((c % 2 == 0) && parn != null && (AIRail.GetSignalType(path.GetTile(), parn.GetTile()) == AIRail.SIGNALTYPE_NONE))
-            AIRail.BuildSignal(path.GetTile(), parn.GetTile(), AIRail.SIGNALTYPE_NORMAL);
+            if (!AIRail.BuildSignal(path.GetTile(), parn.GetTile(), AIRail.SIGNALTYPE_NORMAL)) {
+                while (AIError.GetLastError() == AIError.ERR_VEHICLE_IN_THE_WAY) {
+                    AIController.Sleep(5);
+                    AIRail.BuildSignal(path.GetTile(), parn.GetTile(), AIRail.SIGNALTYPE_NORMAL);
+                }
+            }
         if (path != null) {
             path = parn;
             c++;

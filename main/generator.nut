@@ -32,7 +32,7 @@ class Gen
      */
     static function Service(main)
     {
-        AILog.Info("Generate Service");
+        AILog.Info("Generating Services ...");
         AIController.Sleep(2);
         local min_priority = 10000000;
         local min_distance = 20;
@@ -94,9 +94,6 @@ class Gen
                 if (serv.ID in main.service_tables) continue;
                 if (serv.ID in main.serviced_route) continue;
                 serv = Services.RefreshTable(serv);
-                //if (serv.Engines.IsEmpty()) continue;
-                //speed = AIEngine.GetMaxSpeed(serv.Engines.Begin());
-                //estimated_time = (serv.Distance * 429 / speed / 24) ;
                 main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo_id, 20, 200) + town);
                 main.service_tables[serv.ID] <- serv;
             }
@@ -137,8 +134,8 @@ class Gen
     static function Subsidy(main)
     {
         /* add randomizer, not all trans AI instance would handle subsidy */
-        local skip_this = main.randomizer % 2;
-        if (skip_this != 1) return;
+        local skip_this = main.randomizer % 3;
+        if (skip_this == 0) return;
         local random_factor =  (1 + skip_this) * 30;
         local list = AISubsidyList();
         local subs_service = null;
@@ -162,7 +159,7 @@ class Gen
             if ((!AISubsidy.SourceIsTown(i) && AIIndustry.IsBuiltOnWater(source)) ||
                 (!AISubsidy.DestinationIsTown(i) && AIIndustry.IsBuiltOnWater(dest))) continue;
             subs_service = Services.RefreshTable(subs_service);
-            if (subs_service.Distance < 10) continue;
+            if (AIMap.DistanceMax(subs_service.Source.Location, subs_service.Destination.Location) < 10) continue;
             subs_service.IsSubsidy = true;
             AILog.Info("Subsidy scheduled");
             AILog.Info(subs_service.Readable);
@@ -172,6 +169,7 @@ class Gen
             return;
         }
         AILog.Info("No more Subsidy");
+        subs_service = null;
     }
 
     /**
@@ -179,6 +177,7 @@ class Gen
      */
     static function DropOffType(random_factor)
     {
+        AILog.Info("Generating Drop of points ... ");
         local temp_var = {};
         local type_industries = AIIndustryTypeList();
         type_industries.Valuate(AIIndustryType.IsBuiltOnWater);
@@ -216,6 +215,7 @@ class Gen
         foreach (idx, val in temp_var) {
           AILog.Info(AIIndustry.GetName(val) + ":" + AICargo.GetCargoLabel(idx));
         } */
+        AILog.Info("Drop off point Finished");
         return temp_var;
     }
 }

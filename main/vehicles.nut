@@ -173,7 +173,7 @@ class Vehicles
      static function UpgradeEngine(engine_id_new)
     {
         AILog.Info("Try Upgrading Vehicle");
-        foreach(group_id in AIGroupList()) {
+        foreach(group_id, val in AIGroupList()) {
             local vl = AIVehicleList();
             vl.Valuate(AIVehicle.GetGroupID);
             vl.KeepValue(group_id);
@@ -186,6 +186,10 @@ class Vehicles
                 }
             }
         }
+    }
+
+    static function ReplaceVhc(vhc_id)
+    {
     }
 
     /**
@@ -239,13 +243,11 @@ class Vehicles
         local heap = BinaryHeap();
         foreach (idx, val in engines) {
             AIController.Sleep(1);
-            local score = AIEngine.GetPrice(idx);
-            score += AIEngine.GetRunningCost(idx);
+            local score = AIEngine.GetPrice(idx) / (AIEngine.GetReliability(idx) + 2);
+            score += AIEngine.GetRunningCost(idx) / (AIEngine.GetMaxSpeed(idx) + 2);
             score -=  AIEngine.GetCapacity(idx) * 50;
-            score -= AIEngine.GetReliability(idx) * 50;
-            score -= AIEngine.GetMaxAge (idx);
-            score -= AIEngine.GetMaxSpeed(idx) * 100;
-            score -= AIEngine.GetPower(idx);
+            score -= AIEngine.GetMaxAge (idx) + 1;
+            score -= AIEngine.GetPower(idx) + 1;
             heap.Insert(idx, score);
         }
         return heap;

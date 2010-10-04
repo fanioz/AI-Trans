@@ -61,21 +61,11 @@ function FrontMore(body, head, num =1)
 }
 // =======================================
 // Force to Allocate an area of "tiles"
-function AllocateLand(tiles) {
+function AllocateLand(tilestart, tileend) {
 // =======================================
-    local done=true;
-    local sum = 0;
-    foreach(tile, val in tiles) {
-        sum += AITile.GetHeight(tile);
-    }
-    local avg = (sum / tiles.Count()).tointeger();
-    AILog.Info("Done = " + done);
-    local tile1 = -1, tile2 = -1;
-    Hi_Lo_List(tiles, tile1, tile2);
-    while (AITile.GetHeight(tile1) < avg) {
-        break;
-    }
-    AITile.LevelTiles(tile1, tile2);
+    local tiles = AITileList();
+    tiles.AddRectangle(tilestart, tileend);
+    foreach (idx, val in tiles) if (!Tiles.IsMine(idx, false)) AITile.DemolishTile(idx);
 }
 
 // =======================================
@@ -271,14 +261,17 @@ class Assist
         local new_cost = 0;
         if (AIBridge.IsBridgeTile(new_tile) && (AIBridge.GetOtherBridgeEnd(new_tile) == prev_tile)) {
             local b_id = AIBridge.GetBridgeID(new_tile);
-            new_cost -= AIBridge.GetMaxSpeed(b_id)  + this._cost_bridge_per_tile;
+            if (AIBridge.IsValidBridge(b_id)) new_cost -= (AIBridge.GetMaxSpeed(b_id)  + this._cost_bridge_per_tile);
         }
         if (AITunnel.IsTunnelTile(new_tile) && AITunnel.GetOtherTunnelEnd(new_tile) == prev_tile) {
-            new_cost -= (this._cost_tile + this._cost_bridge_per_tile);
+            new_cost -= this._cost_tunnel_per_tile;
         }
         if (AIRoad.IsRoadTile(new_tile) && AIRoad.AreRoadTilesConnected(prev_tile, new_tile)) {
-            new_cost -= this._cost_tile;
+            new_cost -= this._cost_tile * 2;
         }
+
+        if (!AITile.DemolishTile(new_tile) && AIError.GetLastError() == AIError.ERR_VEHICLE_IN_THE_WAY) new_cost += this._max_cost;
+        //AILog.Info("cost:" + new_cost);
         return new_cost * AIMap.DistanceManhattan(new_tile, prev_tile);
     }
 
@@ -289,6 +282,7 @@ class Assist
         if (main._commander.service_tables.rawin(serv_id)) {
             serv = main._commander.service_tables[serv_id];
         }
+        if (serv.VehicleType != AIVehicle.VT_RAIL) return true;
         AILog.Info("Try to connect backbone for id " + serv_id);
         main.Rail.Path(serv, 2, true);
         main.State.TestMode = true;
@@ -313,19 +307,24 @@ class Assist
         }
         main.Rail.Signal(serv, 1);
         main.Rail.Signal(serv, 2);
-        if (!main.Rail.Vehicle(serv)) return false;
+        main.Rail.Vehicle(serv);
         return true;
     }
 
-    static function GetIDGroup(group_name)
+    static function GetServiceID(group_name)
     {
         return group_name.slice(2);
     }
 
-    static function GetMiddleTile(_first, _end)
+    static function GetMaxProd_Accept(tiles, cargo, is_source)
     {
+        local bh = BinaryHeap();
+        local check_fn = is_source ? AITile.GetCargoProduction : AITile.GetCargoAcceptance;
+        foreach (idx, val in tiles) {
+            bh.Insert(idx, 8 - check_fn(idx, cargo, 1, 1, Stations.RoadRadius()));
+        }
+        return check_fn(bh.Peek(), cargo, 1, 1, Stations.RoadRadius());
     }
-
 }
 
 /**
@@ -343,7 +342,7 @@ class Debug
      */
     static function ResultOf(msg, exp)
     {
-        if (AIError.GetLastError() == AIError.ERR_NONE) AILog.Info("" + msg + ":" + exp +" :Good Job");
+        if (AIError.GetLastError() == AIError.ERR_NONE) AILog.Info("" + msg + ":" + exp +" -> Good Job :-D");
         else AILog.Warning("" + msg + ":" + exp + ":" + AIError.GetLastErrorString().slice(4));
         /* no other methode found to clear last err */
         //AISign.RemoveSign(Debug.Sign(AIMap.GetTileIndex(2, 2), "debugger"));

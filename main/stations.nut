@@ -163,19 +163,22 @@ class Platform
             local c = to_build.pop();
             local x = c % 11;
             local y = (c - x) / 11;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NE_SW);
+            local tile = base + AIMap.GetTileIndex(x, y);
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NE_SW) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
         }
         while (nese.len() > 0) {
             local c = nese.pop();
             local x = c % 11;
             local y = (c - x) / 11;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NE_SE);
+            local tile = base + AIMap.GetTileIndex(x, y);
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NE_SE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
         }
         while (nwsw.len() > 0) {
             local c = nwsw.pop();
             local x = c % 11;
             local y = (c - x) / 11;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NW_SW);
+            local tile = base + AIMap.GetTileIndex(x, y);
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_SW) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
         }
         while (signal.len() > 0) {
             local c = signal.pop();
@@ -183,7 +186,7 @@ class Platform
             local y = (c[0] - x) / 11;
             local xf = c[1] % 11;
             local yf = (c[1] - xf) / 11;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY);
+            if (!AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY)) return false;
         }
         while (door.len() > 0) {
             local c = door.pop();
@@ -191,8 +194,9 @@ class Platform
             local y = (c[0] - x) / 11;
             local xf = c[1] % 11;
             local yf = (c[1] - xf) / 11;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY);
+            if (!AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY)) return false;
         }
+        return true;
     }
 
     static function RailTemplateNW_SE(base)
@@ -207,19 +211,22 @@ class Platform
             local c = to_build.pop();
             local x = c % 2;
             local y = (c - x) / 2;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NW_SE);
+            local tile = base + AIMap.GetTileIndex(x, y);
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_SE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
         }
         while (nenw.len() > 0) {
             local c = nenw.pop();
             local x = c % 2;
             local y = (c - x) / 2;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NW_NE);
+            local tile = base + AIMap.GetTileIndex(x, y);
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_NE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
         }
         while (swse.len() > 0) {
             local c = swse.pop();
             local x = c % 2;
             local y = (c - x) / 2;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_SW_SE);
+            local tile = base + AIMap.GetTileIndex(x, y);
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_SW_SE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
         }
         while (signal.len() > 0) {
             local c = signal.pop();
@@ -227,7 +234,7 @@ class Platform
             local y = (c[0] - x) / 2;
             local xf = c[1] % 2;
             local yf = (c[1] - xf) / 2;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY);
+            if (!AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY)) return false;
         }
         while (door.len() > 0) {
             local c = door.pop();
@@ -235,7 +242,12 @@ class Platform
             local y = (c[0] - x) / 2;
             local xf = c[1] % 2;
             local yf = (c[1] - xf) / 2;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY);
+            if (!AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY)) return false;
         }
+        return true;
+    }
+
+    static function DropOffRailStation()
+    {
     }
 }

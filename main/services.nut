@@ -32,6 +32,7 @@ class Services
     Area =  null;
     Stations = null;
     Depots = null;
+    LastMonthTransported = null;
 
     constructor(id)
     {
@@ -42,6 +43,7 @@ class Services
         this.Area =  AITileList();
         this.Stations = null;
         this.Depots = null;
+        this.LastMonthTransported = null;
     }
 
     /**
@@ -95,6 +97,7 @@ class TownServices extends Services
         this.Location = AITown.GetLocation(this.ID);
         this.IsTown = true;
         this.Area = Tiles.OfTown(this.ID, (Tiles.Radius(this.Location, 20)));
+        this.LastMonthTransported = AITown.GetLastMonthTransported;
         ::Services.Refresh();
     }
 
@@ -118,6 +121,7 @@ class IndustryServices extends Services
         this.Location = AIIndustry.GetLocation(this.ID);
         this.Area =  AITileList_IndustryProducing(this.ID, 10);
         if (this.Area.IsEmpty()) this.Area = AITileList_IndustryAccepting(this.ID, 10);
+        this.LastMonthTransported = AIIndustry.GetLastMonthTransported;
         ::Services.Refresh();
     }
 
@@ -143,7 +147,7 @@ function Services::RefreshTable(tabel)
     tabel.Source.Refresh();
     tabel.Destination.Refresh();
     tabel.Distance <- AIMap.DistanceManhattan(tabel.Source.Location, tabel.Destination.Location);
-    local distmax =AIMap.DistanceMax(tabel.Source.Location, tabel.Destination.Location);
+    local distmax = AIMap.DistanceMax(tabel.Source.Location, tabel.Destination.Location);
     if (tabel.Source.IsTown || tabel.Destination.IsTown || distmax < 20) {
         tabel.TrackType <- AIRoad.ROADTYPE_ROAD;
         tabel.VehicleType <- AIVehicle.VT_ROAD;

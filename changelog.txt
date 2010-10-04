@@ -60,3 +60,7 @@ Fix: Rail that came from the tile exactly beside of depot now redirected to come
 Feature: Check the rail connection (you may seen "null" sign walking)
 Feature: Building Head quarter is now randomized
 
+* 090426
+Fix: Adjusted several operating parameters.
+Fix: index "loco_len" does not exist
+

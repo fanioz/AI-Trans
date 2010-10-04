@@ -81,7 +81,7 @@ class BuildingHandler.road {
 
 function BuildingHandler::road::Depot(service, is_source)
 {
-    AILog.Info("Try to Build Depot");
+    AILog.Info("Try to Build Road Depot");
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
     local built_s = Tiles.DepotOn(is_source ? service.Source.Location : service.Destination.Location);
@@ -117,7 +117,7 @@ function BuildingHandler::road::Depot(service, is_source)
     while (c_pos = resume Gpos) {
         AIController.Sleep(1);
         if (!this.pre_build(c_pos.GetBody(), c_pos.GetHead())) continue;
-        if (Debug.ResultOf("Build Depot at " + name, AIRoad.BuildRoadDepot(c_pos.GetBody(), c_pos.GetHead()))) {
+        if (Debug.ResultOf("Build Road Depot at " + name, AIRoad.BuildRoadDepot(c_pos.GetBody(), c_pos.GetHead()))) {
             if (is_source) service.SourceDepot = c_pos;
             else service.DestinationDepot = c_pos;
             this._mother.State.LastCost = money_need.GetCosts();
@@ -136,8 +136,10 @@ function BuildingHandler::road::pre_build(body, head)
 {
     if (Tiles.IsMine(body) || Tiles.IsMine(head)) return false;
     if (!Tiles.IsRoadBuildable(body)) if (!AITile.DemolishTile(body)) return false;
+    //if (!this._mother.State.TestMode) Tiles.SetHeight(body, AITile.GetHeight(head));
     if (!AIRoad.AreRoadTilesConnected(head, body)) {
         if (!Tiles.IsRoadBuildable(head)) return false;
+        AITile.LevelTiles(head, body);
         AIRoad.BuildRoad(head, body);
     }
     if (!this._mother.State.TestMode) return AIRoad.AreRoadTilesConnected(head, body);
@@ -146,16 +148,16 @@ function BuildingHandler::road::pre_build(body, head)
 
 function BuildingHandler::road::Station(service, is_source)
 {
-    AILog.Info("Try to Build Station");
+    AILog.Info("Try to Build Road Station");
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
     local c_pos = Stations();
-    local prod_accept = false;
+    local prodacc = Assist.GetMaxProd_Accept(is_source ? service.Source.Area : service.Destination.Area, service.Cargo, is_source);
     local validID = -1;
     local built_s = Tiles.StationOn(is_source ? service.Source.Location : service.Destination.Location);
     local check_fn = is_source ? AITile.GetCargoProduction : AITile.GetCargoAcceptance ;
     built_s.Valuate(check_fn, service.Cargo, 1, 1, Stations.RoadRadius());
-    built_s.KeepAboveValue(6);
+    built_s.KeepAboveValue(prodacc - 2);
     /* check if i've one */
     foreach (pos, val in built_s) {
         c_pos.SetID(AIStation.GetStationID(pos));
@@ -218,15 +220,20 @@ function BuildingHandler::road::Station(service, is_source)
                 AILog.Info("Have no money");
                 break;
             }
+            if (AIError.GetLastError() == AIError.ERR_LOCAL_AUTHORITY_REFUSES) {
+                AILog.Info("Local authority angry");
+                break;
+            }
         }
     }
+    AILog.Info("not found");
     return false;
 }
 
 function BuildingHandler::road::Path(service, number, is_finding = false)
 {
     local txt = (is_finding) ? " Finding:" : " Checking:" ;
-    AILog.Info("Path " + number + txt);
+    AILog.Info("Road Path " + number + txt);
     local _from = [];
     local _to = [];
     local Finder = RoadPF();
@@ -261,8 +268,22 @@ function BuildingHandler::road::Path(service, number, is_finding = false)
         case 0:
             //foreach (tile, val in service.Source.Area) Debug.Sign(tile, "s");
             //foreach (tile, val in service.Destination.Area) _to.push(tile);
-            _from = Assist.ListToArray(Tiles.Flat(service.Source.Area));
-            _to = Assist.ListToArray(Tiles.Flat(service.Destination.Area));
+            if (service.Source.IsTown) {
+                _from.push(service.Source.Location);
+            } else {
+                local area = Tiles.Buildable(Tiles.Flat(service.Source.Area));
+                area.Valuate(AIMap.DistanceMax, service.Source.Location);
+                area.KeepBelowValue(5);
+                _from = Assist.ListToArray(area);
+            }
+            if (service.Destination.IsTown) {
+                _to.push(service.Destination.Location);
+            } else {
+                local area = Tiles.Buildable(Tiles.Flat(service.Destination.Area));
+                area.Valuate(AIMap.DistanceMax, service.Destination.Location);
+                area.KeepBelowValue(5);
+                _to = Assist.ListToArray(area);
+            }
             Finder.cost.estimate_multiplier = 3;
             //if (is_finding) path = service.Path0;
             break;
@@ -283,19 +304,19 @@ function BuildingHandler::road::Path(service, number, is_finding = false)
             _from.push(service.DestinationDepot.GetHead());
             _to.push(service.SourceDepot.GetHead());
             _to.push(service.SourceStation.GetPlatform(0).GetHead());
-            Finder.cost.estimate_multiplier = 1.5;
+            Finder.cost.estimate_multiplier = 1.2;
             //if (is_finding) path = service.Path3;
             break;
         default : Debug.DontCallMe("Path Selection");
     }
 
-    if (service.IsSubsidy) Finder.cost.estimate_multiplier = 3;
-
     /* if we are only check is it connected, do bread first search */
     if (!is_finding) {
-        Finder.cost.estimate_multiplier = 0;
+        Finder.cost.estimate_multiplier = 0.1;
         Finder.cost.no_existing_road = Finder.cost.max_cost;
     }
+
+
     try {
         distance = Debug.ResultOf("Distance",1 + AIMap.DistanceManhattan(_from.top(), _to.top()));
         Finder.InitializePath(_from, _to, ignored_tiles);
@@ -306,11 +327,12 @@ function BuildingHandler::road::Path(service, number, is_finding = false)
         return false;
     }
 
-    local c =   150;
+    local c =  200;
+    //local d = max(((10000 - distance) / 1000).tointeger(), 1);
     while (path == false && c-- > 0) {
         AIController.Sleep(1);
         path  = Finder.FindPath(distance);
-        if (c % 5 == 0) this._mother._commander.Evaluate();
+        if (c % 10 == 0) this._mother._commander.Evaluate();
     }
     result = Debug.ResultOf("Path " + txt + " stopped at "+ c, (path != null && path != false));
     switch (number) {
@@ -335,7 +357,7 @@ function BuildingHandler::road::Track(service, number)
         case 3: path = service.Path3; break;
     }
     if (path == null || path == false) return false;
-    AILog.Info("Build Track Length=" + path.GetLength() + txt);
+    AILog.Info("Build Road Track Length=" + path.GetLength() + txt);
     while (path != null) {
         local parn = path.GetParent();
         if (parn != null) {
@@ -385,26 +407,26 @@ function BuildingHandler::road::Track(service, number)
                             AILog.Info("Build a road tunnel");
                             if (!AITunnel.BuildTunnel(AIVehicle.VT_ROAD, path.GetTile())) {
                                 /* An error occured while building a tunnel. TODO: handle it. */
-                            } else {
-                                local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1);
-                                bridge_list.Valuate(AIBridge.GetMaxSpeed);
-                                bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
+                            }
+                        } else {
+                            local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1);
+                            bridge_list.Valuate(AIBridge.GetMaxSpeed);
+                            bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
 
-                                if (Debug.ResultOf("Bridge error", !AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), path.GetTile(), parn.GetTile()))) {
-                                    /* An error occured while building a bridge. TODO: handle it. */
-                                    switch (AIError.GetLastError()) {
-                                        case AIError.ERR_NOT_ENOUGH_CASH:
-                                            while (bridge_list.HasNext()) {
-                                                local bridge = bridge_list.Next();
-                                                if (!Bank.Get(AIBridge.GetPrice(bridge, AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1))) continue;
-                                                if (AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge, path.GetTile(), parn.GetTile())) break;
-                                            }
-                                            break;
-                                        default:
-                                            Debug.ResultOf("Unhandled error build bridge", null);
-                                            //Debug.DontCallMe("Bridge");
-                                            break;
-                                    }
+                            if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), path.GetTile(), parn.GetTile())) {
+                                /* An error occured while building a bridge. TODO: handle it. */
+                                switch (AIError.GetLastError()) {
+                                    case AIError.ERR_NOT_ENOUGH_CASH:
+                                        while (bridge_list.HasNext()) {
+                                            local bridge = bridge_list.Next();
+                                            if (!Bank.Get(AIBridge.GetPrice(bridge, AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1))) continue;
+                                            if (AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge, path.GetTile(), parn.GetTile())) break;
+                                        }
+                                        break;
+                                    default:
+                                        Debug.ResultOf("Unhandled error build bridge", null);
+                                        //Debug.DontCallMe("Bridge");
+                                        break;
                                 }
                             }
                         }
@@ -427,7 +449,7 @@ function BuildingHandler::road::Vehicle(service)
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
     this._mother.State.LastCost = 0;
-    AILog.Info("Build Vehicle ");
+    AILog.Info("Build Road Vehicle ");
     if (AIVehicle.IsValidVehicle(service.MainVhcID)) {
         //local number = service.SourceIsTown ? AITown.GetMaxProduction(service.Source.ID, service.Cargo) :
         //AIIndustry.GetLastMonthProduction(service.SourceID, service.Cargo);
@@ -468,10 +490,6 @@ function BuildingHandler::road::Vehicle(service)
             }
             AIOrder.AppendOrder(myVhc, service.DestinationDepot.GetBody(), AIOrder.AIOF_NONE);
             AIOrder.AppendOrder(myVhc, service.SourceDepot.GetBody(), AIOrder.AIOF_NONE);
-            //AIOrder.InsertConditionalOrder(myVhc, 1, 0);
-            //AIOrder.SetOrderCondition(myVhc, 1, AIOrder.OC_LOAD_PERCENTAGE);
-            //AIOrder.SetOrderCompareFunction(myVhc, 1, AIOrder.CF_LESS_THAN);
-            //AIOrder.SetOrderCompareValue(myVhc, 1, load_num);
             AIOrder.InsertConditionalOrder(myVhc, 2, 3);
             AIOrder.SetOrderCondition(myVhc, 2, AIOrder.OC_REQUIRES_SERVICE);
             AIOrder.SetOrderCompareFunction(myVhc, 2, AIOrder.CF_IS_FALSE);

@@ -96,14 +96,14 @@ function CompanyManager::Born()
         this.my_name = AICompany.GetPresidentName(this.randomizer);
         AICompany.SetName(this.my_name + " Trans Corp.");
     }
-    if (this.drop_off_point.len() == 0) this.drop_off_point = Gen.DropOffType(this.randomizer);
-    if (this._factor == 0) this._factor = AICompany.GetMaxLoanAmount() / 10000;
-
     /* greeting you */
-    AILog.Info("Powered by " + _version_);
     AILog.Info("" + AICompany.GetName(this.randomizer) + " has been started since " + Assist.DateStr(this.start_date));
-    Builder.HeadQuarter();
+    AILog.Info("Powered by " + _version_);
     Debug.ResultOf("Random factor", this.randomizer);
+    //if (this.drop_off_point.len() == 0) this.drop_off_point = Gen.DropOffType(this.randomizer);
+    if (this._factor == 0) this._factor = AICompany.GetMaxLoanAmount() / 10000;
+    Builder.HeadQuarter();
+
 }
 
 /**
@@ -121,7 +121,7 @@ function CompanyManager::Evaluate()
     AILog.Info("Evaluating...");
     Gen.Subsidy(this);
     this.ff_factor = Debug.ResultOf("factor", AICompany.GetMaxLoanAmount() / this._factor);
-    if (Debug.ResultOf("service count", this.service_keys.Count()) < 1) {
+    if (Debug.ResultOf("scheduled service count", this.service_keys.Count()) < 1) {
         /* (re)run the service generator */
         this.drop_off_point = Gen.DropOffType(this.randomizer);
         Gen.Service(this);
@@ -185,43 +185,43 @@ function CompanyManager::Evaluate()
         local ssta = AIOrder.GetOrderDestination(vhcID, AIOrder.ResolveOrderPosition(vhcID,0));
         local depot = AIOrder.GetOrderDestination(vhcID, AIOrder.ResolveOrderPosition(vhcID, 4));
         local cargo = -1;
-        local look_tile = -1;
+        local vhc_count = -1;
         local min_capacity = 0;
         local name = AIVehicle.GetName(vhcID);
         local v_type = AIVehicle.GetVehicleType(vhcID);
         switch (v_type) {
             case AIVehicle.VT_ROAD :
-                if (!Debug.ResultOf(name + " station order", AIRoad.IsRoadStationTile(ssta))  ||
-                    !Debug.ResultOf(name + " depot order", AIRoad.IsRoadDepotTile(depot))) {
+                if (!Debug.ResultOf(name + " valid station order", AIRoad.IsRoadStationTile(ssta))  ||
+                    !Debug.ResultOf(name + " valid depot order", AIRoad.IsRoadDepotTile(depot))) {
                     old_vehicle.Insert(vhcID, 0);
                     continue;
                 }
-                look_tile = AIRoad.GetRoadStationFrontTile(ssta);
+                vhc_count = Vehicles.CountAtTile(AIRoad.GetRoadStationFrontTile(ssta));
                 cargo = Vehicles.CargoType(vhcID);
                 break;
             case AIVehicle.VT_RAIL :
-                if (!Debug.ResultOf(name + " station order", AIRail.IsRailStationTile(ssta))  ||
-                    !Debug.ResultOf(name + " depot order", AIRail.IsRailDepotTile(depot))) {
+                if (!Debug.ResultOf(name + " valid station order", AIRail.IsRailStationTile(ssta))  ||
+                    !Debug.ResultOf(name + " valid depot order", AIRail.IsRailDepotTile(depot))) {
                     old_vehicle.Insert(vhcID, 0);
                     continue;
                 }
+                vhc_count = Vehicles.CountAtTile(AIRail.GetRailDepotFrontTile(depot));
                 cargo = Vehicles.CargoType(vhcID, true);
-                look_tile = depot;
                 break;
             default : Debug.DontCallMe("Unsupported V_Type", vhcID);
         }
-
+        vhc_count += Vehicles.CountAtTile(ssta);
+        vhc_count = Vehicles.CountAtTile(depot);
+        if (Debug.ResultOf("Vehicle waiting:", vhc_count) > 0) continue;
         min_capacity = AIVehicle.GetCapacity(vhcID, cargo);
         local ssta_ID = AIStation.GetStationID(ssta);
-        //AILog.Info("Check cargo " + AICargo.GetCargoLabel(cargo));
-        local string_x = "Waiting at " + AIStation.GetName(ssta_ID);
+        local string_x = "cargo waiting at " + AIStation.GetName(ssta_ID);
         if  (Debug.ResultOf(string_x, AIStation.GetCargoWaiting(ssta_ID, cargo)) > min_capacity) {
             if (AIStation.GetCargoRating(ssta_ID, cargo) < 60) {
                 if (v_type == AIVehicle.VT_RAIL) {
-                    if (Assist.GetIDGroup(Vehicles.GroupName(vhcID)) in this.rail_backbones) continue;
+                    if (Assist.GetServiceID(Vehicles.GroupName(vhcID)) in this.rail_backbones) continue;
                 } else {
                 }
-                if (Debug.ResultOf("Count:", Vehicles.CountAtTile(look_tile)) > 0) continue;
                 Debug.ResultOf("Vehicle build", Vehicles.StartCloned(vhcID, depot, 1));
             }
         }
@@ -234,8 +234,8 @@ function CompanyManager::Evaluate()
  */
 function CompanyManager::Events()
 {
-    AILog.Info("Clearing Events...");
     while (AIEventController.IsEventWaiting()) {
+        AILog.Info("Clearing Events...");
         local e = AIEventController.GetNextEvent();
         local si = null;
 
@@ -251,6 +251,7 @@ function CompanyManager::Events()
                 AILog.Info("SubsidyID " + si + " offer expired" );
                 si = Services.CreateID(AISubsidy.GetSource(si), AISubsidy.GetDestination(si), AISubsidy.GetCargoType(si));
                 if (si in this.serviced_route) break;
+                if (si in this.service_tables) this.service_tables.rawdelete(si);
                 this.expired_route[si] <- si;
                 break ;
 
@@ -261,6 +262,7 @@ function CompanyManager::Events()
                 if (AICompany.IsMine(AISubsidy.GetAwardedTo(si))) break;
                 si = Services.CreateID(AISubsidy.GetSource(si), AISubsidy.GetDestination(si), AISubsidy.GetCargoType(si));
                 if (si in this.serviced_route) break;
+                if (si in this.service_tables) this.service_tables.rawdelete(si);
                 this.expired_route[si] <- si;
                 break;
 
@@ -400,6 +402,8 @@ function CompanyManager::Events()
 
             default : Debug.DontCallMe("Events");
         }
+        e = null;
+        si = null;
     }
 }
 
@@ -417,12 +421,13 @@ function CompanyManager::Service()
     }
 
     while (this.service_keys.Count() > 0) {
-        AILog.Info("Cur Serv "+ this.current_service);
+        AILog.Info("Current Serv "+ this.current_service);
         if (this.current_service == 0) this.current_service = this.service_keys.Pop();
         if (this.current_service in this.serviced_route) this.current_service = 0;
         if (this.current_service in this.expired_route) this.current_service = 0;
         if (this.current_service in this.service_tables) {
             to_do = this.service_tables[this.current_service];
+            if (to_do.Source.LastMonthTransported(to_do.Source.ID, to_do.Cargo) > 70) to_do = null;
         }
         if (Debug.ResultOf("Service Validity", to_do != null && to_do.Source.IsValid() && to_do.Destination.IsValid())) {
             AILog.Info(to_do.Readable);
@@ -435,7 +440,8 @@ function CompanyManager::Service()
                     to_do.TrackType = AIRoad.ROADTYPE_ROAD;
                     to_do.VehicleType = AIVehicle.VT_ROAD;
                 case AIVehicle.VT_ROAD:
-                    this.Builder.RoadServicing(to_do); break;
+                    if (!this.Builder.RoadServicing(to_do)) this.expired_route[to_do.ID] <- to_do.ID;
+                    break;
                 default : Debug.DontCallMe("Unsupported");
             }
             this.current_service = 0;

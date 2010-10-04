@@ -350,18 +350,19 @@ function Tiles::Validated(tiles)
     return tiles;
 }
 
-function Tiles::IsMine(tile, with_road = true)
+function Tiles::IsMine(tile, non_road = true)
 {
     local result = true;
-    if (with_road) result = !AIRoad.IsRoadTile(tile);
+    if (non_road) result = !AIRoad.IsRoadTile(tile);
     return  AICompany.IsMine(AITile.GetOwner(tile)) && result;
 }
 
 function Tiles::Buildable(tiles, yes = 1)
 {
-    tiles.Valuate(AITile.IsBuildable);
-    tiles.KeepValue(yes);
-    return tiles;
+    local tilest = tiles;
+    tilest.Valuate(AITile.IsBuildable);
+    tilest.KeepValue(yes);
+    return tilest;
 }
 
 function Tiles::Roads(tiles, yes = 1)
@@ -383,14 +384,15 @@ function Tiles::Flat(tiles)
     local tile = tiles;
     tile.Valuate(AITile.GetSlope);
     tile.KeepValue(AITile.SLOPE_FLAT);
-    return tiles;
+    return tile;
 }
 
 function Tiles::Waters(area, yes = 1)
 {
-    area.Valuate(AITile.IsWaterTile);
-    area.KeepValue(yes);
-    return area;
+    local tiles = area;
+    tiles.Valuate(AITile.IsWaterTile);
+    tiles.KeepValue(yes);
+    return tiles;
 }
 
 function Tiles::BodiesOf(head)
@@ -434,9 +436,18 @@ function Tiles::CanDemolish(tile)
 
 function Tiles::ToIgnore()
 {
-    local w = Tiles.WholeMap();
-    w.Valuate(Tiles.IsRoadBuildable);
-    w.KeepValue(0);
+    local w = Tiles.Waters(Tiles.WholeMap());
+    /*
+    local result = [];
+    foreach (idx, val in w) {
+        AIController.Sleep(1);
+        //if (AITile.IsBuildable(idx)) continue;
+        //if (AIRoad.IsRoadTile(idx)) continue;
+        //if (AIBridge.IsBridgeTile(idx)) continue;
+        //if (AITunnel.IsTunnelTile(idx)) continue;
+        result.push(idx);
+    }
+    */
     return Assist.ListToArray(w);
 }
 
@@ -472,39 +483,41 @@ function Tiles::IsDepotTile(tile)
 
 function Tiles::GetAdjacentHeight(tile)
 {
-    local tiles = [[0, 0], [0, 1], [1, 0], [1, 1]];
+    local tiles = [Tiles.N_Of, Tiles.E_Of, Tiles. W_Of, Tiles.S_Of];
     local bh = BinaryHeap();
-    foreach (idx in tiles) {
-        local x = AIMap.GetTileIndex(idx[0], idx[1]);
+    while (tiles.len() > 0) {
+        local idx = tiles.pop();
+        local x = idx(tile);
         local valu = 100 - AITile.GetHeight(x);
         if (AIMap.IsValidTile(x)) bh.Insert(x, valu);
     }
-    return (bh.Count() > 0) ? AITile.GetHeight(bh.Pop()) : AITile.GetHeight(tile);
+    return (bh.Count() > 0) ? AITile.GetHeight(bh.Peek()) : AITile.GetHeight(tile);
 }
 
 function Tiles::AverageHeight(tiles)
 {
-    local sam = 0, count = 0;
-    foreach (idx, val in tiles) {
-        sam += Tiles.GetAdjacentHeight(idx);
-        count++;
+    local sam = 0, count = tiles.Count();
+    if (count == 0) return AITile.GetHeight(tiles.Begin());
+    for(local idx = tiles.Begin(); tiles.HasNext(); idx = tiles.Next()) {
+        sam += AITile.GetHeight(idx);
     }
     local mod = sam % count;
     local rounded = (mod / count > 0.5) ? 1: 0;
-    return (count == 0) ? null : (sam - mod) / count + rounded;
+    return (sam - mod) / count + rounded;
 }
 
 function Tiles::SetHeight(tile, height)
 {
     local act_h = -1;
     local do_cmd = null;
-    while (act_h != height) {
-        act_h = Debug.ResultOf("curren height", Tiles.GetAdjacentHeight(tile));
+    while (true) {
+        //local c = Debug.Sign(tile, "t");
+        act_h = Debug.ResultOf("Height/Actual:" + AITile.GetHeight(tile) , Tiles.GetAdjacentHeight(tile));
         local slope = AITile.GetSlope(tile);
         AILog.Info("target = " + height);
-        if (act_h == height &&
-            slope != AITile.SLOPE_STEEP &&
-            (slope == AITile.SLOPE_FLAT || slope == AITile.SLOPE_ELEVATED)) break;
+        if ((AITile.GetHeight(tile) == height) &&
+            //(slope && AITile.SLOPE_STEEP != AITile.SLOPE_STEEP) &&
+            (slope == AITile.SLOPE_FLAT || (slope && AITile.SLOPE_ELEVATED == AITile.SLOPE_ELEVATED))) break;
         if (act_h <= height) do_cmd = AITile.RaiseTile;
         if (act_h > height) do_cmd = AITile.LowerTile;
         local to_slope = -1;
@@ -517,14 +530,16 @@ function Tiles::SetHeight(tile, height)
         if ((slope && AITile.SLOPE_E == AITile.SLOPE_E) ||
             (slope == AITile.SLOPE_STEEP_W)) to_slope = AITile.SLOPE_E;
         if (!do_cmd(tile, to_slope)) return false;
+        //AISign.RemoveSign(c);
     }
     return true;
 }
 
-function Tiles::MakeLevel(tiles)
+function Tiles::MakeLevel(tilestart, tileend)
 {
+    local tiles = AITileList();
+    tiles.AddRectangle(tilestart, tileend);
     local target_h = Tiles.AverageHeight(tiles);
-    foreach (idx, val in tiles) {
-        Tiles.SetHeight(idx, target_h);
-    }
+    foreach (idx, val in tiles) Tiles.SetHeight(idx, target_h);
+    return AITile.LevelTiles(tilestart, tileend);
 }
