@@ -20,18 +20,7 @@
  *      MA 02110-1301, USA.
  */
  
-//require("rail.path.nut");
-require("lib/binary.heap.2.nut");
-require("lib/aystar.5.nut");
-require("lib/road.path.finder.4.nut");
-
-require("company.nut");
-require("building.nut");
-require("generator.nut");
-require("services.nut");
-require("money.nut");
-require("tile.nut");
-require("sandbox.nut");
+require("libraries.nut");
 
 /**
 * extending AIController class
