@@ -1,0 +1,6 @@
+Trans Changelog
+
+* 90310
+Release: AI named FanAI
+Feature: Using road vehicle for servicing industries
+
