@@ -18,3 +18,29 @@ Fix: road station building, now use AITileList_IndustryProducing/Accepting
 Fix: Vehicle group name have leading zero if it is below 10 (some one PM-me about this issue)
 Fix: Better handling on vehicle unprofitable (after AIOrdr.SkipToOrder is available)
 Feature: Use conditional order to prevent congestion (experimental)
+
+* 090417
+Release: AI name change to Trans
+Feature: Add depot near destination
+Feature: Conditional Order for servicing on destination depot if required.
+Feature: Try to rename Drop Off Station (1, 2, ...)
+Feature: Try to handle Industry -> Town cargo (water, good, food)
+Feature: Try to support save / load (known problem : not work in the middle of building station/depot)
+Feature: Try to use train for servicing, if failed fall back to road vehicle
+Feature: Detect a number of vehicle in front off station and inside rail depot
+Feature: Add a little bit randomization to allow run with same instance
+Feature: Try to implement "be nice" (to SirkoZ)
+Feature: Simple Flattening land to build rail station
+Feature: Support New GRF for Rail Stations
+Feature: Try to replace vehicle after 2 year
+Feature: More event handling
+Remove: Conditional order on loading
+Codechange: recode the service generator
+Codechange: Aystar.5 and BinaryHeap.1 not included anymore
+Fix: Loading save game will not try to rename President Name anymore
+Fix: Un-grouped vehicle now moved to its group
+Fix: Add vehicle to station by cargo waiting
+Fix: Train can't detect whether the second line has been built or not
+Fix: Typos in rail pathfinder
+Docs: (re)write more documentation
+
