@@ -1,173 +1,171 @@
-/*  09.06.19 - servable.nut
+/*  10.02.27 - servable.nut
  *
  *  This file is part of Trans AI
  *
  *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- *  MA 02110-1301, USA.
+ *  @see license.txt
  */
 
 /**
-  * Base Serv-able class for store either town or industry handling in game
+ * Servable. Base of serv-able class
   */
-class Servable extends StorableKey
+class Servable extends CIDLocation
 {
-	_API = null; ///< common API function to be used by this class
-	constructor()
-	{
-		::StorableKey.constructor("servable");
-		/// Flag of town
-		this._storage._istown <- null;
-		/// cache area
-		this._storage._area <- []; 
-		this._API = function(){};
+	_Area = null;			// tiles arround-date
+	_Has_Coast = null;		// truth, date
+	_Tried_Station = null;	// type - date
+	_Stations = null;		// Tile - ID of of common station
+	
+	constructor(id, loc, name) {
+		CIDLocation.constructor (id, loc);
+		SetName(name);
+		_Tried_Station = CLList();
+		_Has_Coast = [CLList(), 0];
+		_Area = [CLList(), 0];
+		_Stations = CLList();
 	}
 
-	/**
-	 * Get the name of servable object
-	 * @return string name
-	 */
-	function GetName() { return this._API.GetName(this.GetID()); }
+	function ValidateArea ();
 
-	/**
-	 * Get type of servable object
-	 * @return true if Town or  false if Industry
-	 */
-	function IsTown() { return this._storage._istown; }
-	
-	/**
-	 * Set current servable object as Town/Industry
-	 * @param val True for town and false for industry
-	 */
-	function SetTown(val)
-	{
-		this._storage._istown = val;
-		this._API = val ? AITown : AIIndustry;
+	function GetArea() {
+		ValidateArea();
+		return CLList(_Area[0]);
 	}    
 
-	/**
-	 * Get Base Area
-	 * @return AITileList around servable
-	 */
-	function GetArea()
-	{
-		if (this._storage._area.len()) return Assist.ArrayToList(this._storage._area);
-		local area = null;
-		if (this.IsTown()) {
-			area = Tiles.OfTown(this.GetID(), Tiles.Radius(this.GetLocation(), 20, 20) , 1);
-		} else {    		
-			area = AITileList_IndustryProducing(this.GetID(), 10);
-			if (area.IsEmpty()) area = AITileList_IndustryAccepting(this.GetID(), 10);
+	function GetStations(s_type) {
+		local ret = CLList();
+		local gets = GetStationTiles(s_type);
+		gets.SortItemDescending();
+		foreach (loc, id in gets) {
+			ret.AddItem(id, loc);
 		}
-		this._storage._area = Assist.ListToArray(area);
-		return area;
+		return ret;
 	}
     
-	/**
-	 * Get the location of servable object
-	 * @return tile index of location
-	 */
-	function GetLocation() { return this._API.GetLocation(this.GetID()); }
-	
-	/**
-	 * Get the total last month's production of the given cargo.
-	 * @param cargo_id  The index of the cargo.
-	 * @return The last month's production of the given cargo
-	 */
-	function GetLastMonthProduction(cargo_id)
-	{
-		if (!AICargo.IsValidCargo(cargo_id)) return 0;
-		if (this.IsTown()) return AITown.GetMaxProduction(this.GetID(), cargo_id);
-		return this._API.GetLastMonthProduction(this.GetID(), cargo_id);
-	}
-
-	/**
-	 * Get the total amount of cargo transported  last month.
-	 * @param cargo_id  The index of the cargo.
-	 * @return The percentage amount of given cargo transported last month.
-	 */
-	function GetLastMonthTransported(cargo_id)
-	{
-		if (!AICargo.IsValidCargo(cargo_id)) return 0;
-		local p = this.GetLastMonthProduction(cargo_id);
-		if (p) {
-			local t = this._API.GetLastMonthTransported(this.GetID(), cargo_id);
-			return (100 * t / p).tointeger();
+	function GetStationTiles(s_type) {
+		local tiles = GetArea();
+		tiles.Valuate(AITile.IsStationTile);
+		tiles.KeepValue(1);
+		tiles.Valuate(AIStation.GetStationID);
+		local ret = CLList();
+		foreach (loc, id in tiles) {
+			if (AIStation.HasStationType(id, s_type)) ret.AddItem(loc, id);
 		}
-		return 0;
+		return ret;
 	}
 
-	/**
-	 * Get the manhattan distance from the tile
-	 * @param tile  The tile to get the distance to.
-	 * @return The distance between this object and tile.
-	 */
-	function GetDistanceManhattanToTile(tile)
-	{
-		return this._API.GetDistanceManhattanToTile(this.GetID(), tile);
+	function ValidateCoast() {
+		if (_Has_Coast[1] < AIDate.GetCurrentDate()) {
+			_Has_Coast[0].Clear();
+			_Has_Coast[0].AddList(GetArea());
+			_Has_Coast[0].Valuate (AITile.IsCoastTile);
+			_Has_Coast[0].KeepValue (1);
+			_Has_Coast[0].Valuate(AIMap.DistanceMax, GetLocation());
+			_Has_Coast[1] = AIDate.GetCurrentDate() + 360;
+		}
+	}
+	function GetCoast() {
+		ValidateCoast();
+		return _Has_Coast[0];
+	}
+	function HasCoast () {
+		return GetCoast().Count();
+	}
+	function GetWaterPoint() {
+		local list = GetArea();
+		list.Valuate(AITile.HasTransportType, AITile.TRANSPORT_WATER);
+		list.KeepValue(1);
+		list.Valuate(XMarine.GetWaterSide);
+		list.RemoveValue(-1);
+		list.Valuate(AIMap.DistanceMax, GetLocation());
+		return list;
 	}
 
-	/**
-	 * Just make sure it was valid
-	 * @return true if it was valid
-	 */
-	function IsValid()
-	{
-		return this.IsTown() ? AITown.IsValidTown(this.GetID()) : AIIndustry.IsValidIndustry(this.GetID());
+	function GetExistingRoadStop (dtrs, cargo, s_type, is_source) {
+		local stf = GetStations(s_type);
+		Info ("found existing", stf.Count());
+		foreach (id, tile in stf) {
+			local station = XStation.GetManager (id, s_type);
+			if (!station.HasRoadStation(dtrs)) continue;
+			if (is_source) {
+				if (station.GetProduction(cargo) < 10) continue;
+			} else {
+				if (station.GetAcceptance(cargo) < 10) continue;
+			}
+			if (station.GetOccupancy () > 99) continue;
+			local front = AIRoad.GetRoadStationFrontTile(station.GetLocation());
+			if (!XRoad.IsConnectedTo([front], GetRoadPoint().GetItemArray())) {
+				Debug.Sign(tile, "not connected?");
+				continue;
+			}
+			return station.GetLocation();
+		}
+		return -1;
 	}
 
-	/**
-	 * New Servable Town
-	 * @param id Servable ID
-	 * @return Servable class
-	 */
-	static function NewTown(id)
-	{
-		local tmp = Servable();
-		tmp.SetID(id);
-		tmp.SetTown(true);
-		local loc = tmp.GetLocation();
-		tmp.SetKey(loc);        
-		return tmp;
+	function GetExistingWaterStop (cargo, is_source) {
+		foreach (id, tile in GetStations(AIStation.STATION_DOCK)) {
+			local station = XStation.GetManager (id, AIStation.STATION_DOCK);
+			if (!station.HasDock()) continue;
+			if (is_source) {
+				if (station.GetProduction(cargo) < 10) continue;
+			} else {
+				if (station.GetAcceptance(cargo) < 10) continue;
+			}
+			return station.GetLocation();
+		}
+		return -1;
 	}
 
-	/**
-	 * New Servable Industry
-	 * @param id Servable ID
-	 * @return Servable class
-	 */
-	static function NewIndustry(id)
-	{
-		local tmp = Servable();
-		tmp.SetID(id);
-		tmp.SetTown(false);        
-		local loc = tmp.GetLocation();
-		tmp.SetKey(loc);
-		return tmp;
+	function GetExistingAirport (plane_type, cargo) {
+		foreach (id, tile in GetStations(AIStation.STATION_AIRPORT)) {
+			local station = XStation.GetManager (id, AIStation.STATION_AIRPORT);
+			if (!station.AllowPlaneType (plane_type)) continue;
+			if (station.GetProduction(cargo) < 10) continue;
+			if (station.GetAcceptance(cargo) < 10) continue;
+			if (station.GetOccupancy () > 99) continue;
+			return station.GetLocation();
+		}
+		return -1;
 	}
 
-	/**
-	 * New Unknown Servable
-	 * @param id Servable ID
-	 * @param istown Is this belong to town
-	 * @return Servable class
-	 */
-	static function New(id, istown)
-	{
-		if (istown) return Servable.NewTown(id);
-		return Servable.NewIndustry(id);
+	function AllowTryStation (s_type) {
+		if (!Money.Get (Money.Inflated(10000))) return false;
+		if (_Tried_Station.HasItem (s_type)) {
+			if (_Tried_Station.GetValue (s_type) > AIDate.GetCurrentDate()) return false;
+		}
+		local sts = GetStationTiles(s_type);
+		return sts.IsEmpty() || GetArea().Count() > (sts.Count() / XStation.GetDivisorNum(s_type)).tointeger();
+	}
+
+	function AllowTryAirport (type) {
+		if (!Money.Get (AIAirport.GetPrice (type) * 1.1)) return false;
+		if (_Tried_Airport.HasItem (type)) {
+			Info ("ever try to build ", Assist.ATName (type));
+			if (_Tried_Airport.GetValue (type) > AIDate.GetCurrentDate()) return false;
+			Info ("but that was a year ago :D");
+		}
+		local airports = GetStations(AIStation.STATION_AIRPORT);
+		local num = (GetArea().Count() - airports.Count()) / XAirport.GetDivisorNum(type);
+		Info ("airport counts", airports.Count(), "::num", num);
+		return num > 0;
+	}
+	
+	function GetAreaForWaterDepot() {
+		local list = GetArea();
+		list.Valuate (AITile.IsWaterTile);
+		list.KeepValue (1);
+		list.Valuate(AIMap.DistanceMax, GetLocation ());
+		return list;
+	}
+	
+	// TODO :: Dock terraform-ability
+	function GetAreaForDock(cargo, is_source) {
+		local list = GetCoast();
+		local fn = AITile[is_source ? "GetCargoProduction" : "GetCargoAcceptance"];
+		list.Valuate (fn, cargo, 1, 1, AIStation.GetCoverageRadius (AIStation.STATION_DOCK));
+		//list.KeepAboveValue (8);
+		return list;
 	}    
 }

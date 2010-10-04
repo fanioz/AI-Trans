@@ -1,47 +1,40 @@
-/*  09.02.01 info.nut
+/*  10.02.27 info.nut
  *
  *  This file is part of Trans AI
  *
  *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- *  MA 02110-1301, USA.
+ *  @see license.txt
  */
-
-class Trans extends AIInfo
+class Trans10 extends AIInfo
 {
-    version = null;
-    constructor() {
-    	this.version = 090829;
-        ::AIInfo.constructor();
-    }
-
     function GetAuthor(){ return "fanioz"; }
     function GetName() { return "Trans"; }
     function GetShortName() { return "FTAI"; }
     function GetDescription(){ return "Trans is an effort to be a transporter ;-) "; }
-    function GetVersion() { return this.version; }
+	function GetVersion() { return 100227; }
+	function GetAPIVersion() { return "1.0"; }
     /* only change the version if the structure is changed */
-    function MinVersionToLoad() { return 90619; }
+	function MinVersionToLoad() { return 1; }
     function GetDate(){ return "2009-02-1"; }
     function CreateInstance(){ return "Trans"; }
 	function GetURL() {	return "http://noai.openttd.org/projects/show/ai-trans"; }
     function GetSettings(){
+		foreach (v in ["Rail", "Road", "Water", "Air"]) {
 		AddSetting({
-			name = "allow_bus", 
-			description = "Allow build bus",
+				name = v,
+				description = "Allow build " + v + " vehicle",
+				easy_value = 1,
+				medium_value = 1,
+				hard_value = 1,
+				custom_value = 1,
+				flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
+			});
+		}
+
+		AddSetting( {
+			name = "allow_pax",
+			description = "Allow pax cargo",
 			easy_value = 1, 
 			medium_value = 1, 
 			hard_value = 1, 
@@ -49,23 +42,15 @@ class Trans extends AIInfo
 			flags = AICONFIG_BOOLEAN
 		});
 		AddSetting({
-			name = "allow_truck", 
-			description = "Allow build truck", 
+			name = "allow_freight",
+			description = "Allow freight cargo",
 			easy_value = 1, 
 			medium_value = 1, 
 			hard_value = 1, 
 			custom_value = 1, 
 			flags = AICONFIG_BOOLEAN
 		});
-		AddSetting({
-			name = "allow_train", 
-			description = "Allow build train", 
-			easy_value = 1, 
-			medium_value = 1, 
-			hard_value = 1, 
-			custom_value = 1, 
-			flags = AICONFIG_BOOLEAN
-		});
+
 		AddSetting({
 			name = "last_transport", 
 			description = "percent of last month transported cargo. Trans AI won't compete above this value", 
@@ -83,28 +68,34 @@ class Trans extends AIInfo
 			description = "Trans AI processing speed", 
 			min_value = 1, 
 			max_value = 5, 
-			easy_value = 3, 
-			medium_value = 2, 
+			easy_value = 5,
+			medium_value = 3,
 			hard_value = 1, 
 			custom_value = 1, 
 			flags = 0
 		});
 		AddSetting({
 			name = "debug_signs", 
-			description = " debug signs", 
-			min_value = 0, 
-			max_value = 1, 
+			description = "Build Signs",
 			easy_value = 0, 
 			medium_value = 0, 
 			hard_value = 0, 
 			custom_value = 0, 
-			flags = 0
+			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
 		});
-		AddLabels("loop_time", {_1 = "Fastest", _2 = "Medium", _3 = "Sligthly slow", _4 = "Very slow", _5 = "Slowest"});
-		AddLabels("debug_signs", {_0 = "Don't build", _1 = "Build"});
+		AddSetting( {
+			name = "debug_log",
+			description = "Dump Log",
+			easy_value = 1,
+			medium_value = 1,
+			hard_value = 1,
+			custom_value = 1,
+			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
+		});
+		AddLabels("loop_time", {_1 = "Normal", _2 = "Sligthly slow", _3 = "More slow", _4 = "Very slow", _5 = "Slowest ever"});
     }
 }
 /*
 *Tell the core, I'm an AI too ...
 */
-RegisterAI(Trans());
+RegisterAI(Trans10());

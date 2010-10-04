@@ -1,61 +1,84 @@
-/*  09.04.03 - dependencies.nut
+/*  10.02.27 - dependencies.nut
  *
  *  This file is part of Trans AI
  *
  *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- *  MA 02110-1301, USA.
+ *  @see license.txt
  */
 
 /*
  * Define all required files here.
  * 1 : use 'import' for files that available on Bananas
- * on Binary Heap, that would be enough (auto-resolved dependencies)
  */
 
-import("queue.fibonacci_heap", "FibonacciHeap", 2);
-import("graph.aystar", "AyStar_6", 6);
-import("pathfinder.road", "RoadPF_3", 3);
-import("pathfinder.rail", "RailPF_1", 1);
+try {
+	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
+	import("AILib.Common", "CLCommon", 1);
+	import("AILib.List", "CLList", 1);
+} catch (idx) {
+	AILog.Warning ("you would need to download the libraries which is needed to run this AI.");
+	AILog.Warning ("Please goto http://www.tt-forums.net/viewtopic.php?f=65&t=42272");
+	throw (idx);
+}
 
 /* ---------------- Own --------------- */
-require("base/storage.nut");
-require("base/task.nut");
-require("base/services.nut");
-require("base/keylist.nut");
-require("base/servable.nut");
 
+/* base */
+require("base/base.nut");
+require("base/memory.nut");
+require("base/location_id.nut");
+require("base/servable.nut");
+require("base/infrastructure.nut");
+require("base/item.nut");
+require("base/daily.nut");
+require("base/connector.nut");
+
+/* --linked library --*/
+require("pathfinder/aystar.nut");
+require("pathfinder/aypath.nut");
+require("pathfinder/road_pt.nut");
+require("pathfinder/road_pf.nut");
+require("pathfinder/water_pt.nut");
+
+/* route */
+require("route/vhc_maker.nut");
+require("route/route.nut");
+
+/* task */
+require("task/manager.nut");
+require("task/build_hq.nut");
+require("task/cv.nut");
+require("task/events.nut");
+require("task/route_man.nut");
+require("task/vs_man.nut");
+
+/* managers */
+require("manager/stationmanager.nut");
+require("manager/townmanager.nut");
+require("manager/industrymanager.nut");
+require("manager/airconnector.nut");
+require("manager/roadconnector.nut");
+require("manager/waterconnector.nut");
+
+/* extension */
+require("ext/xairport.nut");
+require("ext/xcargo.nut");
+require("ext/xengine.nut");
+require("ext/xindustry.nut");
+require("ext/xmarine.nut");
+require("ext/xroad.nut");
+require("ext/xstation.nut");
+require("ext/xtile.nut");
+require("ext/xtown.nut");
+require("ext/xvehicle.nut");
+
+/* utilities */
+require("utilities/debugger.nut");
 require("utilities/const.nut");
-require("utilities/cargo.nut");
 require("utilities/money.nut");
 require("utilities/sandbox.nut");
-require("utilities/generator.nut");
+require("utilities/settings.nut");
+require("utilities/service.nut");
+//require("utilities/ticker.nut");
 
-require("infrastructure/tile.nut");
-require("infrastructure/infrastructure.nut");
-require("infrastructure/station.nut");
-require("infrastructure/route.nut");
-
-require("manager/managers.nut");
-require("manager/task.nut");
-require("manager/company.nut");
-require("manager/servable.nut");
-require("manager/builder.nut");
-
-require("build/building.nut");
-require("build/road.nut");
-require("build/rail.nut");
-require("build/vehicles.nut");

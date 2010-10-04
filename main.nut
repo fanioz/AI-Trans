@@ -1,173 +1,122 @@
-/*  09.02.01 - main.nut
+/*  10.02.27 - main.nut
  *
  *  This file is part of Trans AI
  *
  *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- *  MA 02110-1301, USA.
+ *  @see license.txt
  */
 
-/**
- * Trans AI global storage
- */
-TransAI <- {
-	/** Root Table */
-	Root = null,
-	/** Informations */
-	Info = null,
-	/** Station Manager */
-	StationMan = null,
-	/** Vehicle Manager */
-	VehicleMan = null,
-	/** Service Manager */
-	ServiceMan = null,
-	/** Serv-able Manager */
-	ServableMan = null,
-	/** Company Manager */
-	CompanyMan = null,
-	/** Task Manager */
-	TaskMan = null,
-	/** Our Bank Balance */
-	Balance = null,
-	/** Builder Manager */
-	Builder = null,
-	/** Rail back boner */
-	RailBackBones = null,
-	/** Things cost */
-	Cost = null,
-	/** Settings used */
-	Setting = null,
-};
 
-/**
- * extending AIController class
- */
-class Trans extends AIController
-{
-    EventChecker = null;
-
-    constructor()
-    {
-    	/* required to be known by AIController */
+/* required to be known by OpenTTD */
     	require("dependencies.nut");
     	
-    	TransAI.Root = this;
-		TransAI.Info = Memory("Root");
-		TransAI.Setting = Settings();
-		/*----------- Wake up managers ------------------------*/
-		TransAI.StationMan = StationManager();
-		TransAI.ServiceMan = ServiceManager();
-		TransAI.ServableMan = ServableManager();
-		TransAI.CompanyMan = CompanyManager();
-		TransAI.TaskMan = TaskManager();		
-		TransAI.Builder = BuildingHandler();
-		TransAI.RailBackBones = [];
-		TransAI.Cost = Const.Cost;
+/**
+ * extending Base class
+ */
+class Trans extends Base {
+    ID = -1;
+	_Yearly_Profit = 0;
+	_Service_Table = {};
+    _Vehicles = {};
+	_No_Profit_Vhc = CLList();
+    _Subsidies = CLList();
+    _Station_2_Close = [];
+    _Inds_Manager = {};
+    _Town_Manager = {};
+    _Station_Tables = {};
 		
-		this.EventChecker = Task.Events();
-		
-		/*------------Read setting ---------------------------------*/
-		/* Don't forget to set debug sign as false on Release or remove comment*/
-		AILog.Warning("*=====================================*");
-		TransAI.Setting.CheckVersion();
-		TransAI.Setting.DebugSign = Debug.ResultOf("Build sign", AIController.GetSetting("debug_signs"));
-		TransAI.Setting.AllowBus = Debug.ResultOf("Allow build bus", AIController.GetSetting("allow_bus"));
-		TransAI.Setting.AllowTruck = Debug.ResultOf("Allow build truck", AIController.GetSetting("allow_truck"));
-		TransAI.Setting.AllowTrain = Debug.ResultOf("Allow build train", AIController.GetSetting("allow_train"));
-		TransAI.Setting.LastMonth = Debug.ResultOf("Min. last month transported", AIController.GetSetting("last_transport"));
-		TransAI.Setting.LoopTime = Debug.ResultOf("Speed", AIController.GetSetting("loop_time")); 
+    constructor() {
+    	::Base.constructor("Trans");
+        ::My = this;
+        ::My.ID = AICompany.ResolveCompanyID(AICompany.COMPANY_SELF);
+		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
     }
 
 	/**
 	  * Start main AI class
 	  */
-	function Start()
-	{
-		Sleep(5);
-		AILog.Warning("*=====================================*");
-		TransAI.CompanyMan.Born();
-		TransAI.CompanyMan.Test();
-		AILog.Info("Init task schedule");		
+    function Start() {
+        AIController.Sleep(5);
+        local line = Assist.RepeatStr("~", 50);
 		try {
+            /* Wake up .. */
+            Info("Init AI's module");
+            AILog.Warning (line);
+            Setting.Init();
+            AILog.Warning (line);
+            XCargo.Init(XCargo);
+            Service.Init(this);
+            AILog.Warning (line);
+			AIGroup.EnableWagonRemoval(true);
 			
-			TransAI.TaskMan.New(EventChecker);
-			TransAI.TaskMan.New(Task.HeadQuarter());
-			TransAI.TaskMan.New(Task.Monitor());
-			TransAI.TaskMan.New(Task.CurrentValue());
-			TransAI.TaskMan.New(Task.Maintenance());
-			TransAI.TaskMan.New(Task.Inflation());
-			TransAI.TaskMan.New(Task.Service());
-			TransAI.TaskMan.New(Task.GenerateServable());
-			TransAI.TaskMan.New(Task.AddVehicle());
-			TransAI.TaskMan.New(Task.PayLoan());
-			TransAI.TaskMan.New(Task.SellVehicle());
+            /* greeting you */
+            local date = AIDate.GetCurrentDate();
+            SetRandName(date + ::My.ID);
+            Info("(re)started as", AICompany.GetName(::My.ID), "at", Assist.DateStr(date));
+            Info("is powered by ", _version_);
 			
-			/* set loop time */
-			TransAI.TaskMan.SetSleep(max(1, TransAI.Setting.LoopTime) * 5);
+            Money.Pay();
+            Assist.RemoveAllSigns();
+
+            Info("Init task items");
+            TaskManager.New(Task.Events());
+            TaskManager.New(Task.BuildHQ());
+            TaskManager.New(Task.CurrentValue());
+            TaskManager.New(Task.RouteManager());
+            TaskManager.New(Task.Vehicle_Mgr());
 			
 			/*
 			* ============ Main Loop ================
 			*/    
-			while (TransAI.Info.Live){        
-				Sleep(1);
+            while (true) {
+                AIController.Sleep(2);
 				/* run the task manager */
-				TransAI.TaskMan.Run();
+                TaskManager.Run();
 			}
 		} catch (msg) {
-			TransAI.Builder.ClearSigns();
-			AILog.Warning("Error catched:" + msg);
+            ::print("Error catched at:" + Assist.DateStr(AIDate.GetCurrentDate()));
 		}
 		/*
 		* ====================================
 		* Out of loop mean something goes wrong. Destructor called
 		*/
 		Const = null;
-		TransAI = null;
-		AILog.Info("Visit TransAI thread on:");
-		AILog.Info("http://www.tt-forums.net/viewtopic.php?f=65&t=42272");
+        ::My = null;
+        AIController.Sleep(10);
+        Assist.RemoveAllSigns();
+        AILog.Warning("=====> I would thank you very much if you would please to :");
+        ::print("1. Scroll up until the beginning of red line");
+        ::print("2. Make sure that the window wide enough to show all text");
+        ::print("3. Press ctrl-S to take a screenshoot");
+        ::print("4. Make a report (with the screenshoot) at Trans-AI thread on:");
+        ::print("http://www.tt-forums.net/viewtopic.php?f=65&t=42272");
 		AILog.Warning("=========< OR >=========");
 	}
 
 	/**
 	 * Handle save game of OpenTTD
 	 */
-	function Save()
-	{
-		try {
+    function Save() {
 			local save_table = {};
-			EventChecker.Execute();
-			save_table.rawset(TransAI.Info.GetClassName(), TransAI.Info.GetStorage());    
-			AILog.Info("--- (partial) Save supported ---");
+		Info("--- No Save needed (experimental) ---");
 			return save_table;
-		} catch (msg) {
-			AILog.Error("Can't save");
-			return {};
-		}
 	}
 
 	/**
 	 * Handle loading savegame by OpenTTD
 	 */
-	function Load(version, data)
-	{
-		AILog.Warning("--- (experimental) Load supported ---");
-		try {
-			TransAI.Info.SetStorage(data.rawget(TransAI.Info.GetClassName()));
+    function Load(version, data) {
+		Warn(" Loading from ver:", version);
+		Warn("(experimental)", "no load needed");
+		Warn("type of data was", typeof data);
 		}
-		catch (x) AILog.Warning("Failed load: Memory "+ x);    
-		Debug.ResultOf("Loading (partial) from version", version);
+
+    function SetRandName(number) {
+    	local c = number % Const.Name.len();
+		local name = "Trans " + Const.Name[c];
+		AICompany.SetPresidentName(name);
+		AICompany.SetName(name);
+    	AICompany.SetPresidentGender(AICompany[Const.Gender[c % 2]]);
 	}
 }

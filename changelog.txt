@@ -96,3 +96,9 @@ Fix: [Rail PF] avoid to build on road track
 Codechange: Minimum OpenTTD version allowed was 7.2
 Fix: Don't build unnecessary bridge
 
+* 100228
+Removed: Rail service
+Feature: Aircraft (passenger only) service
+Feature: Ship service
+Feature: Tram service
+

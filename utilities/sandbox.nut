@@ -1,42 +1,246 @@
-/*  09.02.04 - sandbox.nut
+/*  10.02.27 - sandbox.nut
  *
  *  This file is part of Trans AI
  *
  *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- *  MA 02110-1301, USA.
+ *  @see license.txt
  */
 
- /**
- * General un categorized static functions to assist program
+/**
+* General un categorized functions to assist program
  */
 class Assist
 {
+	function GetManager(loc) {
+		local tl = AITownList();
+		tl.Valuate(XTown.IsOnLocation, loc);
+		tl.KeepValue(1);
+		if (!tl.IsEmpty()) {
+			return XTown.GetManager(tl.Begin());
+		}
+		tl.AddList(AIIndustryList());
+		tl.Valuate(XIndustry.IsOnLocation, loc);
+		tl.KeepValue(1);
+		if (tl.IsEmpty()) return;
+		return XIndustry.GetManager(tl.Begin());
+	}
+	//find depot near tile for vt and tt
+	function FindDepot(near, vt, tt) {
+		local depots = CLList(AIDepotList(vt));
+		switch (vt) {
+			case AIVehicle.VT_RAIL:
+				depots.Valuate(XRail.HasRail, tt);
+				break;
+			case AIVehicle.VT_AIR:
+				depots.Valuate(XAirport.HasPlaneType, tt);
+				break;
+			case AIVehicle.VT_ROAD:	
+				depots.Valuate(AIRoad.IsRoadDepotTile);
+				break;
+			case AIVehicle.VT_WATER:	
+				depots.Valuate(AIMarine.IsWaterDepotTile);
+				break;
+			default :
+				return -1;
+		}
+		depots.KeepValue(1);
+		depots.Valuate(AIMap.DistanceMax, near);
+		depots.RemoveAboveValue(15);
+		depots.SortValueAscending();
+		foreach (body, v in depots) {
+			return body;
+		}
+		return -1;
+	}
+	function SumValue(list) {
+		local ret = 0;
+		foreach (idx, val in list) ret += val;
+		return ret;
+	}
+	function IncomeTown (town1, loc2, cargoID, engID) {
+		//print(AITown.GetName(town1) + ":to:" + AITown.GetName(town2));
+		local distance = AITown.GetDistanceManhattanToTile (town1, loc2);
+		local product = XTown.ProdValue (town1, cargoID);
+		local mult = Service.GetSubsidyPrice(AITown.GetLocation(town1), loc2, cargoID);
+		return Assist.Estimate (product, distance, cargoID, engID, mult);
+	}
+	function IncomeIndustry (inds1, loc2, cargoID, engID) {
+		//print(AIIndustry.GetName(inds1) + ":to:" + AIIndustry.GetName(inds2));
+		local distance = AIIndustry.GetDistanceManhattanToTile (inds1, loc2) * 2;
+		local product = XIndustry.ProdValue (inds1, cargoID);
+		local mult = Service.GetSubsidyPrice(AIIndustry.GetLocation(inds1), loc2, cargoID);
+		return Assist.Estimate (product, distance, cargoID, engID, mult);
+	}
 	
-	static function BuildAllTrack(head) {
+	function Estimate (product, distance, cargoID, engID, mult) {
+		local spd = AIEngine.GetMaxSpeed (engID);
+		local days = Assist.TileToDays (distance, spd) + 4;
+		local income = AICargo.GetCargoIncome (cargoID, distance, days) * mult;
+		local cap = AIEngine.GetCapacity (engID);
+		//local vhcneed = max(XVehicle.Needed (product, cap, days), 1);
+		//local price =  AIEngine.GetPrice (engID);// * vhcneed;
+		local vhc_num = Money.Maximum() / AIEngine.GetPrice (engID) * 10;
+		local cost = AIEngine.GetRunningCost (engID) * vhc_num / 10;
+		//local profit = 12 * income * product - cost;
+		local profit = 365 / days * income * cap * vhc_num / 10 - cost;
+		//local rrate = (profit * 100 / price).tointeger();
+		//print("=> :Vehicle needed: " + vhcneed + " :Cost: " + cost);
+		//print("=> at distance: " + distance);
+		//print("=> at speed: " + spd);
+		//print("=> days: " + days);
+		//print("=> base:: :income: " + income + " :Prod: " + product);
+		//My.Info("=> :Profit estimated: ", profit);
+		//print("=> :return rate: " + rrate);
+		//return rrate ;
+		return profit;
+	}
+
+	// estimated how many days need to travel with certain speed
+	// using http://wiki.openttd.org/wiki/index.php?title=Game_mechanics&oldid=30090
+	// dist_tile * 686km / (speed / 1.00584)kmph / 24h
+	function TileToDays (dist, speed) {
+		return (dist * 56.8347517166415 / speed).tointeger()
+	}	
+
+	function AntiDistance (a, b) {
+		return 100000 - AIMap.DistanceManhattan (a, b);
+	}
+	//return true if n is between n1 and n2 (exclusive)
+	function IsBetween (n, n1, n2) {
+		return (n1 < n) && (n < n2);
+	}
+
+	function Split (str, separator) {
+		assert (separator.len() == 1);
+		assert (typeof str = "string");
+		local s = "";
+		local result = [];
+		foreach (idx, val in str) {
+			if (val == separator) {
+				if (s.len()) result.push (s);
+				s = "";
+			} else {
+				s += val;
+			}
+		}
+		return result;
+	}
+
+	function Join (arr, separator) {
+		local s = "";
+		local a = clone arr;
+		a.reverse();
+		while (a.len()) {
+			local i = a.pop();
+			s += i;
+			if (a.len())  s += separator;
+		}
+		return s;
+	}
+
+	function RepeatStr (s, count) {
+		return Assist.Join (array (count, s), "");
+	}
+
+	function PTName (pt) {
+		switch (pt) {
+			case AIAirport.PT_BIG_PLANE :
+				return "PT_BIG_PLANE";
+			case AIAirport.PT_SMALL_PLANE :
+				return "PT_SMALL_PLANE";
+			case AIAirport.PT_HELICOPTER :
+				return "PT_HELICOPTER";
+		}
+		return "Invalid plane type";
+	}
+
+	function PT_to_AT (pt) {
+		local at = [];
+		switch (pt) {
+			case AIAirport.PT_HELICOPTER :
+				at.push (AIAirport.AT_HELIPORT);
+				at.push (AIAirport.AT_HELIDEPOT);
+				at.push (AIAirport.AT_HELISTATION);
+			case AIAirport.PT_SMALL_PLANE :
+				at.push (AIAirport.AT_SMALL);
+				at.push (AIAirport.AT_COMMUTER);
+			case AIAirport.PT_BIG_PLANE :
+				at.push (AIAirport.AT_LARGE);
+				at.push (AIAirport.AT_METROPOLITAN);
+				at.push (AIAirport.AT_INTERNATIONAL);
+				at.push (AIAirport.AT_INTERCON);
+				return at;
+		}
+		return [AIAirport.AT_INVALID];
+	}
+
+	function ATName (at) {
+		switch (at) {
+			case AIAirport.AT_HELIPORT:
+				return "AT_HELIPORT";
+			case AIAirport.AT_HELIDEPOT:
+				return "AT_HELIDEPOT";
+			case AIAirport.AT_HELISTATION:
+				return "AT_HELISTATION";
+			case AIAirport.AT_SMALL:
+				return "AT_SMALL";
+			case AIAirport.AT_COMMUTER:
+				return "AT_COMMUTER";
+			case AIAirport.AT_LARGE:
+				return "AT_LARGE";
+			case AIAirport.AT_METROPOLITAN:
+				return "AT_METROPOLITAN";
+			case AIAirport.AT_INTERNATIONAL:
+				return "AT_INTERNATIONAL";
+			case AIAirport.AT_INTERCON:
+				return "AT_INTERCON";
+		}
+		return "invalid airport type";
+	}
+
+	/**
+	 * RemoveAllSigns is AISign cleaner
+	 * Clear all sign that I have been built while servicing.
+	 */
+	function RemoveAllSigns() {
+		Info ("Clearing signs ...");
+		foreach (signID , v in AISignList()) {
+			AISign.RemoveSign (signID);
+		}
+	}
+
+	function Left (num, str) {
+		if (str) {
+			if (str.len() > num) return str.slice (0, num);
+			return str;
+		}
+		return "";
+	}
+
+	function HasBit (item, bit) {
+		return (item & bit) != 0;
+	}
+	function SetBitOff (item, bit) {
+		if (Assist.HasBit(item, bit)) {
+			item = item & ~bit;
+		}
+		return item;
+	}
+
+	function BuildAllTrack (head) {
 		assert(AIMap.IsValidTile(head));
-		foreach (track in Const.RailTrack) AIRail.BuildRailTrack(head, track);
+		foreach (track in Const.RailTrack) {
+			if (!AIRail.BuildRailTrack (head, track)) return track;
+		}
+		return 0;
 	}
 	
 	/**
 	 * Find modus
 	 * @param anarray Array of numbers to find
 	 */
-	 static function Modus(anarray)
-	 {
+	function Modus (anarray) {
 	 	local t = AIList();
 	 	foreach (num in anarray) t.AddItem(num, t.GetValue(num) + 1);
 	 	t.Sort(AIAbstractList.SORT_BY_VALUE, false);
@@ -44,136 +248,13 @@ class Assist
 	 }
 	 
 	 /**
-	 * Valuator function that return array of value
-	 * @param list AIList to valuate
-	 * @param valuator Function to be used as valuator
-	 * @param ... Additional argument to be passed to
-	 */
-	 static function ValuateToArray(list, valuator, ...)
-	{
-		assert(typeof list == "instance");
-		assert(typeof valuator == "function");
-		local anarray = [];
-		local args = [this, null];
-		for(local c = 0; c < vargc; c++) args.append(vargv[c]);
-		foreach(idx, val in list) {
-			args[1] = idx;
-			anarray.push(Assist.ACall(valuator, args));
-		}
-		return anarray;
-	}
-	 
-	/**
-	 * Convert an AIList to a human-readable string.
-	 * @param list The AIList to convert.
-	 * @return A string containing all item => value pairs from the list.
-	 * @author Yexo (Admiral)
-	 */
-	static function AIListToString(list)
-	{
-		if (typeof(list) != "instance") throw("AIListToString(): argument has to be an instance of AIAbstractList.");
-		local ret = "[";
-		if (!list.IsEmpty()) {
-			local a = list.Begin();
-			ret += a + "=>" + list.GetValue(a);
-			if (list.HasNext()) {
-				for (local i = list.Next(); list.HasNext(); i = list.Next()) {
-					ret += ", " + i + "=>" + list.GetValue(i);
-				}
-			}
-		}
-		ret += "]";
-		return ret;
-	}
-	
-	/**
-	 * acall replacement to support do command
-	 * @param func Function to execute
-	 * @args Array of arguments, min. [this]
-	 * @return Value of function called
-	 * @note args[0] should be 'this' or environment.
-	 */
-	static function ACall(func, args)
-	{
-		assert(typeof(func) == "function");
-		assert(typeof(args) == "array");
-		this = args[0];
-		switch (args.len()) {
-		   	case 1: return func();
-			case 2: return func(args[1]);
-			case 3: return func(args[1], args[2]);
-			case 4: return func(args[1], args[2], args[3]);
-			case 5: return func(args[1], args[2], args[3], args[4]);
-			case 6: return func(args[1], args[2], args[3], args[4], args[5]);
-			case 7: return func(args[1], args[2], args[3], args[4], args[5], args[6]);
-			case 8: return func(args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-			default: throw "Too many arguments to ACall Function";
-		}
-	}
-
-	/**
-	 * Rename the drop off station
-	 *@param st_id Station ID
-	 *@param name Cargo label
-	 */
-	static function RenameStation(st_id, name)
-	{
-		local counter = 1;		
-		while (!AIStation.SetName(st_id, name + " Drop Off:" + TransAI.Info.ID + ":" + counter) && counter < 100) counter++;
-	}
-
-	/**
-	 * Count cargo that accept by an Industry
-	 * @param id Industry ID
-	 * @return number of cargo
-	 */
-	static function CargoCount(id)
-	{
-		local ret = 0;
-		local type = AIIndustry.GetIndustryType(id);
-		local cargoes = AIIndustryType.GetAcceptedCargo(type);
-		if (cargoes) {
-			ret += cargoes.Count();
-		}
-		return ret;
-	}
-
-	/**
-	 * Temporary service cost
-	 */
-	static function ServiceCost(dist)
-	{
-		return (dist / 50).tointeger();
-	}
-
-	/**
-	 * Valuator function
-	 * @param list AIList to valuate
-	 * @param valuator Function to be used as valuator
-	 * @param ... Additional argument to be passed to
-	 * @return the list too
-	 */
-	 static function Valuate(list, valuator, ...)
-	{
-		assert(typeof list == "instance");
-		assert(typeof valuator == "function");
-
-		local args = [this, null];
-		for(local c = 0; c < vargc; c++) args.append(vargv[c]);
-		foreach(idx, val in list) {
-			args[1] = idx;
-			local value = Assist.ACall(valuator, args);
-			list.SetValue(idx, (value ? 1 : 0));
-		}
-		return list;
-	}
-
-	/**
-	 * Check if parameter is null
+	 * Check if parameter is not true
 	 * @param val val to evaluate
 	 * @return true if val is null
 	 */
-	static function IsNull(val) { return val == null ; }
+	function IsNot (val) {
+		return !val;
+	}
 
 	/**
      * Lead a number with zero
@@ -182,8 +263,7 @@ class Assist
      * @return number in string
      * @note only for number below 10
      */
-    static function LeadZero(integer_number)
-    {
+	function LeadZero (integer_number) {
         if (integer_number > 9) return integer_number.tostring();
         return "0" + integer_number;
     }
@@ -193,9 +273,8 @@ class Assist
      * @param date to convert
      * @return string representation in DD-MM-YYYY
      */
-    static function DateStr(date)
-    {
-        return "" + AIDate.GetDayOfMonth(date) + "-" +   AIDate.GetMonth(date) + "-" + AIDate.GetYear(date);
+	function DateStr (date) {
+		return Assist.Join ([AIDate.GetDayOfMonth (date), AIDate.GetMonth (date), AIDate.GetYear (date) ], "-");
     }
 
     /**
@@ -204,8 +283,7 @@ class Assist
      * @return  number in integer
      * @note max number is 255 or FF
     */
-    static function HexToDec(Hex_number)
-    {
+	function HexToDec (Hex_number) {
         if (Hex_number.len() > 2) return 0;
         local aSet = "0123456789ABCDEF";
         return aSet.find(Hex_number.slice(0,1)).tointeger() * 16 + aSet.find(Hex_number.slice(1,2)).tointeger();
@@ -216,8 +294,7 @@ class Assist
      * @param dec number to convert
      * @return hex number in string
     */
-    static function DecToHex(dec)
-	{
+	function DecToHex (dec) {
 		local aSet = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
 		local tmp = [];
 		local c = dec % 16;
@@ -233,312 +310,14 @@ class Assist
 		foreach (idx, val in tmp) ret += val;
 		return ret;
 	}
-
-    /**
-     * Push list to array
-     * @param list AIList to convert from
-     * @return Array of index list
-     */
-    static function ListToArray(list)
-    {
-        local array = [];
-        foreach(item, lst in list) array.push(item);
-        return array;
-    }
-
-    /**
-     * Make list from array
-     * @param array to convert from
-     * @return AIList of array value
-     */
-    static function ArrayToList(array)
-    {
-        local list = AIList();
-        foreach(idx, item in array) list.AddItem(item, 0);
-        return list;
-    }
-
-	/**
-	 * Convert path to array
-	 * @param path Path class to convert from
-     * @return Array of path.GetTile()
-     */
-	static function Path2Array(path)
-	{
-		local anArray = [];
-		while (path != null) {
-			anArray.push(path.GetTile(), path.GetDirection(), path.GetCost());
-			path = path.GetParent();
-		}
-		return anArray;
-	}
-	
-	/**
-	 * Convert array to path
-	 * @param anArray array of converted path
-     * @return AyStar.Path class
-     */
-	static function ArrayToPath(anArray)
-	{
-		if (typeof anArray != "array") return;
-		local Ay = Route.Finder;
-		local path = null;
-		while (anArray.len()) {
-			local node = anArray.pop();
-			path = Ay.Path(path, node[0], node[1], function(a, b, c, d) { return a;}, node[2]);
-		}
-		return path;
-	}
-
-    /**
-	 * Filter Industry that is built on water
-	 * @param anIndustry ID of industry
-     * @return AIList of non water Industry
-     */
-     static function NotOnWater(anIndustry) {
-		anIndustry.Valuate(AIIndustry.IsValidIndustry);
-		anIndustry.RemoveValue(0);
-        anIndustry.Valuate(AIIndustry.IsBuiltOnWater);
-        anIndustry.RemoveValue(1);
-        return anIndustry;
-    }
-	
-	/**
-	 * Check existing rail connection
-	 * @param path Path class of Rail PF
-	 * @return true if it was connected
-	 */
-	static function CheckRailConnection(path)
-	{
-	    /* must be executed in exec mode */
-	    local ex = AIExecMode();
-	    if (path == null || path == false) return false;
-	    AILog.Info("Check rail connection Length=" + path.GetLength());
-	    while (path != null) {
-	        local parn = path.GetParent();
-	        if (parn == null ) {
-	            local c = Debug.Sign(path.GetTile(), "null");
-	            if (!AITile.HasTransportType(path.GetTile(), AITile.TRANSPORT_RAIL)) return false;
-	            Debug.UnSign(c);
-	        } else {
-	            local grandpa = parn.GetParent();
-	            if (grandpa == null) {
-	                local c = Debug.Sign(parn.GetTile(), "null");
-	                if (!AITile.HasTransportType(path.GetTile(), AITile.TRANSPORT_RAIL)) return false;
-	                Debug.UnSign(c);
-	            } else {
-	                if (!AIRail.AreTilesConnected(path.GetTile(), parn.GetTile(), grandpa.GetTile())) {
-	                    if (AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) == 1) {
-	                        AIRail.BuildRail(path.GetTile(), parn.GetTile(), grandpa.GetTile());
-	                    } else {
-	                        local c = Debug.Sign(path.GetTile(), "null");
-	                        if (AITunnel.GetOtherTunnelEnd(path.GetTile()) == parn.GetTile()) {
-	                            if (!AITunnel.IsTunnelTile(path.GetTile())) {
-	                                if (!AITunnel.BuildTunnel(AIVehicle.VT_RAIL, path.GetTile())) return false;
-	                            }
-	                        } else if (AIBridge.GetOtherBridgeEnd(path.GetTile()) == parn.GetTile()) {
-	                            if (!AIBridge.IsBridgeTile(path.GetTile())) {
-	                                local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1);
-	                                bridge_list.Valuate(AIBridge.GetMaxSpeed);
-	                                bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
-	                                if (!AIBridge.BuildBridge(AIVehicle.VT_RAIL, bridge_list.Begin(), path.GetTile(), parn.GetTile())) {
-	                                    while (bridge_list.HasNext()) {
-	                                        if (AIBridge.BuildBridge(AIVehicle.VT_RAIL, bridge_list.Next(), path.GetTile(), parn.GetTile())) break;
-	                                    }
-	                                }
-	                            }
-	                        }
-	                        Debug.UnSign(c);
-	                    }
-	                }
-	            }
-	        }
-	        path = parn;
-	    }
-	    return true;
-	}
-	
-	/**
-	 * Try to use sqrt function
-	 * @param num number to get square from
-	 * @return squared root number
-	 * @author zutty (PathZilla)
-	 */
-	static function SquareRoot(num)
-	{
-		if (num == 0) return 0;
-		local n = (num / 2) + 1;
-		local n1 = (n + (num / n)) / 2;
-		while (n1 < n) {
-			n = n1;
-			n1 = (n + (num / n)) / 2;
-		}
-		return n;
-	}
-	
-	/**
-	 * Handle closing industry
-	 * @param tabel Tabel of structure catched on Event catcher
-	 */
-	static function HandleClosingIndustry(tabel)
-	{
-		/* validating Drop off point */
-		if (TransAI.Info.Drop_off_point.rawin(tabel.Loc)) TransAI.Info.Drop_off_point.rawdelete(tabel.Loc);
-		TransAI.ServableMan.RemoveItem(tabel.Loc);
-		/* is there my station ? */
-		local station_list = Tiles.StationOn(tabel.Loc);
-		if (station_list.Count() == 0) return;
-		local location = -1;
-		tabel.CargoAccept.extend(tabel.CargoProduce);
-		/* mark vehicle as lost */
-		foreach (sta, val in station_list) {
-			foreach (vhc, val in AIVehicleList_Station(sta)) {
-				foreach (cargo in tabel.CargoAccept) {
-					if (Vehicles.CargoType(vhc) == cargo) {
-						TransAI.Info.Lost_Vehicle.push(vhc);
-						AIController.Sleep(1);
-					}
-				}
-			}
-		}
-	}
 }
 
-/**
- * Debug static functions class
- *
- */
-class Debug
-{
-    /**
-     * Evaluate expression, display message,  detect last error.
-     * usable for in-line debugging
-     * @param msg Message to be displayed
-     * @param exp Expression to be displayed and returned
-     * @return Value of expression
-     */
-    static function ResultOf(msg, exp)
-    {
-        if (AIError.GetLastError() == AIError.ERR_NONE) AILog.Info("" + msg + ":" + exp +" -> Good Job :-D");
-        else AILog.Warning("" + msg + ":" + exp + ":" + AIError.GetLastErrorString().slice(4));
-        return exp;
-    }
-    
-    /** 
-     * No other methode found to clear last err
-     */
-    static function ClearErr() {
-        AISign.RemoveSign(AISign.BuildSign(AIMap.GetTileIndex(2, 2), "debugger"));
-    } 
-
-    /**
-     * The function that should never called / passed by flow of code.
-     * @param msg The message to be displayed
-	 * @param suspected The variable to displayed
-	 * @note This would only set to make the AI end it's live
-     */
-    static function DontCallMe(msg, suspected)
-    {
-        /* I've said, don't call me. So why you call me ?
-         * okay, I'll throw you out ! :-( */
-        AILog.Warning("Should not come here!" + msg + " suspected --> " + suspected);        
-		throw msg;
-    }
-
-    /**
-	 * Wrapper for build sign.
-	 * Its used with Game.Settings
-	 * @param tile TileID where to build sign
-	 * @param txt Text message to be displayed
-	 * @return a valid signID if its allowed by game setting
-	*/
-	static function Sign(tile, txt)
-    {
-        if (TransAI.Setting.DebugSign) {
-        	if (typeof txt != "string") txt = txt.tostring();
-        	return AISign.BuildSign(tile, txt);
-        }
-    }
-    
-    /**
-     * Unsign is to easy check wether we have build sign before
-     * @param id Suspected signID
-     */
-	static function UnSign(id)
-	{
-		if (id != null) if (AISign.IsValidSign(id)) AISign.RemoveSign(id); 
-	}	
+function min (x, y) { 
+	if (x > y) return y;
+	return x;
 }
 
-/**
- * Game settings related class
- */
-class Settings
-{
-	/** Enable build sign */
-	DebugSign = 0;
-	/** Bus allowed */
-	AllowBus = 0;
-	/** Truck allowed */
-	AllowTruck = 0;
-	/** Train allowed */
-	AllowTrain = 0;
-	/** Last Month Transported */
-	LastMonth = 0;
-	/** Loop Time for TaskManager */
-	LoopTime = 0;
-	
-	/**
-	 * Get settings from .cfg file
-	 * @param setting_str String of settings. Get it from Cons.Settings
-	 * @return false if setting is not valid, otherwise return value from .cfg
-	 * @note usage : 
-	 * AILog.Info(Const.Settings.long_train + " -> " +  Settings.Get(Const.Settings.long_train))
-	 */
-    function Get(setting_str)
-    {
-        if (!AIGameSettings.IsValid(setting_str)) throw "Setting no longer valid :" + setting_str;
-        return AIGameSettings.GetValue(setting_str);
-    }
-	
-	/**
-	 * Check current OpenTTD running version
-	 * @return throw if the version is not match
-	 */
-	function CheckVersion()
-	{
-		local v = AIController.GetVersion();
-		local maj = (v & 0xF0000000) >> 28;
-		local minor = (v & 0x0F000000) >> 24;
-		local build = (v & 0x00F00000) >> 20;
-		local rel = (v & 0x00080000) != 0;
-		local rev = v & 0x0007FFFF;
-		AILog.Warning("You run On OpenTTD Ver:" + maj + "." + minor + " Build:" + build + " (" + (rel ?  "Release" : "Rev." + rev) + ")");
-		if ((minor > 6 && build > 1) || rev > 17009) return true;
-		throw "Not supported version please use version 0.7.2 instead";
-	}
-}
-
-/**
- * Ticker class
- */
-class Ticker
-{
-	/** the ticker */
-	_tick = null;
-	/** class contructor */
-	constructor(){
-		this._tick = AIController.GetTick();
-	}
-
-	/**
-	 * Get elapsed tick
-	 * @return number of tick elapsed
-	 */
-	function Elapsed() {return AIController.GetTick() - this._tick; }
-	
-	/**
-	 * Reset tick
-	 */
-	function Reset() { this._tick = AIController.GetTick(); }
+function max (x, y) { 
+	if (x < y) return y;
+	return x;
 }
