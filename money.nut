@@ -81,7 +81,7 @@ function Bank::Get(money = null)
 		AILog.Info("Balance =" + Bank.Balance());
 		return true;
 	}
-	/* future code */
+	/* rarely used code */
 	if (!Bank.IHave(money)) return false;
 	if (Bank.Balance() > money) return true;
 	local loan = money - Bank.Balance() + AICompany.GetLoanInterval() + AICompany.GetLoanAmount();

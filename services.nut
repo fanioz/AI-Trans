@@ -37,13 +37,17 @@ class Services
 	_srcStation = null;			/// Source station
 	_dstStation = null;			/// Destination station
 	_srcDepot = null;				/// Source depot
-	_cargo_str = null;
-	_cargo_freight = null;
-	_source_text = null;
-	_dest_text = null;
-	_src_pos = null;
-	_dst_pos = null;
-	_readable = null;
+	_dstDepot = null;       /// Destination Depot
+	_cargo_str = null;      /// cargo label
+	_is_subsidy = null;     /// is Subsidy ?
+	_cargo_freight = null;  /// is freight ?
+	_src_tile = null;
+	_dst_tile = null;
+	_source_text = null;    /// source name
+	_dest_text = null;      /// destination name
+	_src_pos = null;        /// source location
+	_dst_pos = null;         /// destination location
+	_readable = null;       /// readable - debugable format
 	_serviced = null;				/// Indicator if this is serviced
 	_path1 = null;             /// the path used by this service
 	_path2 = null;
@@ -56,8 +60,7 @@ class Services
 	constructor(srcid, dstid, cargoid)
 	{
 		this.Info = this.info(this);
-		local str = "" + srcid + dstid + cargoid;
-		this._current = str.tointeger();
+		this._current = LeadZero(srcid) + ":" + LeadZero(dstid) + ":" + LeadZero(cargoid);
 		this._srcID = srcid;
 		this._dstID = dstid;
 		this._cargoID = cargoid;
@@ -66,6 +69,9 @@ class Services
 		this._srcStation = PosClass();
 		this._dstStation = PosClass();
 		this._srcDepot = PosClass();
+		this._dstDepot = PosClass();
+		this._src_tile = null;
+	  this._dst_tile = null;
 		this._cargo_str = "";
 		this._cargo_freight = false;
 		this._source_text = "";
@@ -74,6 +80,7 @@ class Services
 	  this._dst_pos = -1;	
 	  this._readable = "";
 		this._serviced = false;
+		this._is_subsidy = false;
 		this._path1 = false;
 		this._path2 = false;
 		this._path3 = false;
@@ -95,10 +102,10 @@ function Services::Update()
 {
   this._cargo_str = AICargo.GetCargoLabel(this._cargoID);
 	this._cargo_freight = AICargo.IsFreight(this._cargoID);
-	this._source_text = (this._srcIsTown) ? AITown.GetName(this._srcID) : AIIndustry.GetName(this._srcID);
-	this._dest_text = (this._dstIsTown) ? AITown.GetName(this._dstID) : AIIndustry.GetName(this._dstID);
-	this._src_pos = (this._srcIsTown) ? AITown.GetLocation(this._srcID) : AIIndustry.GetLocation(this._srcID);
-	this._dst_pos = (this._dstIsTown) ? AITown.GetLocation(this._dstID) : AIIndustry.GetLocation(this._dstID);
+	this._source_text = this._srcIsTown ? AITown.GetName(this._srcID) : AIIndustry.GetName(this._srcID);
+	this._dest_text = this._dstIsTown ? AITown.GetName(this._dstID) : AIIndustry.GetName(this._dstID);
+	this._src_pos = this._srcIsTown ? AITown.GetLocation(this._srcID) : AIIndustry.GetLocation(this._srcID);
+	this._dst_pos = this._dstIsTown ? AITown.GetLocation(this._dstID) : AIIndustry.GetLocation(this._dstID);
 	this._readable = "" + this._cargo_str + " from " + this._source_text + " to " + this._dest_text ;
 	return this._readable;
 }
@@ -139,10 +146,12 @@ class Services.info {
 			case "CargoID"							    :			this._main._cargoID = val; break;
 			case "SourceIsTown"					:			this._main._srcIsTown = val; break;
 			case "DestinationIsTown"		:			this._main._dstIsTown = val; break;
-			case "SourceStation"			  :			this._main._srcStation = val; break;
-			case "DestinationStation"	:			this._main._dstStation = val; break;
-			case "Depot"					          :			this._main._srcDepot = val; break;
+			case "SourceStation"			    :			this._main._srcStation = val; break;
+			case "DestinationStation"	  :			this._main._dstStation = val; break;
+			case "SourceDepot"					  :			this._main._srcDepot = val; break;
+			case "DestinationDepot"		  :			this._main._dstDepot = val; break;
 			case "Serviced"							  :			this._main._serviced = val; break;
+			case "Is_Subsidy"               : this._main._is_subsidy = val; break;
 			case "Path1"                      :     this._main._path1 = val; break;
 			case "Path2"                      :     this._main._path2 = val; break;
 			case "Path3"                      :     this._main._path3 = val; break;
@@ -164,10 +173,14 @@ class Services.info {
 			case "CargoID"							    :			return this._main._cargoID ; 
 			case "SourceIsTown"					:			return this._main._srcIsTown ; 
 			case "DestinationIsTown"		:			return this._main._dstIsTown ; 
-			case "SourceStation"			  :			return this._main._srcStation ; 
-			case "DestinationStation"	:			return this._main._dstStation ; 
-			case "Depot"					          :			return this._main._srcDepot ; 
+			case "SourceStation"			    :			return this._main._srcStation ; 
+			case "DestinationStation"	  :			return this._main._dstStation ; 
+			case "SourceTile"              :    return this._main._src_tile;
+			case "DestinationTile"         :    return this._main._dst_tile;
+			case "SourceDepot"					   :		return this._main._srcDepot ; 
+			case "DestinationDepot"			 :		return this._main._dstDepot ; 
 			case "Serviced"							    :			return this._main._serviced ;
+			case "Is_Subsidy"               : return this._main._is_subsidy;
 			case "Path1"                      :     return this._main._path1 ;
 			case "Path2"                      :     return this._main._path2 ;
 			case "Path3"                      :     return this._main._path3 ;

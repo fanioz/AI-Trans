@@ -31,12 +31,15 @@ class CompanyManager
 	_name = null;              /// _name of my company
 	Live= null;               /// Should I keep alive or retire ?
 	Factor = null;            /// Factor of cost;
+	_factor = null;           /// factor of fluctuation
 	StartDate = null;         /// Company launching date
 	Builder = null;           /// My Builder assistant
 	service_table = null;   /// table of list of service todo
+	serviced_route = null; /// table to save serviced service
 	service_key = null;     /// the key to retreive a service from table
-	_main = null;             /// The AIController callback
-_serv_gen = null;
+	_main = null;             /// The AIController main instance
+_serv_gen = null;       /// service generator
+
 /**
  *
  * name: CompanyManager::constructor
@@ -45,12 +48,14 @@ _serv_gen = null;
 	constructor(main) {
 		_name = "Fanioz";
 		Live = 1;
-		Factor = 0;
+		Factor = 10000;
+		_factor = AICompany.GetMaxLoanAmount() / Factor;
 		StartDate = 0;
 		Builder = BuildingHandler(this);
 		_main = main;
     service_table = {};
     service_key = Binary_Heap();
+    serviced_route = {};
 	}
 
 /**
@@ -117,12 +122,8 @@ function CompanyManager::Born()
 	AILog.Info("Powered by " + _version_);
 	AILog.Info("" + AICompany.GetName(AICompany.COMPANY_SELF) + " has been started since " + DateStr(this.StartDate)	+".");
 	Builder.HeadQuarter();
-	this.Factor = Builder.State.LastCost;
-	Builder.Factor = this.Factor;
-	ErrMessage("Build HQ cost = " + this.Factor);
-	Bank.PayLoan();
+	ErrMessage("Build HQ cost = " + Builder.State.LastCost);
 	this.Live = 1;
-	_serv_gen = Gen.Service(10);
 }
 
 function CompanyManager::Evaluate()
@@ -131,34 +132,39 @@ function CompanyManager::Evaluate()
 	this._main.Sleep(1);
 
 	GatherSubsidy();
+	this.Factor = AICompany.GetMaxLoanAmount() / this._factor;
+  AILog.Info("Factor=" + this.Factor);
   AILog.Info("service count=" + service_key.Count());
   if (service_key.Count() < 1) {
-    if (_serv_gen.getstatus() != "dead") resume _serv_gen;
-    /* stop iterating service generator */
-    ///_serv_gen = Gen.Service(10);
+    /* init new service generator */
+    if (_serv_gen == null) _serv_gen = Gen.Service(500);
+    else resume _serv_gen;    
   }
-  if (Bank.Balance() > 50000) this.Live = 1;
-  if (this.Live < 0) return;
-  
+  /* check to see if there are invalid vehicle order */
+  local vhc_list = AIVehicleList();
+  vhc_list.Valuate(AIOrder.GetOrderCount);
+  vhc_list.KeepBelowValue(1);
+  foreach (vhc, val in vhc_list) HandleVehicleLost(vhc);
+
+  if (this.Live < 0) {
+    if (Bank.Balance() > this.Factor) this.Live = 1;
+    else return;
+  }
+    
+  Bank.Get(null);
+  if (Bank.Balance() < this.Factor) return;
   /* make additional vehicle */
   AILog.Info("Check My Stations...");
-  Bank.Get(null);
-  if (Bank.Balance() < 10000);
   local gl = AIGroupList();
   for(local ID_g = gl.Begin(); gl.HasNext() ; ID_g = gl.Next()) {
-    local vl = AIVehicleList();
-    vl.Valuate(AIVehicle.GetGroupID);
-    vl.KeepValue(ID_g);
-    local vhcID = vl.Begin();
-    local ssta = null, depot = null, order_count = AIOrder.GetOrderCount(vhcID);
-    for (local cx = 0; (cx != order_count); cx++) {
-      local tile = AIOrder.GetOrderDestination(vhcID, cx);
-      local flag = AIOrder.GetOrderFlags(vhcID, cx) & AIOrder.AIOF_FULL_LOAD;
-      //AILog.Info("flag:" + cx + ":" + flag);
-      if (AIRoad.IsRoadStationTile(tile) &&  flag > 0) ssta = tile;
-      if (AIRoad.IsRoadDepotTile(tile)) depot = tile;
-    }
-    if (ssta == null || depot == null) {
+    local vhc_list = AIVehicleList();
+    vhc_list.Valuate(AIVehicle.GetGroupID);
+    vhc_list.KeepValue(ID_g);
+    local vhcID = vhc_list.Begin();
+    local ssta = AIOrder.GetOrderDestination(vhcID, 0);
+    local depot = AIOrder.GetOrderDestination(vhcID, 3);    
+    
+    if (!AIRoad.IsRoadStationTile(ssta)  || !AIRoad.IsRoadDepotTile(depot)) {
       AILog.Warning("Vehicle has no station/depot order!");
       HandleUnprofitable(vhcID);
       continue;
@@ -168,12 +174,16 @@ function CompanyManager::Evaluate()
     //AILog.Info("Check cargo " + AICargo.GetCargoLabel(cargo));
     local staname = AIStation.GetName(ssta_ID);
     AILog.Info("Waiting at " + staname + "=" + AIStation.GetCargoWaiting(ssta_ID, cargo));
-    if (AIStation.GetCargoWaiting(ssta_ID, cargo) > 100) {
-      if (AIVehicleList_Station(ssta_ID).Count() > 30) continue;
-      StartClonedVehicle(vhcID, depot, 2);
-      ErrMessage("Extending vehicle");
+    if (AIStation.GetCargoWaiting(ssta_ID, cargo) > 50) {
+      if (AIVehicleList_Station(ssta_ID).Count() > 60) continue;
+      if (MsgResult("Extra vehicle =", StartClonedVehicle(vhcID, depot, 1)) > 0) {
+        /* if it getting old */
+        vhc_list.Valuate(AIVehicle.GetAge);
+        vhc_list.KeepAboveValue(730);
+        HandleUnprofitable(vhc_list.Begin());
+      }
     }
-  }
+  }  
 }
 
 
@@ -314,8 +324,8 @@ function CompanyManager::Service()
   AILog.Info("Do a service");
   local serv = null;
   Bank.Get(serv);
-  while (this.service_key.Count() > 0) {
-    if (Bank.Balance() < 10000) break;
+  while (this.service_key.Count() > 0 && serv == null) {
+    if (Bank.Balance() < this.Factor) break;
     local id = this.service_key.Pop();
     serv = (this.service_table.rawin(id)) ? this.service_table.rawget(id) : null;
     if (serv != null && !serv.Info.Serviced) {
@@ -325,27 +335,59 @@ function CompanyManager::Service()
       local executor = (serv.Info.VehicleType == AIVehicle.VT_ROAD) ? this.Builder.Road : this.Builder.Rail;
       AISign.BuildSign(serv.Info.SourcePos,"Source");
       AISign.BuildSign(serv.Info.DestinationPos,"Dest");
-      local trial = AITestMode();
+      local service_cost = 0;
+      
       AILog.Warning("Test Mode");
+      Builder.State.TestMode = true;
       if (executor.Vehicle(serv) == -1) break;
-      //if (!executor.Station(serv, true)) break;
-      //if (!executor.Station(serv, false)) break;
-
-      local really = AIExecMode();
-      AILog.Warning("Real Mode");
-      executor.Path(serv, 1);
-      local cost = AIAccounting();
-      if (!executor.Track(serv, 1, false)) break;
-      /* don't continue if I've not enough money */
-      if (!Bank.Get(max((cost.GetCosts() * 1.5).tointeger(), 10000))) break;
+      service_cost += Builder.State.LastCost * 2;
+      //Builder.State.TestMode = false;  
+      if (!executor.Station(serv, true)) break;
+      service_cost += Builder.State.LastCost;
+      if (!executor.Station(serv, false)) break;
+      service_cost += Builder.State.LastCost;
+      if (!executor.Depot(serv, true)) break;
+      service_cost += Builder.State.LastCost;
+      if (!executor.Depot(serv, false)) break;
+      service_cost += Builder.State.LastCost;
+      executor.Path(serv, 1, true);
       if (!executor.Track(serv, 1)) break;
+      service_cost += Builder.State.LastCost;
+      executor.Path(serv, 2, true);
+      if (!executor.Track(serv, 2)) break;
+      service_cost += Builder.State.LastCost;
+      executor.Path(serv, 3, true);
+      if (!executor.Track(serv, 3)) break;
+      service_cost += Builder.State.LastCost;
+      
+      /* don't continue if I've not enough money */
+      if (!Bank.Get(service_cost * 1.3)) break;
+      
+      AILog.Warning("Real Mode");
+      Builder.State.TestMode = false;     
+      //if (!executor.Track(serv, 1)) break;
       if (!executor.Station(serv, true)) break;
       if (!executor.Station(serv, false)) break;
-      if (!executor.Depot(serv)) break;
-      executor.Path(serv, 2);
-      if (!executor.Track(serv, 2)) break;
-      executor.Path(serv, 3);
-      if (!executor.Track(serv, 3)) break;
+      if (!executor.Depot(serv, true)) break;
+      if (!executor.Depot(serv, false)) break;
+      
+      if (!executor.Track(serv, 1)) {
+        serv.Info.Path1 = false;
+        executor.Path(serv, 1, true);
+        if (!executor.Track(serv, 1)) break;
+      }
+      
+      if (!executor.Track(serv, 2)) {
+        serv.Info.Path2 = false;
+        executor.Path(serv, 2, true);
+        if (!executor.Track(serv, 2)) break;
+      }
+      
+      if (!executor.Track(serv, 3)) {
+        serv.Info.Path3 = false;
+        executor.Path(serv, 3, true);
+        if (!executor.Track(serv, 3)) break;
+      }
 
       // I'm sad to break after going so far
       if (executor.Vehicle(serv) < 1) break;
@@ -353,7 +395,7 @@ function CompanyManager::Service()
       local grp = AIVehicle.GetGroupID(serv.Info.MainVhcID);
       if (!AIGroup.IsValidGroup(grp)) {
         grp = AIGroup.CreateGroup(serv.Info.VehicleType);
-        local g_name = serv.Info.CargoStr + ":::" + serv.Info.CurrentID;
+        local g_name = serv.Info.CurrentID;
         AIGroup.SetName(grp, g_name);
       }
       AIGroup.MoveVehicle(grp, serv.Info.MainVhcID);
@@ -399,6 +441,7 @@ function CompanyManager::GatherSubsidy()
       subs_service.Info.DestinationIsTown = AISubsidy.DestinationIsTown(i);
       AILog.Info(subs_service.Update());
       if ((AIMap.DistanceManhattan(subs_service.Info.SourcePos, subs_service.Info.DestinationPos)) < 5) continue;
+      subs_service.Info.Is_Subsidy = true;
       this.service_key.Insert(subs_service.Info.CurrentID, d - 29);
       this.service_table[subs_service.Info.CurrentID] <- subs_service;
     }
@@ -409,10 +452,10 @@ function CompanyManager::GatherSubsidy()
 function CompanyManager::Test() 
 {
 	//do some test stuff here;
+	
 }
 
 function CompanyManager::SleepTime() 
 {
-	return max((100000 / Bank.Balance()).tointeger(), 10);
+  return 100;
 }
-

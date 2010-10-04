@@ -153,7 +153,7 @@ class Tile
   * 
   * name: IsMine
   * @param tile 'tile to check 
-  * @return true if "tile" is mine
+  * @return true if "tile" is mine and it's not a road
   */
 	static function IsMine(tile);
 	
@@ -187,6 +187,21 @@ class Tile
   * @return Flat Tile List
   */
 	static function Flat(tiles);
+	
+/**
+* Check if I can demolish a Tile using test mode
+* @param tile to demolish
+* @return true if can demolish that tile
+*/
+static function CanDemolish(tile);
+
+
+/**
+* Get Ignorance tile while path finding
+* @param none
+* @return AITileList()
+*/
+static function ToIgnore();
 }
 
 function Tile::N_Of(tile, num = 1) 
@@ -245,6 +260,7 @@ function Tile::Radius(tile, rad_X, rad_Y = null)
 	area.AddList(Tile.Radius_N(tile, -rad_X, rad_Y));
 	area.AddList(Tile.Radius_W(tile, rad_X, rad_Y));
 	area.AddList(Tile.Radius_W(tile, -rad_X, rad_Y));
+	area.Sort(AIAbstractList.SORT_BY_ITEM, true);
 	return area;
 }
 
@@ -273,7 +289,7 @@ function Tile::Validated(tiles)
 
 function Tile::IsMine(tile)
 {
-	return  AICompany.IsMine(AITile.GetOwner(tile));
+	return  AICompany.IsMine(AITile.GetOwner(tile)) && !AIRoad.IsRoadTile(tile);
 }
 
 function Tile::Buildable(tiles, yes = 1)
@@ -346,14 +362,14 @@ function Tile::RailDepot(base)
 function Tile::GoodSource(tiles, cargoID)
 {
 	tiles.Valuate(AITile.GetCargoProduction,cargoID,1,1,RoadStationRadius(RoadStationOf(cargoID)));
-	tiles.KeepAboveValue(5);
+	tiles.KeepAboveValue(8);
   return tiles;
 }
 
 function Tile::GoodAccept(tiles, cargoID)
 {
 	tiles.Valuate(AITile.GetCargoAcceptance,cargoID,1,1,RoadStationRadius(RoadStationOf(cargoID)));
-	tiles.KeepAboveValue(5);
+	tiles.KeepAboveValue(8);
 	return tiles;
 }
 
@@ -361,3 +377,16 @@ function Tile::IsStraight(tile1, tile2) return (Tile.IsStraightX(tile1,tile2) ||
 function Tile::IsStraightX(tile1, tile2) return AIMap.GetTileX(tile1) == AIMap.GetTileX(tile2);
 function Tile::IsStraightY(tile1, tile2) return AIMap.GetTileY(tile1) == AIMap.GetTileY(tile2);
 
+function Tile::CanDemolish(tile)
+{
+  local at = AITestMode();
+  return AITile.DemolishTile(tile);
+}
+
+function Tile::ToIgnore()
+{
+  local b = Tile.WholeMap();
+  local c = Tile.Buildable(b, 0);
+  local r = Tile.Roads(c, 0);
+  return r;
+}

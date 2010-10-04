@@ -1,5 +1,5 @@
 /**
- *      09.02.01
+ *			09.02.01
  *      info.nut
  *      
  *      Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
@@ -25,7 +25,7 @@ class FanAI extends AIInfo {
 	function GetName()        { return "FanAI"; }
 	function GetShortName()   { return "FNAI"; }
 	function GetDescription() { return "FanAI is an AI that want to be a Tycoon too ;-)"; }
-	function GetVersion()     { return 90312 }
+	function GetVersion()     { return 90318 }
 	function CanLoadFromVersion(version)	{return version <= 90201;}
 	function GetDate()        { return "2009-02-1"; }
 	function CreateInstance() { return "FanAI"; }

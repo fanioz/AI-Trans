@@ -112,26 +112,30 @@ function HandleClosingIndustry(id)
   //todo : handle it !
 }
 // =======================================
-function StartClonedVehicle(VhcID,DepotX,number) {
+function StartClonedVehicle(VhcID, DepotX, number) {
 // =======================================
-//if (!AIVehicle.IsValidVehicle(VhcID)) ErrMessage("Invalid VHC");
-//if (!AIRoad.IsRoadDepotTile(DepotX)) ErrMessage("Invalid Depot");
+  local built = 0;
+  AILog.Info("Try clone " + number + " Vehicle");
 	for (local x = 0; x < number; x++) {
-		AIVehicle.StartStopVehicle(AIVehicle.CloneVehicle (DepotX, VhcID, true));
+		if (AIVehicle.StartStopVehicle(AIVehicle.CloneVehicle (DepotX, VhcID, true))) built++;
 	}
+	return built;
 }
 // =======================================
 function UpgradeVehicleEngine(engine_id_new) {
-	ErrMessage("Try Upgrading Vehicle");
+	AILog.Info("Try Upgrading Vehicle");
 	local gl = AIGroupList();
   for(local ID_g = gl.Begin(); gl.HasNext() ; ID_g = gl.Next()) {
     local vl = AIVehicleList();
     vl.Valuate(AIVehicle.GetGroupID);
     vl.KeepValue(ID_g);
     local engine_id_old = AIVehicle.GetEngineType(vl.Begin());
-    if (AIEngine.GetCargoType(engine_id_new) == AIEngine.GetCargoType(engine_id_old))
+    if ((AIEngine.GetCargoType(engine_id_new) == AIEngine.GetCargoType(engine_id_old)) &&
+      (AIEngine.GetVehicleType(engine_id_new) == AIEngine.GetVehicleType(engine_id_old))) {
       AIGroup.SetAutoReplace(ID_g,	engine_id_old,	engine_id_new	);
       /* it slightly hard to replace also using .EngineCanRefitCargo without table*/
+      ErrMessage("Upgrading " + AIEngine.GetName(engine_id_old) + " to " + AIEngine.GetName(engine_id_new));
+    }
   }
 }
 // =======================================
@@ -150,10 +154,9 @@ function ErrMessage(msg) {
 // usage :
 // done = MsgResult("Build x", AIBuild.X);
 // evaluate exp, display msg, optionally detect err
-function MsgResult(msg, exp, detect = false)
+function MsgResult(msg, exp)
 {
-  local msgX = detect ? AIError.GetLastErrorString().slice(4) : "";
-  AILog.Info(msgX + " " + msg + "->" + exp);
+  ErrMessage("" + msg + "->" + exp);
   return exp;
 }
 // ===================================
@@ -385,9 +388,10 @@ function Rail(path) {
 */
 function HandleVehicleLost(vhc_ID)
 {
+  AIController.Sleep(10);
   AIOrder.UnshareOrders(vhc_ID);
-  while (AIOrder.GetOrderCount(vhc_ID) > 0) AIOrder.RemoveOrder(vhc_ID, 0);
-  local retry = 5;
+  while (AIOrder.GetOrderCount(vhc_ID) > 1) AIOrder.RemoveOrder(vhc_ID, 0);
+  local retry = 10;
 	while (!AIVehicle.SendVehicleToDepot(vhc_ID) && retry > 0) {
     AIController.Sleep(retry * 10);
     ErrMessage("Sending vehicle to depot");
@@ -399,17 +403,18 @@ function HandleVehicleLost(vhc_ID)
 /**
 * Handle Un profitable vehicle
 *
+* @param vhc_ID The ID of vehicle to handle
 */
 function HandleUnprofitable(vhc_ID)
 {
-  if (AIVehicle.GetProfitLastYear(vhc_ID) > 0) return false;
-  if (AIVehicle.GetProfitThisYear(vhc_ID) > 0) return false;
+  //if (AIVehicle.GetProfitLastYear(vhc_ID) > 0) return false;
+  //if (AIVehicle.GetProfitThisYear(vhc_ID) > 0) return false;
   AILog.Info("It would be better if I sell " + vhc_ID + " anyway");
   /* But, I only delete your source station only and mark you as a loss vehicle :) */
   AIOrder.UnshareOrders(vhc_ID);
-  /* AIOrder.SkipOrder(not available) */
+  /* AIOrder.SkipOrder(now available) */
   AIController.Sleep(10);
-	if (AIOrder.GetOrderCount (vhc_ID) > 2 ) AIOrder.RemoveOrder(vhc_ID, 0);
+	if (AIOrder.ResolveOrderPosition(vhc_ID, AIOrder.ORDER_CURRENT) < 2) AIOrder.SkipToOrder(vhc_ID, 2);
   if (AIVehicle.GetCargoLoad(vhc_ID, VehicleCargo(vhc_ID)) == 0) HandleVehicleLost(vhc_ID);
 } 	
 /**
@@ -421,3 +426,30 @@ function VehicleCargo(vhc_ID)
 {
  return AIEngine.GetCargoType(AIVehicle.GetEngineType(vhc_ID));
 }
+
+/**
+* Lead a number with zero
+* this will solve problem of '09' that displayed '9' only
+* @param integer_number to convert
+* @return number in string
+* @note only for number below 10
+*/
+function LeadZero(integer_number)
+{
+  if (integer_number > 9) return integer_number.tostring();
+  return "0" + integer_number.tostring();
+}
+
+/**
+* Hex to Decimal converter
+* @param Hex_number in string to convert
+* @return  number in integer
+* @note max number is 255 or FF
+*/
+function HexToDec(Hex_number)
+{
+  if (Hex_number.length() > 2) return 0;
+  local aSet = "0123456789ABCDEF";
+  return aSet.find(Hex_number.slice(0,1)).tointeger() * 16 + aSet.find(Hex_number.slice(1,2)).tointeger();
+}
+

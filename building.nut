@@ -81,18 +81,12 @@ function BuildingHandler::HeadQuarter()
 	loc.Valuate(AITile.IsBuildableRectangle,3,3);
 	loc.RemoveValue(0);
 	local location = loc.Begin();
-	local t = AITestMode();
-	local c = AIAccounting();
-  AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
-	AIRoad.BuildRoad(location, Tile.SE_Of(location));
 	AIController.Sleep(1);
-	this._lastCost = c.GetCosts();
-	c = null;
-	local xt = AIExecMode();
 	while (!AICompany.BuildCompanyHQ (location) && loc.HasNext()) {
 		AIController.Sleep(10);
 		location = loc.Next();
 	}
+	this._lastCost = this._costHandler.GetCosts();
 }
 
 function BuildingHandler::ClearSigns()
@@ -176,97 +170,96 @@ class BuildingHandler.road {
 
 function BuildingHandler::road::_depot(body, head)
 {
-  if (!AITile.IsBuildable(body)) AITile.DemolishTile(body);
-  if (!Tile.IsMine(head) && !(AITile.IsBuildable(head) || AIRoad.IsRoadTile(head))) AITile.DemolishTile(head);
-  AIRoad.BuildRoad(head, body);
-  if (!AIRoad.BuildRoadDepot(body, head)) ErrMessage("can't build");
-  /* problem here with AITestMode() */
-  return (AIRoad.AreRoadTilesConnected(head, body) && AIRoad.IsRoadDepotTile(body));
+  AISign.BuildSign(body,"b");
+  if (Tile.IsMine(body) || Tile.IsMine(head)) return false;
+  if (!(AITile.IsBuildable(body) || AITile.DemolishTile(body))) return false;
+  //if (! && !(AITile.IsBuildable(head) || AITile.DemolishTile(head))) return false;
+  if (!AIRoad.AreRoadTilesConnected(head, body) && !AIRoad.BuildRoad(head, body)) return false;
+  /* no problem again here with AITestMode() */
+  return (AIRoad.IsRoadDepotTile(body) || AIRoad.BuildRoadDepot(body, head));
 }
 
-function BuildingHandler::road::Depot(service)
+function BuildingHandler::road::Depot(service, is_source)
 {
-  //AILog.Info("Build Depot");
-  local rad = 1;
-  local built_s = Tile.RoadDepot(service.Info.SourcePos);
+  AILog.Info("Build Depot");
+  local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
+  local money_need = AIAccounting();
+  local built_s = Tile.RoadDepot(is_source ? service.Info.SourcePos : service.Info.DestinationPos);
+  local c_pos = PosClass();
   /* check if i've one */
   if (!built_s.IsEmpty()) {
     local dpt = built_s.Begin();
-    service.Info.Depot.Body = dpt;
-    service.Info.Depot.Head = AIRoad.GetRoadDepotFrontTile(dpt);
-    AILog.Info("Not need as I have one");
+    c_pos.Body = dpt;
+    c_pos.Head = AIRoad.GetRoadDepotFrontTile(dpt);
+    if (is_source) service.Info.SourceDepot = c_pos;
+    else service.Info.DestinationDepot = c_pos;
+    AILog.Info("Depot Not need as I have one");
     return true;
   }
   /* check if i've determined the position*/
-  if (AIMap.IsValidTile(service.Info.Depot.Body) && AIMap.IsValidTile(service.Info.Depot.Head)) {
-    if (this._depot(service.Info.Depot.Body, service.Info.Depot.Head)) return true;
+  c_pos = (is_source) ? service.Info.SourceDepot : service.Info.DestinationDepot;
+  if (AIMap.IsValidTile(c_pos.Body) && AIMap.IsValidTile(c_pos.Head)) {
+    if (this._depot(c_pos.Body, c_pos.Head)) return true;
   }
+  AILog.Info("Position Invalid, find a new good place");
   /* find a good place */
-	while (rad < 20) {
-    local Gpos = Gen.Pos(rad, service.Info.SourcePos, service.Info.SourceIsTown);
-	  local pos = null;
-	  local the_cost = AIAccounting();
-	  while (pos = resume Gpos) {
-	    if (Tile.IsMine(pos.Body)) continue;
-	    AIController.Sleep(1);
-	    //AISign.BuildSign(pos.Body,"b");
-			if (this._depot(pos.Body, pos.Head)) {
-			  service.Info.Depot = pos;
-			  ErrMessage("Road Depot at " + service.Info.SourceText);
-			  return true;
-			}
-			else {
-			  if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) {
-					local addmoney = 0;
-					local wait_time = AIVehicleList().Count() * 2 + 5;
-					AIController.Sleep(wait_time);
-					 do {
-					  if (this._depot(pos.Body, pos.Head)) {
-			        service.Info.Depot = pos;
-			        ErrMessage("Road Depot at " + service.Info.SourceText);
-              return true;
-            }
-					  if (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH) break;
-					  AIController.Sleep(wait_time);
-					} while (Bank.Get(addmoney += 10000));
-					//in case come here after break;
-					if (Bank.Get(addmoney += 10000)) return false;
-        }
-        if (AIError.GetLastError() == AIError.ERR_LOCAL_AUTHORITY_REFUSES) return false;
-			}
-			AIController.Sleep(1);
+  local name = (is_source) ? service.Info.SourceText : service.Info.DestinationText;
+  local Gpos = Gen.Pos(service, is_source, 3);
+	local the_cost = AIAccounting();
+	c_pos = null;
+	while (c_pos = resume Gpos) {
+	  //if (Tile.IsMine(pos.Body)) continue;
+    AIController.Sleep(1);
+	  //AISign.BuildSign(pos.Body,"b");
+		if (MsgResult("Build Depot at " + name, this._depot(c_pos.Body, c_pos.Head))) {
+		  if (is_source) service.Info.SourceDepot = c_pos;
+      else service.Info.DestinationDepot = c_pos;
+		  return true;
+		} else {
+      if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) {
+			  local addmoney = 0;
+			  local wait_time = AIVehicleList().Count() * 2 + 5;
+			  AIController.Sleep(wait_time);
+		    do {
+  		    if (MsgResult("Build Depot at " + name, this._depot(c_pos.Body, c_pos.Head))) {
+  		      if (is_source) service.Info.SourceDepot = c_pos;
+  		      else service.Info.DestinationDepot = c_pos;
+		        this._mother.State.LastCost = money_need.GetCosts();
+            return true;
+          }
+          if (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH) break;
+          AIController.Sleep(wait_time);
+        } while (Bank.Get(addmoney += this._mother.Factor));
+				//in case come here after break;
+				if (Bank.Get(addmoney)) return false;
+      }
     }
-	  ErrMessage("Road Depot at " + service.Info.SourceText);
-	  rad++;
+    AIController.Sleep(1);
 	}
   return false;
  }
 
 function BuildingHandler::road::_station(body, head, tipe, id)
 {
-  if (!AITile.IsBuildable(body)) {
-    if (!AITile.DemolishTile(body)) return false;
-  }
-  if (!(AITile.IsBuildable(head) || AIRoad.IsRoadTile(head)) && !Tile.IsMine(head)) {
-    if (!AITile.DemolishTile(head)) return false;
-  }
-  AIRoad.BuildRoad(head, body);
-  AIRoad.BuildRoadStation(body, head, tipe, AIStation.STATION_JOIN_ADJACENT || id);
-  /* problem here with AITestMode() */
-  return (AIRoad.AreRoadTilesConnected(head, body) && AIRoad.IsRoadStationTile(body));
+  AISign.BuildSign(body,"b");
+  if (Tile.IsMine(body) || Tile.IsMine(head)) return false;
+  if (!(AITile.IsBuildable(body) || AITile.DemolishTile(body))) return false;
+  if (!AIRoad.AreRoadTilesConnected(head, body) && !AIRoad.BuildRoad(head, body)) return false;
+  /* no problem again here with AITestMode() */
+  return (AIRoad.IsRoadStationTile(body) || AIRoad.BuildRoadStation(body, head, tipe, AIStation.STATION_JOIN_ADJACENT || id));
 }
 
 function BuildingHandler::road::Station(service, is_source)
 {
-  //AILog.Info("Build Station");
-  local rad = 1;
+  AILog.Info("Build Station");
+  local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
+  local money_need = AIAccounting();
   local c_pos = PosClass();
-  local built_s = (is_source) ? MyStationTile(service.Info.SourcePos) : MyStationTile(service.Info.DestinationPos)
+  local built_s = MyStationTile(is_source ? service.Info.SourcePos : service.Info.DestinationPos);
   /* check if i've one */
   for (local pos = built_s.Begin(); built_s.HasNext(); pos = built_s.Next()) {
-    if (!AIStation.HasRoadType(c_pos.ID, AIRoad.ROADTYPE_ROAD)) continue;
     c_pos.ID = AIStation.GetStationID(pos);
-    c_pos.ID = AIStation.IsValidStation(c_pos.ID) ? c_pos.ID : 0;
+    if (!AIStation.HasRoadType(c_pos.ID, AIRoad.ROADTYPE_ROAD)) continue;
     local prod_accept = (is_source) ?
       AITile.GetCargoProduction(pos, service.Info.CargoID, 1, 1, RoadStationRadius(RoadStationOf(service.Info.CargoID))) :
       AITile.GetCargoAcceptance(pos, service.Info.CargoID, 1, 1, RoadStationRadius(RoadStationOf(service.Info.CargoID))) ;
@@ -278,109 +271,121 @@ function BuildingHandler::road::Station(service, is_source)
     c_pos.Head = AIRoad.GetRoadStationFrontTile(c_pos.Body);
     if (is_source) service.Info.SourceStation = c_pos;
     else service.Info.DestinationStation = c_pos;
+    AILog.Info("I have empty station one");
+    this._mother.State.LastCost = money_need.GetCosts();
     return true;
   }
-  /* ceck if i've determined the position*/
+  /* check if i've determined the position*/
   c_pos = (is_source) ? service.Info.SourceStation : service.Info.DestinationStation;
   if (AIMap.IsValidTile(c_pos.Body) && AIMap.IsValidTile(c_pos.Head)) {
     if (this._station(c_pos.Body, c_pos.Head, RoadStationOf(service.Info.CargoID), c_pos.ID)) return true;
   }
+  AILog.Info("Position Invalid, find a new good place");
   /* find a good place */
   local name = (is_source) ? service.Info.SourceText : service.Info.DestinationText;
-	while (rad < 20) {
-	  local Gpos = Gen.Pos(rad,
-      (is_source) ? service.Info.SourcePos : service.Info.DestinationPos,
-      (is_source) ? service.Info.SourceIsTown : service.Info.DestinationIsTown );
-	  local pos = null;
-	  while (pos = resume Gpos) {
-      if (Tile.IsMine(pos.Body)) continue;
-      local prod_accept = (is_source) ?
-        AITile.GetCargoProduction(pos.Body, service.Info.CargoID, 1, 1, RoadStationRadius(RoadStationOf(service.Info.CargoID))) :
-        AITile.GetCargoAcceptance(pos.Body, service.Info.CargoID, 1, 1, RoadStationRadius(RoadStationOf(service.Info.CargoID))) ;
-      if (prod_accept < 5) continue;
-			if (this._station(pos.Body, pos.Head, RoadStationOf(service.Info.CargoID), c_pos.ID)) {
-        pos.ID = AIStation.GetStationID(pos.Body);
-        if (is_source) service.Info.SourceStation = pos;
-        else service.Info.DestinationStation = pos;
-			  return true;
-			}
-			else {
-			  if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) {
-					local addmoney = 0;
-					local pos_income = AIVehicleList().Count();
-					local wait_time =  pos_income * 2 + 5;
+  local Gpos = Gen.Pos(service, is_source, 1);
+	local pos = null;
+	while (pos = resume Gpos) {
+    //if (Tile.IsMine(pos.Body)) continue;
+    local prod_accept = (is_source) ?
+      AITile.GetCargoProduction(pos.Body, service.Info.CargoID, 1, 1, RoadStationRadius(RoadStationOf(service.Info.CargoID))) :
+      AITile.GetCargoAcceptance(pos.Body, service.Info.CargoID, 1, 1, RoadStationRadius(RoadStationOf(service.Info.CargoID))) ;
+    if (prod_accept < 8) continue;
+	  if (MsgResult("Road Station at " + name, this._station(pos.Body, pos.Head, RoadStationOf(service.Info.CargoID), c_pos.ID))) {
+      pos.ID = AIStation.GetStationID(pos.Body);
+      if (is_source) service.Info.SourceStation = pos;
+      else service.Info.DestinationStation = pos;
+      this._mother.State.LastCost = money_need.GetCosts();
+		  return true;
+    } else {
+			if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) {
+			  local addmoney = 0;
+				local pos_income = AIVehicleList().Count();
+				local wait_time =  pos_income * 2 + 5;
+				AIController.Sleep(wait_time);
+				do {
+				  if (MsgResult("Road Station at " + name, this._station(pos.Body, pos.Head, RoadStationOf(service.Info.CargoID), c_pos.ID))) {
+            pos.ID = AIStation.GetStationID(pos.Body);
+            if (is_source) service.Info.SourceStation = pos;
+            else service.Info.DestinationStation = pos;
+            this._mother.State.LastCost = money_need.GetCosts();
+			      return true;
+				  }
+					if (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH) break;
 					AIController.Sleep(wait_time);
-					 do {
-					  if (this._station(pos.Body, pos.Head, RoadStationOf(service.Info.CargoID), c_pos.ID)) {
-              pos.ID = AIStation.GetStationID(pos.Body);
-              if (is_source) service.Info.SourceStation = pos;
-              else service.Info.DestinationStation = pos;
-			        return true;
-					  }
-					  if (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH) break;
-					  AIController.Sleep(wait_time);
-					} while (Bank.Get(addmoney += 10000) && pos_income > 1);
-					//in case come here after break;
-					if (Bank.Get(addmoney += 10000)) return false;
-        }
-			}
-			AIController.Sleep(1);
+        } while (Bank.Get(addmoney += this._mother.Factor) && pos_income > 1);
+				//in case come here after break;
+				if (!Bank.Get(addmoney)) return false;
+      }
     }
-	  ErrMessage("Road Station at " + name);
-	  rad++;
+		AIController.Sleep(1);
 	}
   return false;
 }
 
-function BuildingHandler::road::Path(service, number, is_finding = true)
+function BuildingHandler::road::Path(service, number, is_finding = false)
 {
-  local txt = (is_finding) ? "Finding" : "Checking" ;
-  AILog.Info("Path " + txt);
+  local txt = (is_finding) ? "Finding:" : "Checking:" ;
+  AILog.Info("Path " + txt + number);
 
   AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
 
-  //if (path != null && path != false) return true;
-  local _from = [];
-  local _to = [];
+  
+  local _from = -1;
+  local _to = -1;
   local Finder = null;
   local distance = 0;
   local result = false;
   local path = false;
+  local ignored_tiles = AITileList();
+  if (is_finding) {
+    //ignored_tiles = Tile.ToIgnore();
+    ignored_tiles.AddTile(service.Info.SourceStation.Body);
+    ignored_tiles.AddTile(service.Info.DestinationStation.Body);
+    ignored_tiles.AddTile(service.Info.SourceDepot.Body);
+    ignored_tiles.AddTile(service.Info.DestinationDepot.Body);
+  }
 
   switch (number) {
     case 1:
-    _from.push((service.Info.SourceIsTown) ? service.Info.SourcePos : Tile.N_Of(service.Info.SourcePos));
-    _to.push((service.Info.DestinationIsTown) ? service.Info.DestinationPos : Tile.N_Of(service.Info.DestinationPos));
+    _from = service.Info.SourceStation.Head;
+    _to = service.Info.DestinationStation.Head;
+    if (is_finding) path = service.Info.Path1;
     break;
     case 2:
-    _from.push(service.Info.SourceStation.Head);
-    _to.push(service.Info.DestinationStation.Head);
+    _from = service.Info.DestinationDepot.Head;
+    _to = service.Info.DestinationStation.Head;
+    if (is_finding) path = service.Info.Path2;
     break;
     case 3:
-    _from.push(service.Info.Depot.Head);
-    _to.push(service.Info.SourceStation.Head);
+    _from = service.Info.SourceDepot.Head;
+    _to = service.Info.SourceStation.Head;
+    if (is_finding) path = service.Info.Path3;    
   }
-
-  distance = AIMap.DistanceManhattan(_from[0], _to[0]) + 1;
-  local prior = Binary_Heap();
+  
+  if (!MsgResult("Valid From", AIMap.IsValidTile(_from))) return false;
+  if (!MsgResult("Valid To", AIMap.IsValidTile(_to))) return false;
+  if (path != null && path != false) return true;
+  distance = 1 + AIMap.DistanceManhattan(_from, _to);
+  //local prior = Binary_Heap();
   //for (local t = 0; t < 2; t++) {
   Finder = Road();
   local tile_cost = Finder.cost.tile;
   //Finder.cost.max_cost = distance * tile_cost * 10;
   /* check if find existing road first */
-  Finder.cost.no_existing_road = (is_finding) ? tile_cost * number : Finder.cost.max_cost;
-  Finder.cost.tile = 0.2 * tile_cost;
-  Finder.cost.turn = 3 * tile_cost;
-	Finder.cost.slope = 2 * tile_cost;
-  Finder.cost.bridge_per_tile = 6 * tile_cost;
-	Finder.cost.tunnel_per_tile = 10 * tile_cost;
-  Finder.cost.coast = 4 * tile_cost;
-	Finder.cost.crossing = 12 * tile_cost;
+  Finder.cost.no_existing_road = is_finding ? tile_cost * number : Finder.cost.max_cost;
+  //Finder.cost.tile = 0.2 * tile_cost;
+  //Finder.cost.turn = 3 * tile_cost;
+	//Finder.cost.slope = 2 * tile_cost;
+  //Finder.cost.bridge_per_tile = 6 * tile_cost;
+	//Finder.cost.tunnel_per_tile = 10 * tile_cost;
+  //Finder.cost.coast = 4 * tile_cost;
+	//Finder.cost.crossing = 12 * tile_cost;
   //Finder.cost.NonFreeTile = 5 * tile_cost; //custom cost huh?
-  //Finder.cost.allow_demolition = still get conflict huh ?
-	Finder.cost.demolition = 12 * tile_cost;
-	Finder.cost.estimate_multiplier = 6;
-  Finder.InitializePath(_from, _to, 3.5 - number, 20);
+  //Finder.cost.allow_demolition = true;
+	//Finder.cost.demolition = 12 * tile_cost;
+	Finder.cost.estimate_multiplier = service.Info.Is_Subsidy ? 2 : 1.2 ;
+  Finder.InitializePath([_from], [_to], 3.5 - number, 20, ignored_tiles);
 
     local c = 1;
     while (path == false && c++ < 120) {
@@ -406,10 +411,11 @@ function BuildingHandler::road::Path(service, number, is_finding = true)
 	return result;
 }
 
-function BuildingHandler::road::Track(service, number, real_job = true)
+function BuildingHandler::road::Track(service, number)
 {
-  local test_job = (real_job) ? AIExecMode() : AITestMode() ;
-  local txt = (real_job) ? "(Real)" : "(Test)";
+  local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
+  local money_need = AIAccounting();
+  local txt = (this._mother.State.TestMode) ? "(Test)" :"(Real)" ;
   local path = null;
   switch (number) {
     case 1:	path = service.Info.Path1; break;
@@ -443,7 +449,7 @@ function BuildingHandler::road::Track(service, number, real_job = true)
 						  local addmoney = 0;
 						  local pos_income = AIVehicleList().Count();
 						  local wait_time = pos_income * 2 + 5;
-						  while (Bank.Get(addmoney += 1000) && pos_income > 1) {
+						  while (Bank.Get(addmoney += this._mother.Factor / 10) && pos_income > 1) {
 							  AIController.Sleep(wait_time);
 							  AIRoad.BuildRoad(path.GetTile(), parn.GetTile());
 							  ErrMessage("Retry build road");
@@ -458,53 +464,62 @@ function BuildingHandler::road::Track(service, number, real_job = true)
 				}
 			}
 			else {
-				if (!AIBridge.IsBridgeTile(path.GetTile()) && !AITunnel.IsTunnelTile(path.GetTile())) {
-					/* If it was a road tile, demolish it first. Do this to work around expended roadbits. */
-					if (AIRoad.IsRoadTile(path.GetTile())) AITile.DemolishTile(path.GetTile());
-					if (AITunnel.GetOtherTunnelEnd(path.GetTile()) == parn.GetTile()) {
-						AILog.Info("Build a road tunnel");
-						if (!AITunnel.BuildTunnel(AIVehicle.VT_ROAD, path.GetTile())) {
-							/* An error occured while building a tunnel. TODO: handle it. */
-						}
-					}
-					else {
-						local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1);
-						bridge_list.Valuate(AIBridge.GetMaxSpeed);
-						bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
-						AILog.Info("build a pieces of a bridge");
-						if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), path.GetTile(), parn.GetTile())) {
-							/* An error occured while building a bridge. TODO: handle it. */
-							switch (AIError.GetLastError()) {
-							case AIError.ERR_NOT_ENOUGH_CASH:
-							  while (bridge_list.HasNext()) {
-							    local bridge = bridge_list.Next();
-							    if (!Bank.Get(AIBridge.GetPrice(bridge, AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1))) continue;
-							    if (AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge, path.GetTile(), parn.GetTile())) break;
-							  }
-							  break;
-							default:
-								ErrMessage("Unhandled error ");
-								break;
-							}
-						}
-					}
-				}
-			}
+			  if (!AIRoad.BuildRoadFull(path.GetTile(), parn.GetTile())) {
+			    if (!AIBridge.IsBridgeTile(path.GetTile()) && !AITunnel.IsTunnelTile(path.GetTile())) {
+					  /* If it was a road tile, demolish it first. Do this to work around expended roadbits. */
+					  if (AIRoad.IsRoadTile(path.GetTile())) AITile.DemolishTile(path.GetTile());
+					  if (AITunnel.GetOtherTunnelEnd(path.GetTile()) == parn.GetTile()) {
+  						AILog.Info("Build a road tunnel");
+	  					if (!AITunnel.BuildTunnel(AIVehicle.VT_ROAD, path.GetTile())) {
+		  					/* An error occured while building a tunnel. TODO: handle it. */
+			  			}
+				  	} else {
+					  	local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1);
+						  bridge_list.Valuate(AIBridge.GetMaxSpeed);
+  						bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
+	  					AILog.Info("build a pieces of a bridge");
+		  				if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), path.GetTile(), parn.GetTile())) {
+			  				/* An error occured while building a bridge. TODO: handle it. */
+				  			switch (AIError.GetLastError()) {
+					  		case AIError.ERR_NOT_ENOUGH_CASH:
+						  	  while (bridge_list.HasNext()) {
+							      local bridge = bridge_list.Next();
+							      if (!Bank.Get(AIBridge.GetPrice(bridge, AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1))) continue;
+							      if (AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge, path.GetTile(), parn.GetTile())) break;
+							    }
+							    break;
+							  default:
+  								ErrMessage("Unhandled error ");
+	  							break;
+		  					}
+			  			}
+				  	}
+				  }
+			  }
+		  }
 		}
-		path = parn;
-	}
-	/* check existing road first */
-	local r = (real_job) ? this.Path(service, number, false) : (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH);
-	AILog.Info("Tracking:" + r +" " + txt);
-	return r;
+  path = parn;
+  }
+  /* check existing road first */
+  this._mother.State.LastCost = money_need.GetCosts();
+  local r = this._mother.State.TestMode ? 
+ 	  (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH) : this.Path(service, number, false) ;
+  AILog.Info("Tracking:" + r +" " + txt);
+  return r;
 }
+
 function BuildingHandler::road::Vehicle(service)
 {
+  local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
+  local money_need = AIAccounting();
   AILog.Info("Build Vehicle");
   local available = -1;
   if (AIVehicle.IsValidVehicle(service.Info.MainVhcID)) {
-    StartClonedVehicle(service.Info.MainVhcID, service.Info.Depot.Body, 5);
-    ErrMessage("Made a Cloning");
+    local number = service.Info.SourceIsTown ? AITown.GetMaxProduction(service.Info.SourceID, service.Info.CargoID) :
+      AIIndustry.GetLastMonthProduction(service.Info.SourceID, service.Info.CargoID);
+    number = (number / AIVehicle.GetCapacity(service.Info.MainVhcID, service.Info.CargoID)).tointeger();
+    StartClonedVehicle(service.Info.MainVhcID, service.Info.SourceDepot.Body, number);
+    this._mother.State.LastCost = money_need.GetCosts();
     return 1;
   }
   else {
@@ -513,19 +528,20 @@ function BuildingHandler::road::Vehicle(service)
     for(local ID_eng = _engines.Begin(); _engines.HasNext() ; ID_eng = _engines.Next()) {
       if (AIEngine.GetCargoType(ID_eng) == service.Info.CargoID) {
         available = 0;
-        myVhc = AIVehicle.BuildVehicle(service.Info.Depot.Body, ID_eng);
+        myVhc = AIVehicle.BuildVehicle(service.Info.SourceDepot.Body, ID_eng);
         ErrMessage("Vehicle = " + AIEngine.GetName(ID_eng));
       }
       else {
         if (AIEngine.CanRefitCargo(ID_eng, service.Info.CargoID)) {
           available = 0;
-          myVhc = AIVehicle.BuildVehicle(service.Info.Depot.Body, ID_eng);
+          myVhc = AIVehicle.BuildVehicle(service.Info.SourceDepot.Body, ID_eng);
           AIVehicle.RefitVehicle(myVhc, service.Info.CargoID);
           ErrMessage("Vehicle = " + AIEngine.GetName(ID_eng));
         }
         else continue;
       }
-      if (!AIOrder.AppendOrder(myVhc, service.Info.SourceStation.Body, AIOrder.AIOF_FULL_LOAD)) {
+      local load_num = service.Info.SourceIsTown ? 10 : 90;
+      if (!AIOrder.AppendOrder(myVhc, service.Info.SourceStation.Body, AIOrder.AIOF_NONE)) {
         ErrMessage("Vehicle = " + AIEngine.GetName(ID_eng));
         AIVehicle.SellVehicle(myVhc);
         continue;
@@ -535,13 +551,18 @@ function BuildingHandler::road::Vehicle(service)
         AIVehicle.SellVehicle(myVhc);
         continue;
       }
-      AIOrder.AppendOrder(myVhc, service.Info.Depot.Body, AIOrder.AIOF_NONE);
+      AIOrder.AppendOrder(myVhc, service.Info.SourceDepot.Body, AIOrder.AIOF_NONE);
       if (AIVehicle.IsValidVehicle(myVhc)) {
         service.Info.MainVhcID = myVhc;
+        AIOrder.InsertConditionalOrder(myVhc, 1, 0);
+        AIOrder.SetOrderCondition(myVhc, 1, AIOrder.OC_LOAD_PERCENTAGE);
+        AIOrder.SetOrderCompareFunction(myVhc, 1, AIOrder.CF_LESS_THAN);
+        AIOrder.SetOrderCompareValue(myVhc, 1, load_num);
         return 1;
       }
     }
     if (available == -1) AILog.Info("No Vehicle available");
+    this._mother.State.LastCost = money_need.GetCosts();
     return available;
   }
 }
@@ -603,6 +624,7 @@ function BuildingHandler::rail::Depot(service)
 	}
   return false;
  }
+ 
 function BuildingHandler::rail::Station(service, is_source)
 {
   AILog.Info("Build Station");
@@ -633,6 +655,7 @@ function BuildingHandler::rail::Station(service, is_source)
 	AILog.Info("Finished");
   return false;
 }
+
 function BuildingHandler::rail::Path(service, is_back)
 {
   AILog.Info("Build Path");
@@ -668,6 +691,7 @@ function BuildingHandler::rail::Path(service, is_back)
 	service.Info.Path = path;
   return (path == null || path == false);
 }
+
 function BuildingHandler::rail::Track(service, is_back)
 {
   AILog.Info("Build Track");
@@ -703,6 +727,7 @@ function BuildingHandler::rail::Track(service, is_back)
   }
   return false;
 }
+
 function BuildingHandler::rail::Vehicle(service)
 {
   AILog.Info("Build Vehicle");

@@ -77,20 +77,19 @@ function FanAI::Start()
 	this._manager.Born();
 	this._manager.Evaluate();
 	this._manager.Test();
-	this._manager.Service();
+	Bank.PayLoan();
 	/**
 	* ============ Main Loop ================
 	*/
 	local wait_time = GetTick();
 	while (this._manager.Live != 0){
 		Sleep(this._manager.SleepTime());
-		if (GetTick() - wait_time > 1000) {
+		this._manager.Events();
+		if (GetTick() - wait_time > 500) {
 		  wait_time = GetTick();
 			AILog.Info("============" + DateStr(AIDate.GetCurrentDate()) + "============");
 			this._manager.Evaluate();
-			this._manager.Events();
-      local s = AISubsidyList();
-			if (s.Count() > 0 || AIBase.Chance(1, 4)) this._manager.Service();
+			if (AISubsidyList().Count() > 0 || AIBase.Chance(1, 10)) this._manager.Service();
 			if ((AICompany.GetLoanAmount() > 0) && (Bank.Balance() > 10000)) Bank.PayLoan();
 		}
 	}
@@ -103,12 +102,14 @@ function FanAI::Start()
 function FanAI::Save() 
 {
 	AutoSave.Start_Date <- this._manager.StartDate;
-	AILog.Info("--- Save/Load unsupported yet ---");
+	AutoSave.serviced_route <- this._manager.serviced_route;
+	AILog.Info("--- Save/Load not needed yet ---");
 	return AutoSave;
 }
 
 function FanAI::Load(version, data)
 {
-	this._manager.StartDate = (data["Start_Date"]) ? data["Start_Date"] : 0;
+	this._manager.StartDate = data["Start_Date"] ? data["Start_Date"] : 0;
+	this._manager.serviced_route = data["serviced_route"] ? data["serviced_route"] : {};
 	ErrMessage("Loading... ");
 }

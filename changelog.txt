@@ -11,3 +11,10 @@ Fix: forget to remark un-finished generator code
 Fix: Road Station Heading & Building (Join Distance Station)
 Fix: even handler on vehicle lost and unprofitable
 Fix: adust some operational parameter.
+
+* 090318
+Fix: adjust some operating parameters
+Fix: road station building, now use AITileList_IndustryProducing/Accepting
+Fix: Vehicle group name have leading zero if it is below 10 (some one PM-me about this issue)
+Fix: Better handling on vehicle unprofitable (after AIOrdr.SkipToOrder is available)
+Feature: Use conditional order to prevent congestion (experimental)
