@@ -64,11 +64,10 @@ function BuildingHandler::HeadQuarter()
     loc.Valuate(AITown.GetPopulation);
     loc.KeepBottom(1);
     loc = Tiles.Flat(Tiles.OfTown(loc.Begin(), Tiles.Radius(AITown.GetLocation(loc.Begin()), 20)));
-    loc.Valuate(AITile.IsBuildableRectangle,3,3);
+    loc.Valuate(AITile.IsBuildableRectangle, 2, 2);
     loc.RemoveValue(0);
     foreach (location, val in loc) {
         AIController.Sleep(2);
-        if (!AITile.IsBuildableRectangle(location, 3, 3)) continue;
         if (AICompany.BuildCompanyHQ (location)) return location;
     }
     this._lastCost = this._costHandler.GetCosts();
@@ -244,9 +243,17 @@ function BuildingHandler::RailServicing(serv)
     this.State.TestMode = true;
 
     if (!this.Rail.Vehicle(serv)) return false;
-    service_cost += this.State.LastCost * 2;
+    service_cost += this.State.LastCost * 3;
     if (!Bank.Get(service_cost)) return false;
     //this.State.TestMode = false;
+
+    if (!this.Rail.Station(serv, true)) return false;
+    service_cost += this.State.LastCost;
+    if (!Bank.Get(service_cost)) return false;
+
+    if (!this.Rail.Station(serv, false)) return false;
+    service_cost += this.State.LastCost;
+    if (!Bank.Get(service_cost)) return false;
 
     this.Rail.Path(serv, 2, true);
     if (!this.Rail.Track(serv, 2)) {
@@ -255,14 +262,6 @@ function BuildingHandler::RailServicing(serv)
         this.Rail.Signal(serv, 2);
     }
     service_cost += this.State.LastCost * 2;
-    if (!Bank.Get(service_cost)) return false;
-
-    if (!this.Rail.Station(serv, true)) return false;
-    service_cost += this.State.LastCost;
-    if (!Bank.Get(service_cost)) return false;
-
-    if (!this.Rail.Station(serv, false)) return false;
-    service_cost += this.State.LastCost;
     if (!Bank.Get(service_cost)) return false;
 
     if (!this.Rail.Depot(serv, true)) return false;

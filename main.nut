@@ -59,7 +59,7 @@ function Trans::Start()
             AILog.Info("Company Value ::" + AICompany.GetCompanyValue(AICompany.COMPANY_SELF));
             this.manager.Evaluate();
         }
-        if (wait_time % 70 == 0) {
+        if (wait_time % 80 == 0) {
             if (AISubsidyList().Count() > 0 ||
                 AIBase.Chance(1, 4) ||
                 (this.manager.serviced_route.len() == 0)) {
@@ -88,11 +88,12 @@ function Trans::Save()
     save_table.Current_Service <- this.manager.current_service;
     save_table.Serviced_Route <- this.manager.serviced_route;
     save_table.Drop_Off_Point <- this.manager.drop_off_point;
-    save_table.Old_Vehicle <- this.manager.old_vehicle;
+    //save_table.Old_Vehicle <- this.manager.old_vehicle;
     save_table.Factor <- this.manager._factor;
     save_table.Expired_Route <- this.manager.expired_route;
     save_table.New_Engines <- this.manager.new_engines;
     save_table.Industry_Close <- this.manager.industry_will_close;
+    save_table.Vehicle_Sent <- this.manager.vehicle_sent;
     //save_table.Rail_BackBones <- this.manager.rail_backbones;
     return Debug.ResultOf("--- (partial) Save supported ---", save_table);
 }
@@ -110,11 +111,12 @@ function Trans::Load(version, data)
     this.manager.current_service = Debug.ResultOf("Current service", ("Current_Service" in data) ? data["Current_Service"] : 0);
     this.manager.serviced_route = Debug.ResultOf("Serviced route", ("Serviced_Route" in data) ? data["Serviced_Route"] : {});
     this.manager.drop_off_point = Debug.ResultOf("Drop Off Point", ("Drop_Off_Point" in data) ? data["Drop_Off_Point"] : {});
-    this.manager.old_vehicle = Debug.ResultOf("Old Vehicle", ("Old_Vehicle" in data) ? data["Old_Vehicle"] : []);
+    //this.manager.old_vehicle = Debug.ResultOf("Old Vehicle", ("Old_Vehicle" in data) ? data["Old_Vehicle"] : []);
     this.manager._factor = Debug.ResultOf("Factor", ("Factor" in data) ? data["Factor"] : 0);
     this.manager.expired_route = Debug.ResultOf("Expired Route", ("Expired_Route" in data) ? data["Expired_Route"] : {});
     this.manager.new_engines = Debug.ResultOf("New Engines", ("New_Engines" in data) ? data["New_Engines"] : []);
     this.manager.industry_will_close = Debug.ResultOf("Industry closed", ("Industry_Close" in data) ? data["Industry_Close"] : []);
+    this.manager.vehicle_sent = Debug.ResultOf("Vehicle sent", ("Vehicle_Sent" in data) ? data ["Vehicle_Sent"] : {});
     //this.manager.rail_backbones = Debug.ResultOf("Rail_BackBones", ("Rail_BackBones" in data) ? data["Rail_BackBones"] : []);
     Debug.ResultOf("Loading (partial) done from", version);
 }

@@ -312,6 +312,7 @@ function BuildingHandler::road::Path(service, number, is_finding = false)
     while (path == false && c-- > 0) {
         AIController.Sleep(1);
         path  = Finder.FindPath(distance);
+        if (c % 5 == 0) this._mother._commander.Evaluate();
     }
     result = Debug.ResultOf("Path " + txt + " stopped at "+ c, (path != null && path != false));
     switch (number) {
@@ -402,7 +403,7 @@ function BuildingHandler::road::Track(service, number)
                                             }
                                             break;
                                         default:
-                                            Debug.ResultOf("Unhandled error build bridge/tunnel", null);
+                                            Debug.ResultOf("Unhandled error build bridge", null);
                                             //Debug.DontCallMe("Bridge");
                                             break;
                                     }

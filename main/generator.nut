@@ -59,8 +59,9 @@ class Gen
                 serv = Services.RefreshTable(serv);
                 //speed = AIEngine.GetMaxSpeed(serv.Engines.Begin());
                 //estimated_time = (serv.Distance * 429 / speed / 24) ;
-                local be_nice_factor = AIIndustry.GetLastMonthTransported(src, cargo) * mult_transported;
-                main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo, 20, 200) + dst + be_nice_factor);
+                local be_nice_factor = /*AIIndustry.GetLastMonthProduction(src, cargo)*/ -mult_transported *
+                    AIIndustry.GetLastMonthTransported(src, cargo);
+                main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo, 20, 200) + (dst * 10) - be_nice_factor);
                 //AICargo.GetCargoIncome(cargo, distance, estimated_time));
                 main.service_tables[serv.ID] <- serv;
             }

@@ -108,56 +108,18 @@ function RPFCostBased(tile_cost)
     Bank.Get(null);
     Finder.cost.max_cost = Bank.Balance();
     AILog.Info("Tile Cost =" + tile_cost);
-  Finder.cost.tile = tile_cost *0.1;
+    Finder.cost.tile = tile_cost *0.1;
     Finder.cost.no_existing_road = tile_cost;
-  Finder.cost.turn = tile_cost * 3;
+    Finder.cost.turn = tile_cost * 3;
     Finder.cost.slope = 2 * tile_cost;
-  Finder.cost.bridge_per_tile = 6 * tile_cost;
+    Finder.cost.bridge_per_tile = 6 * tile_cost;
     Finder.cost.tunnel_per_tile = 10 * tile_cost;
-  Finder.cost.coast = 4 * tile_cost;
+    Finder.cost.coast = 4 * tile_cost;
     Finder.cost.crossing = 12 * tile_cost;
-  //Finder.cost.NonFreeTile = 5 * tile_cost;
+    //Finder.cost.NonFreeTile = 5 * tile_cost;
     Finder.cost.demolition = 12 * tile_cost;
     return Finder;
 }
-// ===================================
-// Try to build  drive thru station on "town" with "cargoID"
-// this is the last option due to unable to build normal station.
-// the articulated vehicle will need this type of station
-function TownDTRS() {
-// ===================================
-    while (!done && rad < 20) {
-      ///local heads = Tiles.Flat(Tiles.Roads(Tiles.Radius(service.SourcePos, rad)));
-      /// use above if rail is ready
-      local heads = Tiles.Flat(Tiles.Radius(service.SourcePos, rad));
-      heads = (service.SourceIsTown) ? Tiles.Roads(heads) : heads ;
-      local head = heads.Begin();
-      while (!done) {
-        local bodies = Tiles.BodiesOf(head);
-        local body = bodies.Begin();
-        while (!done) {
-          if (AIMap.IsValidTile(head)) {
-            if (!Tiles.IsMine(body)) AITile.DemolishTile(body);
-            done = AIRoad.BuildRoadStation (body, head, Stations.RoadStationFor(service.CargoID), AIStation.STATION_JOIN_ADJACENT) ||
-                    AIRoad.BuildDriveThroughRoadStation (head, body, Stations.RoadStationFor(service.CargoID), AIStation.STATION_JOIN_ADJACENT);
-            Debug.Sign(body,"b");
-            Debug.ResultOf("Road Station at " + service.SourceText);
-                  if (done) {
-                    AIRoad.BuildRoadFull(head,body);
-                    service.Depot = body;
-                    return true;
-                  }
-                  AIController.Sleep(1);
-                }
-            if (!bodies.HasNext()) break;
-            body = bodies.Next();
-        }
-        if (!heads.HasNext()) break;
-        head = heads.Next();
-    }Debug.ResultOf("DTRS at " + AITown.GetName(town));
-    return pos;
-}
-    }
 
 /**
   * Class for Map based on region radius 10
@@ -309,7 +271,7 @@ class Assist
         local new_cost = 0;
         if (AIBridge.IsBridgeTile(new_tile) && (AIBridge.GetOtherBridgeEnd(new_tile) == prev_tile)) {
             local b_id = AIBridge.GetBridgeID(new_tile);
-            new_cost -= AIBridge.GetMaxSpeed(b_id) + this._cost_bridge_per_tile;
+            new_cost -= AIBridge.GetMaxSpeed(b_id)  + this._cost_bridge_per_tile;
         }
         if (AITunnel.IsTunnelTile(new_tile) && AITunnel.GetOtherTunnelEnd(new_tile) == prev_tile) {
             new_cost -= (this._cost_tile + this._cost_bridge_per_tile);
@@ -357,6 +319,10 @@ class Assist
         return group_name.slice(2);
     }
 
+    static function GetMiddleTile(_first, _end)
+    {
+    }
+
 }
 
 /**
@@ -401,6 +367,8 @@ class Debug
 
 class Settings
 {
+
+    /* usage : AILog.Info(" you're run on " + Settings.Get(game.version)); */
     static function Get(setting_str)
     {
         return AIGameSettings.IsValid(setting_str) ? AIGameSettings.GetValue(setting_str) : null ;
@@ -408,9 +376,10 @@ class Settings
 }
 
 enum game {
-    version = "version.version_string"
-    subsidy_multiply = "difficulty.subsidy_multiplier"
-}
+    version = "version.version_string",
+    subsidy_multiply = "difficulty.subsidy_multiplier",
+    }
+
 
 /**
  *  Depot & Station
@@ -552,6 +521,7 @@ class Platform
         local nese = [2, 8];
         local nwsw = [13, 19];
         local signal = [[3, 2], [7, 8], [14, 15], [18, 19]];
+        local door = [[1, 2], [20, 21]];
         local _tmp = -1;
         while (to_build.len() > 0) {
             local c = to_build.pop();
@@ -576,8 +546,16 @@ class Platform
             local x = c[0] % 11;
             local y = (c[0] - x) / 11;
             local xf = c[1] % 11;
-            local yf = (c[1] - x) / 11;
+            local yf = (c[1] - xf) / 11;
             AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY);
+        }
+        while (door.len() > 0) {
+            local c = door.pop();
+            local x = c[0] % 11;
+            local y = (c[0] - x) / 11;
+            local xf = c[1] % 11;
+            local yf = (c[1] - xf) / 11;
+            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY);
         }
     }
 
@@ -587,6 +565,7 @@ class Platform
         local swse = [4, 16];
         local nenw = [5, 17];
         local signal = [[6, 4], [7, 5], [14, 16], [15, 17]];
+        local door = [[3, 5], [18, 16]];
         local _tmp = -1;
         while (to_build.len() > 0) {
             local c = to_build.pop();
@@ -611,8 +590,16 @@ class Platform
             local x = c[0] % 2;
             local y = (c[0] - x) / 2;
             local xf = c[1] % 2;
-            local yf = (c[1] - x) / 2;
+            local yf = (c[1] - xf) / 2;
             AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY);
+        }
+        while (door.len() > 0) {
+            local c = door.pop();
+            local x = c[0] % 2;
+            local y = (c[0] - x) / 2;
+            local xf = c[1] % 2;
+            local yf = (c[1] - xf) / 2;
+            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY);
         }
     }
 }

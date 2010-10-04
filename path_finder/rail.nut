@@ -46,7 +46,7 @@ class Rail
         this._max_cost = 10000000;
         this._cost_tile = 100;
         /* this._cost_no_existing_rail = 40; */
-        this._cost_diagonal_tile = 100;
+        this._cost_diagonal_tile = 70;
         this._cost_turn = 300;
         this._cost_slope = 200;
         this._cost_bridge_per_tile = 150;

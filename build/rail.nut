@@ -193,7 +193,8 @@ function BuildingHandler::rail::Station(service, is_source)
     built_s.Valuate(check_fn, service.Cargo, 2, 3, Stations.RailRadius());
     built_s.KeepAboveValue(6);
     /* check if i've one */
-    while (built_s.Count()) {
+    while (built_s.Count() > 0) {
+        AILog.Info("check existing");
         AIController.Sleep(1);
         local pos = built_s.Begin();
         built_s.RemoveTop(1);
@@ -270,10 +271,11 @@ function BuildingHandler::rail::Station(service, is_source)
         saved = -1;
         pos.SetBody(base);
         local dir = pos.FindDirection(location);
-        if (check_fn(base + read_table[dir].opset, service.Cargo, 2, 3, Stations.RailRadius()) < 6) {
+        if (check_fn(base + read_table[dir].opset, service.Cargo, 2, 3, Stations.RailRadius()) < 7) {
             if (!this._mother.State.TestMode) continue;
         }
         if (!AITile.IsBuildableRectangle(base, read_table[dir].x, read_table[dir].y)) continue;
+        AILog.Info("Buildability Passed");
         local tiles = AITileList();
         tiles.AddRectangle(base, base + AIMap.GetTileIndex(read_table[dir].x - 1, read_table[dir].y - 1));
         if (tiles.Count() != Tiles.Flat(tiles).Count()) {
@@ -330,6 +332,7 @@ function BuildingHandler::rail::Station(service, is_source)
             continue;
         }
     }
+    AILog.Info("Not found");
     return false;
 }
 
@@ -340,20 +343,20 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
     local _from = [];
     local _to = [];
     local Finder = Rail();
-    local distance = 0;
     local result = false;
     local path = false;
     local ignored_tiles = [];
 
-    local tile_cost = Finder.cost.tile;
+    local tile_cost = 10;
+    Finder.cost.tile = tile_cost;
     //Finder.cost.max_cost = distance * tile_cost * 10;
     //Finder.cost.no_existing_rail = 2 * tile_cost;
-    Finder.cost.diagonal_tile = 0.5 * tile_cost;
+    Finder.cost.diagonal_tile =  tile_cost;
     Finder.cost.turn = 5 * tile_cost;
     Finder.cost.slope = tile_cost;
-    Finder.cost.bridge_per_tile = 6 * tile_cost;
+    Finder.cost.bridge_per_tile = 10 * tile_cost;
     Finder.cost.tunnel_per_tile = 3 * tile_cost;
-    Finder.cost.coast = 4 * tile_cost;
+    Finder.cost.coast = 10 * tile_cost;
     Finder.cost.crossing = 12 * tile_cost;
     //Finder.cost.NonFreeTile = 5 * tile_cost; //un implemented custom cost huh?
     Finder.cost.allow_demolition = true;
@@ -367,25 +370,25 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
         case 0:
             _from = service.StartPath;
             _to = service.EndPath;
-            Finder.cost.estimate_multiplier = 3;
+            Finder.cost.estimate_multiplier = 1.5;
             break;
         case 1:
             _from = service.DepotEnd;
             _to = service.DepotStart;
-            Finder.cost.estimate_multiplier = 3;
+            Finder.cost.estimate_multiplier = 2;
             break;
         case 2:
-            local bodies = Tiles.Buildable(Tiles.Flat(Tiles.Radius(service.Source.Location, 3)));
+            local bodies = Tiles.Buildable(Tiles.Flat(Tiles.Radius(service.Source.Location, 2)));
             foreach (idx, val in bodies) {
                 local heads = Tiles.Buildable(Tiles.Flat(Tiles.Adjacent(idx)));
                 foreach (head, val in heads) _from.push([head, idx]);
             }
-            bodies = Tiles.Buildable(Tiles.Flat(Tiles.Radius(service.Destination.Location, 3)));
+            bodies = Tiles.Buildable(Tiles.Flat(Tiles.Radius(service.Destination.Location, 2)));
             foreach (idx, val in bodies) {
                 local heads = Tiles.Buildable(Tiles.Flat(Tiles.Adjacent(idx)));
                 foreach (head, val in heads) _to.push([head, idx]);
             }
-            Finder.cost.estimate_multiplier = 3;
+            Finder.cost.estimate_multiplier = 5;
             break;
         default : Debug.DontCallMe("Path Selection", number);
     }
@@ -400,8 +403,10 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
         //Finder.cost.no_existing_road = Finder.cost.max_cost;
         return false;
     }
+    local distance = 0, dist = 0, cx = 0, cy = 0;
+    local scorex = Binary_Heap(), scorey = Binary_Heap();
     try {
-        distance = Debug.ResultOf("Distance",1 + AIMap.DistanceManhattan(_from.top()[0], _to.top()[0]));
+        distance = AIMap.DistanceManhattan(_from.top()[0], _to.top()[0]);
         //Debug.Sign(_from.top()[0], "from");
         //Debug.Sign(_to.top()[0],"to");
         Finder.InitializePath(_from, _to, ignored_tiles);
@@ -415,6 +420,7 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
     while (path == false && c-- > 0) {
         AIController.Sleep(1);
         path  = Finder.FindPath(distance);
+        if (c % 5 == 0) this._mother._commander.Evaluate();
     }
     result = Debug.ResultOf("Path " + txt + " stopped at "+ c, (path != null && path != false));
     switch (number) {
@@ -449,6 +455,9 @@ function BuildingHandler::rail::Track(service, number)
     while (path != null) {
         if (prevprev != null) {
             if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
+                /*if (AIMap.DistanceManhattan(prev, path.GetTile()) == 2) {
+
+                }*/
                 if (AITunnel.GetOtherTunnelEnd(prev) == path.GetTile()) {
                     if (!AITunnel.BuildTunnel(AIVehicle.VT_RAIL, prev)) {
                         /* error build tunnel */
@@ -541,7 +550,7 @@ function BuildingHandler::rail::Vehicle(service)
         //local number = service.SourceIsTown ? AITown.GetMaxProduction(service.Source.ID, service.Cargo) :
         //AIIndustry.GetLastMonthProduction(service.SourceID, service.Cargo);
         //number = (number / AIVehicle.GetCapacity(service.MainVhcID, service.Cargo) / 1.5).tointeger();
-        Debug.ResultOf("Vehicle build", Vehicles.StartCloned(service.MainVhcID, service.SourceDepot.GetBody(), 1));
+        Debug.ResultOf("Vehicle build", Vehicles.StartCloned(service.MainVhcID, service.SourceDepot.GetBody(), 2));
         return true;
     }
 
@@ -649,7 +658,8 @@ function BuildingHandler::rail::Signal(service, number)
     local c = 0;
     while (path != null) {
         local parn = path.GetParent();
-        if ((c % 2 == 0) && parn != null) AIRail.BuildSignal(path.GetTile(), parn.GetTile(), AIRail.SIGNALTYPE_NORMAL);
+        if ((c % 2 == 0) && parn != null && (AIRail.GetSignalType(path.GetTile(), parn.GetTile()) == AIRail.SIGNALTYPE_NONE))
+            AIRail.BuildSignal(path.GetTile(), parn.GetTile(), AIRail.SIGNALTYPE_NORMAL);
         if (path != null) {
             path = parn;
             c++;

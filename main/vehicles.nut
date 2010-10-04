@@ -34,12 +34,14 @@ class Vehicles
     }
 
     /**
-     * Try to sell vehicle
+     * Try to send vehicle to depot
      * @param vhc_ID The ID of vehicle to handle
+     * @return false if can't sell right now, true if can send to depot or already there
      */
-    static function TryToSell(vhc_ID)
+    static function TryToSend(vhc_ID)
     {
-        AILog.Info("Try to sell " + AIVehicle.GetName(vhc_ID));
+        if (!AIVehicle.IsValidVehicle(vhc_ID)) return Debug.ResultOf("Validity of vehicle try to send", false);
+        local name = Debug.ResultOf("Try to send ", AIVehicle.GetName(vhc_ID));
         /*
         VS_RUNNING  The vehicle is currently running.
         VS_STOPPED  The vehicle is stopped manually.
@@ -52,20 +54,30 @@ class Vehicles
         AIController.Sleep(1);
         local vhc_state = AIVehicle.GetState(vhc_ID);
         local cargo_in = AIVehicle.GetCargoLoad(vhc_ID, Vehicles.CargoType(vhc_ID, is_train));
+        local current_order = AIOrder.ResolveOrderPosition(vhc_ID, AIOrder.ORDER_CURRENT);
         switch (vhc_state) {
             case AIVehicle.VS_BROKEN :
             case AIVehicle.VS_RUNNING :
-                if (AIOrder.ResolveOrderPosition(vhc_ID, AIOrder.ORDER_CURRENT) == 1) return false;
-                if (AIOrder.ResolveOrderPosition(vhc_ID, AIOrder.ORDER_CURRENT) == 0) return Vehicles.SendToDepot(vhc_ID);
+                /* don't send to depot */
+                if (Debug.ResultOf(name + " is going to source/destination", current_order < 2)) break;
+                /* otherwise it heading to depot, */
+                return Vehicles.IsSendToDepot(vhc_ID);
+                break;
             case AIVehicle.VS_AT_STATION :
-                if (AIOrder.ResolveOrderPosition(vhc_ID, AIOrder.ORDER_CURRENT) == 1) return Vehicles.SendToDepot(vhc_ID);
-                if (cargo_in > 0) return AIVehicle.SkipToVehicleOrder(vhc_ID, 1);
-            case AIVehicle.VS_CRASHED : break;
+                if (Debug.ResultOf(name + " is unloading", current_order == 1)) return Vehicles.IsSendToDepot(vhc_ID);
+                if (Debug.ResultOf(name + " is loading", current_order == 0)) {
+                    if (cargo_in > 0) AIVehicle.SkipToVehicleOrder(vhc_ID, 1);
+                    else return Vehicles.IsSendToDepot(vhc_ID);
+                }
+                break;
+            case AIVehicle.VS_CRASHED :
+            /* just make sure it is stopped inside depot */
             case AIVehicle.VS_STOPPED :
-            case AIVehicle.VS_IN_DEPOT : return Vehicles.StoppedInDepot(vhc_ID);
-            case AIVehicle.VS_INVALID: return false;
-            default : Debug.DontCallMe("Vehicle state", vhc_state);
+            case AIVehicle.VS_IN_DEPOT : return AIVehicle.IsStoppedInDepot(vhc_ID);
+            case AIVehicle.VS_INVALID: AILog.Warning("Invalid state " + name); break;
+            default : Debug.DontCallMe("unknown Vehicle state", vhc_state);
         }
+        return false;
     }
 
     /**
@@ -82,18 +94,20 @@ class Vehicles
     }
 
     /**
-     * Send vehicle to depot
+     * Can Send vehicle to depot ?
      * - Give a try to send vehicle to depot
      * @param vhc_ID The ID of vehicle to handle
+     * @return true if vehicle has been sent to depot
      */
-    static function SendToDepot(vhc_ID)
+    static function IsSendToDepot(vhc_ID)
     {
         AIController.Sleep(5);
         if (AIVehicle.IsStoppedInDepot(vhc_ID)) return true;
-        if (Tiles.IsDepotTile(AIOrder.GetOrderDestination(vhc_ID, AIOrder.ORDER_CURRENT))) return true;
+        /* maybe yes .. maybe no, but let assume true because we checked it :-)*/
+        //if (Tiles.IsDepotTile(AIOrder.GetOrderDestination(vhc_ID, AIOrder.ORDER_CURRENT))) return true;
         if (AIOrder.GetOrderCount(vhc_ID) < 5) AIOrder.RemoveOrder(vhc_ID, 0);
         local retry = 3;
-        local msg = "Sending " + AIVehicle.GetName(vhc_ID) + " to depot";
+        local msg = "Sending " + AIVehicle.GetName(vhc_ID) + " to depot(" +  retry + ")";
         while (retry-- > 0) {
             AIController.Sleep(retry);
             if (Debug.ResultOf(msg, AIVehicle.SendVehicleToDepot(vhc_ID))) return true;
@@ -101,17 +115,18 @@ class Vehicles
             AIController.Sleep(retry * 2);
             if (Debug.ResultOf(msg, AIVehicle.SendVehicleToDepot(vhc_ID))) return true;
         }
+        /*can't send, maybe congested line */
         return false
     }
 
-    static function StoppedInDepot(vhc_id)
+    static function Sold(vhc_ID)
     {
         if (!AIVehicle.IsStoppedInDepot(vhc_ID)) return false;
         switch (AIVehicle.GetVehicleType(vhc_ID)) {
             case AIVehicle.VT_RAIL :
                 if (AIOrder.GetOrderCount(vhc_ID) < 5) {
                     AIVehicle.SellWagonChain(vhc_ID, 0);
-                    return AIVehicle.SellVehicle(vhc_id);
+                    return AIVehicle.SellVehicle(vhc_ID);
                 }
                 /* pick a loco */
                 local vhc_eng = AIVehicle.GetEngineType(vhc_ID);
@@ -128,16 +143,25 @@ class Vehicles
                     local engine_name = Debug.ResultOf("Loco Name", AIEngine.GetName(MainEngineID));
                     if (!AIEngine.CanPullCargo(MainEngineID, cargo)) continue;
                     local loco_id = AIVehicle.BuildVehicle(depot, MainEngineID);
+                    if (!AIVehicle.IsValidVehicle(loco_id)) continue;
                     if (AIEngine.CanRefitCargo(MainEngineID, cargo)) AIVehicle.RefitVehicle(loco_id, cargo);
-                    if (AIVehicle.HasSharedOrders(vhc_ID)) AIOrder.ShareOrders(loco_id,vhc_ID)
+                    if (AIVehicle.HasSharedOrders(vhc_ID)) AIOrder.ShareOrders(loco_id,vhc_ID);
                     else AIOrder.CopyOrders (loco_id,vhc_ID);
-                    AIVehicle.MoveWagonChain(vhc_ID, 0, loco_id, 0);
+                    if (AIOrder.GetOrderCount(loco_id) != AIOrder.GetOrderCount(vhc_ID)) {
+                        AIVehicle.SellVehicle(loco_id);
+                        continue;
+                    }
+                    if (!AIVehicle.MoveWagonChain(vhc_ID, 1, loco_id, 0)) {
+                        AIVehicle.SellVehicle(loco_id);
+                        continue;
+                    }
+                    AIGroup.MoveVehicle(AIVehicle.GetGroupID(vhc_ID), loco_id);
                     AIVehicle.StartStopVehicle(loco_id);
-                    return AIVehicle.SellVehicle(vhc_id);
+                    return AIVehicle.SellVehicle(vhc_ID);
                 }
                 break;
             case AIVehicle.VT_ROAD :
-                return AIVehicle.SellVehicle(vhc_id);
+                return AIVehicle.SellVehicle(vhc_ID);
             default : Debug.DontCallMe("stop in depot" , AIVehicle.GetVehicleType(vhc_ID));
         }
     }
@@ -217,10 +241,10 @@ class Vehicles
             AIController.Sleep(1);
             local score = AIEngine.GetPrice(idx);
             score += AIEngine.GetRunningCost(idx);
-            score -=  AIEngine.GetCapacity(idx) * 30;
-            score -= AIEngine.GetReliability(idx) * 30;
+            score -=  AIEngine.GetCapacity(idx) * 50;
+            score -= AIEngine.GetReliability(idx) * 50;
             score -= AIEngine.GetMaxAge (idx);
-            score -= AIEngine.GetMaxSpeed(idx) * 30;
+            score -= AIEngine.GetMaxSpeed(idx) * 100;
             score -= AIEngine.GetPower(idx);
             heap.Insert(idx, score);
         }

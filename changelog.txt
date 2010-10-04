@@ -44,3 +44,13 @@ Fix: Train can't detect whether the second line has been built or not
 Fix: Typos in rail pathfinder
 Docs: (re)write more documentation
 
+* 090418
+Fix: Typos in vehicle detection
+Fix: Use combo type signal on rail station instead of exit type to make the train waiting inside of depot.
+Fix: wrong calculation of the signal positioning
+Fix: Build signal on existing signal will cycle signal type, so must do detect it before build.
+Fix: Issue with send vehicle to depot. (hope it fine now)
+Fix: Adjust rail path finder penalty
+Fix: Combo signal has a 'feature', fall back to exit signal, and add entry signal too.
+Fix: Un-grouped vehicle after replacement now bounded to it group again
+
