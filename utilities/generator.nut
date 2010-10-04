@@ -1,107 +1,31 @@
- /*
-    *    09.03.08
-    *    generator.nut
-    *
-    *    Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
-    *
-    *    This program is free software; you can redistribute it and/or modify
-    *    it under the terms of the GNU General Public License as published by
-    *    the Free Software Foundation; either version 2 of the License, or
-    *    (at your option) any later version.
-    *
-    *    This program is distributed in the hope that it will be useful,
-    *    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    *    GNU General Public License for more details.
-    *
-    *    You should have received a copy of the GNU General Public License
-    *    along with this program; if not, write to the Free Software
-    *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-    *    MA 02110-1301, USA.
-    */
+/*  09.03.08 - generator.nut
+ *
+ *  This file is part of Trans AI
+ *
+ *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA 02110-1301, USA.
+ */
 
 /**
-    *
-    * Generator Class for Service, Subsidy and Position
-    */
-class Gen
+ *
+ * Generator Class for Service, Subsidy and Position
+ */
+class Generate
 {
-    /**
-     * Service Generator. Generate table of service.
-     * @param main Main instance that has the table.
-     */
-    static function Service(main)
-    {
-        AILog.Info("Generating Services ...");
-        AIController.Sleep(2);
-        local min_priority = 10000000;
-        local min_distance = 20;
-        local min_production = 10;
-        local mult_transported = 100;
-        local serv = null;
-        local last_type = null;
-        local speed = 0;
-        local estimated_time = 0;
-        /* service by drop off point */
-        foreach(cargo, dst in main.drop_off_point) {
-            AIController.Sleep(2);
-            local src_ind_lst = NotOnWater(AIIndustryList_CargoProducing(cargo));
-            src_ind_lst.Valuate(AIIndustry.GetLastMonthProduction, cargo);
-            src_ind_lst.KeepAboveValue(min_production);
-            src_ind_lst.Valuate(AIIndustry.GetDistanceManhattanToTile, AIIndustry.GetLocation(dst));
-            src_ind_lst.KeepAboveValue(min_distance);
-            foreach (src, val in src_ind_lst) {
-                AIController.Sleep(2);
-                serv = Services.NewTable(src, dst, cargo);
-                if (serv.ID in main.expired_route)  delete main.expired_route[serv.ID];
-                if (serv.ID in main.serviced_route) continue;
-                if (serv.ID in main.service_tables) continue;
-                serv = Services.RefreshTable(serv);
-                //speed = AIEngine.GetMaxSpeed(serv.Engines.Begin());
-                //estimated_time = (serv.Distance * 429 / speed / 24) ;
-                local be_nice_factor = /*AIIndustry.GetLastMonthProduction(src, cargo) -*/ mult_transported *
-                    AIIndustry.GetLastMonthTransported(src, cargo);
-                main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo, 20, 200) + dst + be_nice_factor);
-                //AICargo.GetCargoIncome(cargo, distance, estimated_time));
-                main.service_tables[serv.ID] <- serv;
-            }
-        }
-
-        /* generate Industries -> Town cargo services*/
-        foreach (idx, cargo_id in AICargoList()) {
-            AIController.Sleep(2);
-            local industries = NotOnWater(AIIndustryList());
-            industries.Valuate(AIIndustry.GetLastMonthProduction, cargo_id);
-            industries.RemoveBelowValue(min_production);
-            local town_list = AITownList();
-            town_list.Valuate(Assist.TownCanAccept, cargo_id);
-            town_list.RemoveValue(0);
-            local number = town_list.Count();
-            if (number == 0) continue;
-            town_list.Valuate(AITown.GetPopulation);
-            /* determine the destination town */
-            local dst = -1;
-            local counter = 0;
-            /* add a bit randomization support */
-            foreach (town, val in town_list) {
-                if ((main.randomizer % number) == counter) dst = town;
-                counter++;
-            }
-            foreach (src, val in industries) {
-                AIController.Sleep(2);
-                serv = Services.NewTable(src, town, cargo_id);
-                if (serv.ID in main.expired_route)  delete main.expired_route[serv.ID];
-                if (serv.ID in main.service_tables) continue;
-                if (serv.ID in main.serviced_route) continue;
-                serv = Services.RefreshTable(serv);
-                main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo_id, 20, 200) + town);
-                main.service_tables[serv.ID] <- serv;
-            }
-        }
-        AILog.Info("Service Generator Stopped");
-        return false;
-    }
-
     /**
      * Position Generator. Generate position for depot and station.
      * @param heads Area of tile list that become a head
@@ -109,10 +33,10 @@ class Gen
      * @param centered center first or last
      * @return yield of position table (head, body, id)
      */
-    static function Pos(heads, center, centered = true)
+    static function Pos(heads, center, centered)
     {
         AIController.Sleep(1);
-        heads.Valuate(AIMap.DistanceManhattan, center);
+        heads.Valuate(AIMap.DistanceMax, center);
         heads.Sort(AIAbstractList.SORT_BY_VALUE, centered);
         for (local head = heads.Begin(); heads.HasNext(); head = heads.Next()) {
             AIController.Sleep(1);
@@ -134,7 +58,7 @@ class Gen
     static function Subsidy(main)
     {
         /* add randomizer, not all trans AI instance would handle subsidy */
-        local skip_this = main.randomizer % 3;
+        local skip_this = main.GetID() % 3;
         if (skip_this == 0) return;
         local random_factor =  (1 + skip_this) * 30;
         local list = AISubsidyList();
@@ -172,50 +96,169 @@ class Gen
         subs_service = null;
     }
 
-    /**
-     * Drop off type Generator. Generate table of drop off point by industry types.
-     */
-    static function DropOffType(random_factor)
+
+}
+
+/**
+ * Yield Task to generate service
+ */
+class Task.GenerateService extends YieldTask
+{
+	constructor()
+	{
+		::YieldTask.constructor("Service Generator");
+		::YieldTask.SetRepeat(true);
+		::YieldTask.SetKey(5);
+	}
+
+	function _exec()
     {
-        AILog.Info("Generating Drop of points ... ");
-        local temp_var = {};
-        local type_industries = AIIndustryTypeList();
-        type_industries.Valuate(AIIndustryType.IsBuiltOnWater);
-        type_industries.RemoveValue(1);
-        foreach (ind_type, val in type_industries) {
+    	::YieldTask._exec;        
+        local min_priority = 10000000;
+        local min_distance = 20;
+        local min_production = 10;
+        local mult_transported = 100;
+        local serv = null;
+        local last_type = null;
+        local speed = 0;
+        local estimated_time = 0;
+		local src_lst = null;
+		local src = null, dst = null;
+		local dst_istown = null, src_istown = null; 
+        foreach(cargo, val in  Cargo.Sorted()) {
             AIController.Sleep(1);
-            local cargoes = AIIndustryType.GetAcceptedCargo(ind_type);
-            if (cargoes == null || cargoes.Count() == 0) continue;
-            local industries = NotOnWater(AIIndustryList());
-            industries.Valuate(AIIndustry.GetIndustryType);
-            industries.KeepValue(ind_type);
-            local number = industries.Count()
-            if (number == 0) continue;
-            industries.Valuate(AIIndustry.GetDistanceManhattanToTile, AIMap.GetTileIndex(1, 1));
-            industries.Sort(AIAbstractList.SORT_BY_VALUE, true);
-            local destiny = -1;
-            local counter = 0;
-            /* add a bit randomization support */
-            for (local dst = industries.Begin(); industries.HasNext(); dst = industries.Next()) {
+			if (!(cargo in TransAI.Info.Drop_off_point)) continue;
+			AILog.Info("Cargo type " + AICargo.GetCargoLabel(cargo));			
+			dst = TransAI.ServableMan.Item(TransAI.Info.Drop_off_point.rawget(cargo));
+			if (dst == null) continue;
+			//AILog.Info("Target " + dst.GetName());
+			src_istown = AIIndustryList_CargoProducing(cargo).IsEmpty();
+			if (src_istown) {
+				/* working with town */
+				src_lst = Cargo.TownList_Producing(cargo);
+			} else {
+				/* let's assume working with industry */
+				src_lst = Assist.NotOnWater(AIIndustryList_CargoProducing(cargo));
+			}
+			src_lst.Valuate(Assist.ServiceCost, src_istown, cargo);
+			src_lst.RemoveBelowValue(min_production);
+			//AILog.Info("Count of src:" + src_lst.Count());
+            local c = 0;
+			local key = "";
+			local id = 0;
+            foreach (source, val in src_lst) {
                 AIController.Sleep(1);
-                if ((random_factor % number) == counter) destiny = dst;
-                /*AILog.Info("c:" + counter + ":dest " + dest + ":number:" + number);*/
-                counter++ ;
+				key = Services.CreateID(source, dst.GetID(), cargo);
+				id = TransAI.ServiceMan.FindKey(key);
+				if (id) {
+					AILog.Info("Found duplicate");
+					//TODO: upgrade services
+					
+				/// service key not found
+				} else {
+					src = TransAI.ServableMan.Item(TransAI.ServableMan.FindID(source, src_istown));
+					if (src == null) continue;
+					// skip if source and destination is same
+					if (src.GetKey() == dst.GetKey()) continue;
+					//AILog.Info("src:" + src.GetName());
+					//src.SetTown(src.IsTown());					
+					serv = Services.New(src, dst, cargo);
+					id = TransAI.ServiceMan.New(serv, AICargo.GetCargoIncome(cargo, 20, 200));					
+					//AILog.Info("Source:" + src.GetName());
+					//speed = AIEngine.GetMaxSpeed(serv.Engines.Begin());
+					//estimated_time = (serv.Distance * 429 / speed / 24) ;
+					//serv.info.Priority = ;
+					//AICargo.GetCargoIncome(cargo, distance, estimated_time));
+					c++;
+					AILog.Info(AICargo.GetCargoLabel(cargo) +
+					   " from " + src.GetName()+ " to " + dst.GetName());
+					yield c;
+				}
             }
-            if (!AIIndustry.IsValidIndustry(destiny)) continue;
-            foreach(cargo, val in cargoes) {
-                AIController.Sleep(1);
-                if (!AIIndustry.IsCargoAccepted(destiny, cargo)) continue;
-                if (cargoes.Count() > 1) {
-                    temp_var[cargo] <- destiny;
-                } else if (!temp_var.rawin(cargo)) temp_var[cargo] <- destiny;
-            }
+			AILog.Info("Source count:" + c);
+        }
+        AILog.Info("Service Generator Stopped");
+    }
+}
+
+/**
+ * Task to generate drop off point.
+ * Generate table of drop off point by industry types.
+ */
+class Task.GenerateDropOff extends TaskItem
+{
+	constructor()
+	{
+		::TaskItem.constructor("Drop Off Point Generator");
+		::TaskItem.SetRemovable(true);
+		::TaskItem.SetKey(3);
+	}
+
+	function Execute()
+	{
+		::TaskItem.Execute();
+		local tick = Ticker();
+		local random_factor = TransAI.Info.ID;
+		local destiny = AIList();
+		local number = 0;
+		local dst_istown = null;
+		foreach (cargo, val in AICargoList()) {
+			AIController.Sleep(1);
+			destiny = Assist.NotOnWater(AIIndustryList_CargoAccepting(cargo));
+			number = destiny.Count();            
+			if (number) {
+				destiny.Valuate(Assist.CargoCount);
+				destiny.Sort(AIAbstractList.SORT_BY_VALUE, false);
+				dst_istown = false;
+			} else {
+				destiny = Cargo.TownList_Accepting(cargo);
+				destiny.Valuate(AITown.GetPopulation);
+				destiny.Sort(AIAbstractList.SORT_BY_VALUE, true);
+				dst_istown = true;
+				number = destiny.Count();
+			}
+			
+			if (number == 0) continue;
+			local counter = 0;
+			/* add a bit randomization support */
+			for (local dst = destiny.Begin(); destiny.HasNext(); dst = destiny.Next()) {
+				AIController.Sleep(1);
+				if ((random_factor % number) == counter) {
+					local dst_id = TransAI.ServableMan.FindID(dst, dst_istown);
+					if (dst_id) {
+						/* there are servable class of dst */
+					} else {
+						local dst_serv = Servable.New(dst, dst_istown);
+						dst_id = dst_serv.GetLocation();
+					}                	
+					TransAI.Info.Drop_off_point.rawset(cargo, dst_id);
+					break;
+			    }
+				counter++;
+			}            
         }
         /*
-        foreach (idx, val in temp_var) {
-          AILog.Info(AIIndustry.GetName(val) + ":" + AICargo.GetCargoLabel(idx));
-        } */
-        AILog.Info("Drop off point Finished");
-        return temp_var;
+		foreach (idx, val in TransAI.Info.Drop_off_point) {
+			AILog.Info(TransAI.ServableMan.Item(val).GetName() + ":" + AICargo.GetCargoLabel(idx));
+		}*/
+		AILog.Info("Drop off point Finished in " + tick.Elapsed());
+		TransAI.DropPointIsValid = true;
+	}
+}
+
+class Task.GenerateServable extends DailyTask
+{
+	constructor()
+	{
+        ::DailyTask.constructor("Servable Object scanner");
+        ::DailyTask.SetRemovable(false);
+        ::DailyTask.SetKey(2);
     }
+    
+    function Execute()
+    {
+    	::DailyTask.Execute();
+    	TransAI.ServableMan.ScanMap();
+    	::DailyTask.SetKey(30);
+    }	
 }

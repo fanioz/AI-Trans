@@ -1,6 +1,6 @@
-/*
- *  09.02.05
- *  money.nut
+/*  09.02.05 - money.nut
+ *
+ *  This file is part of Trans AI
  *
  *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
@@ -26,26 +26,15 @@
  */
 class Bank
 {
-
-    /**
-     * Current AI Bank Balance
-     * @return My bank balance at time calling
-     */
-    static function Balance()
-    {
-        return AICompany.GetBankBalance(AICompany.COMPANY_SELF);
-    }
-
     /**
      * Try to get that amount of money
-     * @param money the amount of money to check. Default is all (-1)
+     * @param money the amount of money to check. use '0' to get all.
      * @return True if  I can get or have that amount of money / all possible loan although it is need to loan first
-     *
      */
-    static function Get(money = -1)
+    static function Get(money)
     {
         local current_loan = AICompany.GetLoanAmount();
-        local current_balance = Bank.Balance();
+        local current_balance = TransAI.Balance();
         local loan_to_take = AICompany.GetMaxLoanAmount();
 
         /* take all possible loan or just amount of it*/
@@ -61,23 +50,39 @@ class Bank
         }
         return AICompany.SetMinimumLoanAmount(Debug.ResultOf("Want to get " + money + " Increased loan to ", loan_to_take));
     }
+}
+
+/**
+ * Current AI Bank Balance
+ * @return My bank balance at time calling
+ */
+TransAI.Balance = function () {	return AICompany.GetBankBalance(AICompany.COMPANY_SELF); }
 
 /**
   * Pay all loan as much as possible
   */
-    static function PayLoan()
-    {
+class Task.PayLoan extends DailyTask
+{
+	constructor()
+	{
+		::DailyTask.constructor("Paying Loan Task");
+		::DailyTask.SetRemovable(false);
+		::DailyTask.SetKey(30);
+	}
+
+	function Execute() {
+		::DailyTask.Execute();
         AIController.Sleep(1);
+		if (AICompany.SetLoanAmount(AICompany.GetLoanInterval())) return true;
         local current_loan = AICompany.GetLoanAmount();
-        local current_balance = Bank.Balance();
         local paying = 0;
         /* nothing to paid */
-        if (current_loan == 0) return;
+        if (current_loan == 0) return false;
         /* nothing to pay with */
-        if (current_balance < 10000) return;
-        if (current_balance < AICompany.GetMaxLoanAmount()) {
-            paying =  current_loan - (current_balance - current_balance % AICompany.GetLoanInterval());
+        if (TransAI.Balance() < AICompany.GetLoanInterval()) return false;
+        if (TransAI.Balance() < AICompany.GetMaxLoanAmount()) {
+            paying =  current_loan - (TransAI.Balance() - TransAI.Balance() % AICompany.GetLoanInterval());
         }
-        AICompany.SetLoanAmount(Debug.ResultOf("Set Loan to", paying));
-   }
+        return AICompany.SetLoanAmount(Debug.ResultOf("Set Loan to", paying));
+	}
 }

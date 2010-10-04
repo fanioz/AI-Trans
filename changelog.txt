@@ -64,3 +64,10 @@ Feature: Building Head quarter is now randomized
 Fix: Adjusted several operating parameters.
 Fix: index "loco_len" does not exist
 
+
+* 090619
+Feature: Actually check OTTD version. It is required at least minor ver 7 and build 1 (0.7.1) or rev16537
+Feature: Using Task management.
+Fix: rail pathfinder, so you may not seen again an old-AI-style rail route
+Feature: Improvement in many areas (included but not limited to): cargo, industries, towns, and vehicles handling.
+

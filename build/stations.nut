@@ -1,25 +1,24 @@
-/*
- *      09.04.19
- *      stations.nut
+/*  09.04.19 - stations.nut
  *
- *      Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  This file is part of Trans AI
  *
- *      This program is free software; you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation; either version 2 of the License, or
- *      (at your option) any later version.
+ *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
- *      This program is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with this program; if not, write to the Free Software
- *      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- *      MA 02110-1301, USA.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA 02110-1301, USA.
  */
-
 
 /**
  *  Depot & Station
@@ -164,21 +163,21 @@ class Platform
             local x = c % 11;
             local y = (c - x) / 11;
             local tile = base + AIMap.GetTileIndex(x, y);
-            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NE_SW) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NE_SW) && AIError.GetLastError() != AIError.ERR_ALREADY_BUILT) return false;
         }
         while (nese.len() > 0) {
             local c = nese.pop();
             local x = c % 11;
             local y = (c - x) / 11;
             local tile = base + AIMap.GetTileIndex(x, y);
-            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NE_SE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NE_SE) && AIError.GetLastError() != AIError.ERR_ALREADY_BUILT) return false;
         }
         while (nwsw.len() > 0) {
             local c = nwsw.pop();
             local x = c % 11;
             local y = (c - x) / 11;
             local tile = base + AIMap.GetTileIndex(x, y);
-            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_SW) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_SW) && AIError.GetLastError() != AIError.ERR_ALREADY_BUILT) return false;
         }
         while (signal.len() > 0) {
             local c = signal.pop();
@@ -212,21 +211,21 @@ class Platform
             local x = c % 2;
             local y = (c - x) / 2;
             local tile = base + AIMap.GetTileIndex(x, y);
-            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_SE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_SE) && AIError.GetLastError() != AIError.ERR_ALREADY_BUILT) return false;
         }
         while (nenw.len() > 0) {
             local c = nenw.pop();
             local x = c % 2;
             local y = (c - x) / 2;
             local tile = base + AIMap.GetTileIndex(x, y);
-            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_NE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_NE) && AIError.GetLastError() != AIError.ERR_ALREADY_BUILT) return false;
         }
         while (swse.len() > 0) {
             local c = swse.pop();
             local x = c % 2;
             local y = (c - x) / 2;
             local tile = base + AIMap.GetTileIndex(x, y);
-            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_SW_SE) && AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) return false;
+            if (!AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_SW_SE) && AIError.GetLastError() != AIError.ERR_ALREADY_BUILT) return false;
         }
         while (signal.len() > 0) {
             local c = signal.pop();
@@ -245,9 +244,5 @@ class Platform
             if (!AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY)) return false;
         }
         return true;
-    }
-
-    static function DropOffRailStation()
-    {
     }
 }

@@ -1,26 +1,24 @@
-/*
- *      09.04.12
- *      vehicles.nut
+/*  09.04.12 vehicles.nut
  *
+ *  This file is part of Trans AI
  *
- *      Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
- *      This program is free software; you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation; either version 2 of the License, or
- *      (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *      This program is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with this program; if not, write to the Free Software
- *      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- *      MA 02110-1301, USA.
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA 02110-1301, USA.
  */
-
 
 /**
  *  Vehicle related static functions
@@ -33,15 +31,15 @@ class Vehicles
         this.id = id;
     }
 
-    /**
-     * Try to send vehicle to depot
-     * @param vhc_ID The ID of vehicle to handle
-     * @return false if can't sell right now, true if can send to depot or already there
-     */
-    static function TryToSend(vhc_ID)
-    {
-        if (!AIVehicle.IsValidVehicle(vhc_ID)) return Debug.ResultOf("Validity of vehicle try to send", false);
-        local name = Debug.ResultOf("Try to send ", AIVehicle.GetName(vhc_ID));
+	/**
+	 * Try to send vehicle to depot
+	 * @param vhc_ID The ID of vehicle to handle
+	 * @return false if can't sell right now, true if can send to depot or already there
+	 */
+	static function TryToSend(vhc_ID)
+	{
+		if (!Debug.ResultOf("Vehicle try to send is valid", AIVehicle.IsValidVehicle(vhc_ID))) return;
+		local name = Debug.ResultOf("It named", AIVehicle.GetName(vhc_ID));
         /*
         VS_RUNNING  The vehicle is currently running.
         VS_STOPPED  The vehicle is stopped manually.
@@ -86,7 +84,7 @@ class Vehicles
      * @param is_wagon. To check wagon cargo
      * @return cargoID of that vehicle
      */
-    static function CargoType(vhc_ID, is_wagon = false)
+    static function CargoType(vhc_ID, is_wagon)
     {
         local engine = AIVehicle.GetEngineType(vhc_ID);
         if (is_wagon) engine = AIVehicle.GetWagonEngineType(vhc_ID, 1);
@@ -122,6 +120,7 @@ class Vehicles
     static function Sold(vhc_ID)
     {
         if (!AIVehicle.IsStoppedInDepot(vhc_ID)) return false;
+        local depot = AIVehicle.GetLocation(vhc_ID);
         switch (AIVehicle.GetVehicleType(vhc_ID)) {
             case AIVehicle.VT_RAIL :
                 if (AIOrder.GetOrderCount(vhc_ID) < 5) {
@@ -132,7 +131,7 @@ class Vehicles
                 local vhc_eng = AIVehicle.GetEngineType(vhc_ID);
                 local wagon_id = AIVehicle.GetWagonEngineType(vhc_ID, 1);
                 local cargo = AIEngine.GetCargoType(wagon_id);
-                local depot = AIVehicle.GetLocation(vhc_ID);
+                
                 local locos = Vehicles.WagonEngine(0);
                 locos.Valuate(AIEngine.HasPowerOnRail, AIEngine.GetRailType(vhc_eng));
                 locos.KeepValue(1);
@@ -161,32 +160,38 @@ class Vehicles
                 }
                 break;
             case AIVehicle.VT_ROAD :
+            	Vehicles.StartCloned(vhc_ID, depot, 2);
                 return AIVehicle.SellVehicle(vhc_ID);
             default : Debug.DontCallMe("stop in depot" , AIVehicle.GetVehicleType(vhc_ID));
         }
     }
 
-    /**
-     * upgrade vehicle by check it engine
-     * @param engine_id_new The new engine ID of vehicle
-     */
-     static function UpgradeEngine(engine_id_new)
-    {
-        AILog.Info("Try Upgrading Vehicle");
-        foreach(group_id, val in AIGroupList()) {
-            local vl = AIVehicleList();
-            vl.Valuate(AIVehicle.GetGroupID);
-            vl.KeepValue(group_id);
-            local engine_id_old = AIVehicle.GetEngineType(vl.Begin());
-            if (AIEngine.GetVehicleType(engine_id_new) == AIEngine.GetVehicleType(engine_id_old)) {
-                if (AIEngine.GetCargoType(engine_id_new) == AIEngine.GetCargoType(engine_id_old)) {
-                    AIGroup.SetAutoReplace(group_id,  engine_id_old,  engine_id_new);
-                    /* todo :: it slightly hard to replace also using .EngineCanRefitCargo without table*/
-                    Debug.ResultOf("Upgrading " + AIEngine.GetName(engine_id_old) + " to " + AIEngine.GetName(engine_id_new), "");
-                }
-            }
-        }
-    }
+	/**
+	 * upgrade vehicle by check it engine
+	 * @param engine_id_new The new engine ID of vehicle
+	 */
+	static function UpgradeEngine(engine_id_new)
+	{
+		AILog.Info("Try Upgrading Vehicle");
+		foreach(vhc_id, val in AIVehicleList()) {
+			AIController.Sleep(1);
+			local group_id = AIVehicle.GetGroupID(vhc_id);            
+			local engine_id_old = AIVehicle.GetEngineType(vhc_id);
+			if (AIGroup.GetEngineReplacement(group_id, engine_id_old) == engine_id_new) continue; 
+			local old_v_type = AIVehicle.GetVehicleType(vhc_id);
+			local new_v_type = AIEngine.GetVehicleType(engine_id_new);
+			if (new_v_type != old_v_type) continue; 
+			local cargo = Vehicles.CargoType(vhc_id, old_v_type == AIVehicle.VT_RAIL);			 			
+			if (!Cargo.IsFit(engine_id_new, cargo)) continue;
+			if (new_v_type == AIVehicle.VT_RAIL) {
+				if (!AIEngine.CanPullCargo(engine_id_new, cargo)) continue;
+				local r_type = AIEngine.GetRailType(engine_id_old);
+				if (!(AIEngine.CanRunOnRail(engine_id_new, r_type) || AIEngine.HasPowerOnRail(engine_id_new, r_type))) continue;
+			}
+			/* todo :: it slightly hard to replace also using .EngineCanRefitCargo without table*/
+			Debug.ResultOf("Upgrading " + AIEngine.GetName(engine_id_old) + " to " + AIEngine.GetName(engine_id_new), AIGroup.SetAutoReplace(group_id,  engine_id_old,  engine_id_new));
+		}
+	}
 
     static function ReplaceVhc(vhc_id)
     {
@@ -210,7 +215,7 @@ class Vehicles
 
     static function EngineCargo(engines, cargo)
     {
-        engines.Valuate(IsCargoFit, cargo);
+        engines.Valuate(Cargo.IsFit, cargo);
         engines.KeepValue(1);
         return engines;
     }
@@ -225,7 +230,7 @@ class Vehicles
         return engines;
     }
 
-    static function WagonEngine(yes = 1)
+    static function WagonEngine(yes)
     {
         local engines = AIEngineList(AIVehicle.VT_RAIL);
         engines.Valuate(AIEngine.IsWagon);
@@ -240,7 +245,7 @@ class Vehicles
 
     static function SortedEngines(engines)
     {
-        local heap = BinaryHeap();
+        local heap = FibonacciHeap();
         foreach (idx, val in engines) {
             AIController.Sleep(1);
             local score = AIEngine.GetPrice(idx) / (AIEngine.GetReliability(idx) + 2);
@@ -260,4 +265,95 @@ class Vehicles
         vc.KeepValue(tileID);
         return vc.Count();
     }
+}
+
+/**
+ * Try add vehicle
+ */
+class Task.AddVehicle extends DailyTask
+{
+	Info = null;
+	_max_num = 0;
+    constructor()
+    {    	
+        ::DailyTask.constructor("Vehicle Addition task");
+        ::DailyTask.SetRemovable(false);
+        ::DailyTask.SetKey(7);        
+    }
+    
+    function Execute()
+    {
+    	if (TransAI.Info.Serviced_Route.len() == 0) return;
+    	::DailyTask.Execute();    	
+    	foreach (idx, tabel in TransAI.Info.Serviced_Route) {	        
+	        AILog.Info("" + AIVehicle.GetName(tabel.MainVhcID));
+	        local dist = Debug.ResultOf("Distance", max(tabel.A_Distance, tabel.R_Distance));
+	        local vlen = Debug.ResultOf("Vehicle len", AIVehicle.GetLength(tabel.MainVhcID));
+	        this._max_num = ( dist * 16 / vlen).tointeger();
+	        local vhclst = AIVehicleList_Station(tabel.SourceStation);
+	        tabel.VehicleNum = vhclst.Count();
+	        tabel.MainVhcID = vhclst.Begin();
+	        AILog.Info("Vehicle count:" + tabel.VehicleNum);
+	        this.Info = tabel;
+	        if (tabel.VehicleNum > Debug.ResultOf("Max", this._max_num)) {
+				AILog.Warning("Maximum reached: Not adding");				
+			} else {
+				this.TryAdd();
+	        }
+	        TransAI.Info.Serviced_Route[idx] = this.Info;
+    	}
+    }
+
+    function TryAdd()
+    {		
+		
+		local min_capacity = 0;
+		local vhc_count = 0;
+		local name = AIVehicle.GetName(this.Info.MainVhcID);
+		/* sometime not work */
+		local ssta = AIStation.GetLocation(this.Info.SourceStation);		
+		//local ssta = AIOrder.GetOrderDestination((this.Info.MainVhcID), AIOrder.ResolveOrderPosition(this.Info.MainVhcID, 0));
+		local depot = this.Info.SourceDepot;
+		switch (this.Info.VehicleType) {
+			case AIVehicle.VT_ROAD :
+				if (!Debug.ResultOf(name + " valid station order", AIRoad.IsRoadStationTile(ssta))  ||
+					!Debug.ResultOf(name + " valid depot order", AIRoad.IsRoadDepotTile(depot))) {
+						TransAI.Info.Lost_Vehicle.push(this.Info.MainVhcID);						
+						return;
+				}
+				//vhc_count = Vehicles.CountAtTile(AIRoad.GetRoadStationFrontTile(ssta));
+				break;
+			case AIVehicle.VT_RAIL :
+				if (!Debug.ResultOf(name + " valid station order", AIRail.IsRailStationTile(ssta))  ||
+					!Debug.ResultOf(name + " valid depot order", AIRail.IsRailDepotTile(depot))) {
+						TransAI.Info.Lost_Vehicle.push(this.Info.MainVhcID);						
+						return;
+				}
+				//vhc_count = Vehicles.CountAtTile(AIRail.GetRailDepotFrontTile(depot));
+				break;
+			case AIVehicle.VT_AIR:
+	        	AILog.Warning("Using Air");
+	        	break;
+            case AIVehicle.VT_WATER:
+            	AILog.Warning("Using Water");
+            	break;
+			default : Debug.DontCallMe("Unsupported V_Type", this.Info.MainVhcID);
+		}
+		vhc_count += Vehicles.CountAtTile(ssta);
+		//vhc_count += Vehicles.CountAtTile(depot);
+		if (Debug.ResultOf("Vehicle waiting:", vhc_count) > 0) return;
+		local ssta_ID = this.Info.SourceStation;
+		if (AIStation.GetCargoRating(ssta_ID, this.Info.Cargo) > 60) return;
+		min_capacity = Debug.ResultOf("Min. Cap", AIVehicle.GetCapacity(this.Info.MainVhcID, this.Info.Cargo));		
+		local string_x = "cargo waiting at " + AIStation.GetName(ssta_ID);
+		if  (Debug.ResultOf(string_x, AIStation.GetCargoWaiting(ssta_ID, this.Info.Cargo)) > min_capacity) {
+			if (this.Info.VehicleType == AIVehicle.VT_RAIL) {
+				if (!this.Info.RailDoubled) return;
+			} else {
+				//do other stuff for non rail veh
+			}
+			Bank.Get(0);
+			Debug.ResultOf("Vehicle build", Vehicles.StartCloned(this.Info.MainVhcID, depot, 1));
+		}		
+	}
 }
