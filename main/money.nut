@@ -50,9 +50,8 @@ class Bank
 
         /* take all possible loan or just amount of it*/
         if (money > 0) {
-            AILog.Info("Get:" + money);
-            if (current_balance > money) return true;
-            if ((current_balance + loan_to_take - current_loan) < money) return false;
+            if (Debug.ResultOf("Have:" + money, current_balance > money)) return true;
+            if (Debug.ResultOf("Out of range:" + money, (current_balance + loan_to_take - current_loan) < money)) return false;
             /* now set the real loan to take */
             loan_to_take = (money - current_balance + AICompany.GetLoanInterval() + current_loan).tointeger();
         } else {

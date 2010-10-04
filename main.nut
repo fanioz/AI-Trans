@@ -60,7 +60,7 @@ function Trans::Start()
             this.manager.Evaluate();
         }
         if (wait_time % 80 == 0) {
-            if (AISubsidyList().Count() > 0 ||
+            if (AISubsidyList().Count() > 1 ||
                 AIBase.Chance(1, 4) ||
                 (this.manager.serviced_route.len() == 0)) {
                     this.manager.Service();

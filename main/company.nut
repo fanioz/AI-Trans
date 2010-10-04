@@ -57,13 +57,13 @@ class CompanyManager
         this._factor = 0;
         this.start_date = 0;
         this.Builder = BuildingHandler(this);
-        this.service_keys = Binary_Heap();
+        this.service_keys = BinaryHeap();
         this.serviced_route = {};
         this.expired_route = {};
         this.service_tables = {};
         this.new_engines = [];
         this.drop_off_point = {};
-        this.old_vehicle = Binary_Heap();
+        this.old_vehicle = BinaryHeap();
         this.industry_will_close = [];
         this.current_service = 0;
         this.randomizer = null;
@@ -104,8 +104,6 @@ function CompanyManager::Born()
     AILog.Info("" + AICompany.GetName(this.randomizer) + " has been started since " + Assist.DateStr(this.start_date));
     Builder.HeadQuarter();
     Debug.ResultOf("Random factor", this.randomizer);
-    Debug.ResultOf("Drop off point", this.drop_off_point.len());
-    Gen.Subsidy(this);
 }
 
 /**
@@ -130,7 +128,7 @@ function CompanyManager::Evaluate()
     }
 
     /* check to see a will close industry */
-    if (this.industry_will_close.len() > 0) HandleClosingIndustry(this.industry_will_close.pop(), this);
+    if (this.industry_will_close.len() > 0) HandleClosingIndustry.call(this, this.industry_will_close.pop());
 
     /* check to see if there are invalid vehicle order */
     local vhc_list = AIVehicleList();
@@ -420,7 +418,6 @@ function CompanyManager::Service()
 
     while (this.service_keys.Count() > 0) {
         AILog.Info("Cur Serv "+ this.current_service);
-        //if (!MsgResult("Confident Enough", Bank.Balance() > this.Factor)) break;
         if (this.current_service == 0) this.current_service = this.service_keys.Pop();
         if (this.current_service in this.serviced_route) this.current_service = 0;
         if (this.current_service in this.expired_route) this.current_service = 0;
@@ -429,6 +426,8 @@ function CompanyManager::Service()
         }
         if (Debug.ResultOf("Service Validity", to_do != null && to_do.Source.IsValid() && to_do.Destination.IsValid())) {
             AILog.Info(to_do.Readable);
+            Debug.Sign(to_do.Source.Location,"Src");
+            Debug.Sign(to_do.Destination.Location,"Dst");
             switch (to_do.VehicleType) {
                 case AIVehicle.VT_RAIL:
                     if (this.Builder.RailServicing(to_do)) break;

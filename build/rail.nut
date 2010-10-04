@@ -174,6 +174,7 @@ function BuildingHandler::rail::Station(service, is_source)
         head2 = [AIMap.GetTileIndex(10, 1), AIMap.GetTileIndex(9, 1)],
         depot1 = [AIMap.GetTileIndex(0, 1), AIMap.GetTileIndex(0, 0)],
         depot2 = [AIMap.GetTileIndex(10, 0), AIMap.GetTileIndex(10, 1)],
+        depotside = [AIMap.GetTileIndex(-1, 1), AIMap.GetTileIndex(11, 0)],
     }
     local table_NW_SE = {
         x = 2,
@@ -183,6 +184,7 @@ function BuildingHandler::rail::Station(service, is_source)
         head2 = [AIMap.GetTileIndex(0, 10), AIMap.GetTileIndex(0, 9)],
         depot1 = [AIMap.GetTileIndex(0, 0), AIMap.GetTileIndex(1, 0)],
         depot2 = [AIMap.GetTileIndex(1, 10), AIMap.GetTileIndex(0, 10)],
+        depotside = [AIMap.GetTileIndex(-1, 0), AIMap.GetTileIndex(1, 11)],
     }
     local read_table = {};
     read_table[AIRail.RAILTRACK_NW_SE] <- table_NW_SE;
@@ -199,8 +201,10 @@ function BuildingHandler::rail::Station(service, is_source)
         local pos = built_s.Begin();
         built_s.RemoveTop(1);
         local posID = AIStation.GetStationID(pos);
+        if (posID == validID) continue;
         if (AIStation.IsValidStation(posID)) validID = posID;
         else continue;
+        pos = AIStation.GetLocation(posID);
         if (!AIStation.HasStationType(posID, AIStation.STATION_TRAIN)) continue;
         /* check if i really need to build other one */
         local train_here = AIVehicleList_Station(posID);
@@ -210,6 +214,7 @@ function BuildingHandler::rail::Station(service, is_source)
         Debug.Sign(pos, "stasion");
         c_pos.SetID(posID);
         local dir = AIRail.GetRailStationDirection(pos);
+        if (dir == 0) continue;
         local _platform = Platform();
         _platform.SetBody(pos);
         _platform.SetHead(_platform.FindLastTile(dir, true, 1));
@@ -222,8 +227,12 @@ function BuildingHandler::rail::Station(service, is_source)
         local depot_path = [];
         depot_path.push([base + read_table[dir].depot1[0], base + read_table[dir].depot1[1]]);
         depot_path.push([base + read_table[dir].depot2[0], base + read_table[dir].depot2[1]]);
+        local tiles = AITileList();
+        tiles.AddRectangle(base, base + AIMap.GetTileIndex(read_table[dir].x - 1, read_table[dir].y - 1));
         tiles.RemoveTile(start_path[0][0]);
         tiles.RemoveTile(start_path[1][0]);
+        tiles.AddTile(base + read_table[dir].depotside[0]);
+        tiles.AddTile(base + read_table[dir].depotside[1]);
         service.IgnorePath <- tiles;
         if (is_source) {
             service.SourceStation = c_pos;
@@ -278,10 +287,15 @@ function BuildingHandler::rail::Station(service, is_source)
         AILog.Info("Buildability Passed");
         local tiles = AITileList();
         tiles.AddRectangle(base, base + AIMap.GetTileIndex(read_table[dir].x - 1, read_table[dir].y - 1));
-        if (tiles.Count() != Tiles.Flat(tiles).Count()) {
-            if (!AITile.LevelTiles(base, base + AIMap.GetTileIndex(read_table[dir].x, read_table[dir].y))) continue;
-            if (!this._mother.State.TestMode && tiles.Count() != Tiles.Flat(tiles).Count()) continue;
+        local c = 0;
+        while ((tiles.Count() != Tiles.Flat(tiles).Count()) && c < 10) {
+            if (!this._mother.State.TestMode) {
+                Tiles.MakeLevel(tiles);
+            }
+            c++;
         }
+        if (!AITile.LevelTiles(base, base + AIMap.GetTileIndex(read_table[dir].x, read_table[dir].y))) continue;
+        if (!this._mother.State.TestMode && tiles.Count() != Tiles.Flat(tiles).Count()) continue;
         AILog.Info("Flattening Passed");
         stasiun.SetDirection(dir);
         local result = AIRail.BuildNewGRFRailStation(base + read_table[dir].opset, dir, stasiun.GetWidth(), stasiun.GetLength(), AIStation.STATION_JOIN_ADJACENT || validID,
@@ -312,6 +326,8 @@ function BuildingHandler::rail::Station(service, is_source)
                 depot_path.push([base + read_table[dir].depot2[0], base + read_table[dir].depot2[1]]);
                 tiles.RemoveTile(start_path[0][0]);
                 tiles.RemoveTile(start_path[1][0]);
+                tiles.AddTile(base + read_table[dir].depotside[0]);
+                tiles.AddTile(base + read_table[dir].depotside[1]);
                 service.IgnorePath <- tiles;
                 if (is_source) {
                     service.SourceStation = stasiun;
@@ -351,16 +367,16 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
     Finder.cost.tile = tile_cost;
     //Finder.cost.max_cost = distance * tile_cost * 10;
     //Finder.cost.no_existing_rail = 2 * tile_cost;
-    Finder.cost.diagonal_tile =  tile_cost;
-    Finder.cost.turn = 5 * tile_cost;
-    Finder.cost.slope = tile_cost;
-    Finder.cost.bridge_per_tile = 10 * tile_cost;
-    Finder.cost.tunnel_per_tile = 3 * tile_cost;
-    Finder.cost.coast = 10 * tile_cost;
-    Finder.cost.crossing = 12 * tile_cost;
+    Finder.cost.diagonal_tile =  0.7 * tile_cost;
+    Finder.cost.turn = 6 * tile_cost;
+    Finder.cost.slope =  2 * tile_cost;
+    Finder.cost.bridge_per_tile = 12 * tile_cost;
+    Finder.cost.tunnel_per_tile = 10 * tile_cost;
+    Finder.cost.coast = 8 * tile_cost;
+    Finder.cost.crossing = 24 * tile_cost;
     //Finder.cost.NonFreeTile = 5 * tile_cost; //un implemented custom cost huh?
     Finder.cost.allow_demolition = true;
-    Finder.cost.demolition = 12 * tile_cost;
+    Finder.cost.demolition = 24 * tile_cost;
     Finder.cost.max_bridge_length = 50;
     Finder.cost.max_tunnel_length = 50;
     //Finder.RegisterCostCallback(CheckBridge); // un implemented cost call back
@@ -368,16 +384,6 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
 
     switch (number) {
         case 0:
-            _from = service.StartPath;
-            _to = service.EndPath;
-            Finder.cost.estimate_multiplier = 1.5;
-            break;
-        case 1:
-            _from = service.DepotEnd;
-            _to = service.DepotStart;
-            Finder.cost.estimate_multiplier = 2;
-            break;
-        case 2:
             local bodies = Tiles.Buildable(Tiles.Flat(Tiles.Radius(service.Source.Location, 2)));
             foreach (idx, val in bodies) {
                 local heads = Tiles.Buildable(Tiles.Flat(Tiles.Adjacent(idx)));
@@ -389,6 +395,16 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
                 foreach (head, val in heads) _to.push([head, idx]);
             }
             Finder.cost.estimate_multiplier = 5;
+            break;
+        case 1:
+            _from = service.StartPath;
+            _to = service.EndPath;
+            Finder.cost.estimate_multiplier = 1.5;
+            break;
+        case 2:
+            _from = service.DepotEnd;
+            _to = service.DepotStart;
+            Finder.cost.estimate_multiplier = 2;
             break;
         default : Debug.DontCallMe("Path Selection", number);
     }
@@ -404,7 +420,7 @@ function BuildingHandler::rail::Path(service, number, is_finding = false)
         return false;
     }
     local distance = 0, dist = 0, cx = 0, cy = 0;
-    local scorex = Binary_Heap(), scorey = Binary_Heap();
+    local scorex = BinaryHeap(), scorey = BinaryHeap();
     try {
         distance = AIMap.DistanceManhattan(_from.top()[0], _to.top()[0]);
         //Debug.Sign(_from.top()[0], "from");
@@ -449,6 +465,7 @@ function BuildingHandler::rail::Track(service, number)
         return false;
     }
     if (path == null || path == false) return false;
+    local path_for_check = path;
     AILog.Info("Build Track Length=" + path.GetLength() + txt);
     local prev = null;
     local prevprev = null;
@@ -530,7 +547,7 @@ function BuildingHandler::rail::Track(service, number)
     }
     this._mother.State.LastCost = money_need.GetCosts();
     if (this._mother.State.TestMode) return (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH);
-    return true;
+    return CheckRailConnection(path_for_check);
 }
 
 function BuildingHandler::rail::Vehicle(service)

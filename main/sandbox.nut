@@ -27,7 +27,7 @@ function NonStopOrder(addition) {
     return AIOrder.AIOF_NON_STOP_INTERMEDIATE | addition;
 }
 // =======================================
-function HandleClosingIndustry(id, main)
+function HandleClosingIndustry(id)
 {
   local station_list = Tiles.StationOn(AIIndustry.GetLocation(id));
   if (station_list.Count() == 0) return;
@@ -37,7 +37,7 @@ function HandleClosingIndustry(id, main)
     foreach (vhc, val in AIVehicleList_Station(sta)) {
         foreach (cargo, val in AIIndustryType.GetProducedCargo(ind_type).AddList(AIIndustryType.GetAcceptedCargo(ind_type))) {
             AIController.Sleep(1);
-            if (Vehicles.CargoType(vhc) == cargo) main.old_vehicle.push(vhc);
+            if (Vehicles.CargoType(vhc) == cargo) this.old_vehicle.push(vhc);
         }
     }
   }
@@ -282,35 +282,38 @@ class Assist
         return new_cost * AIMap.DistanceManhattan(new_tile, prev_tile);
     }
 
-    static function Connect_BackBone(main, serv)
+    static function Connect_BackBone(main, serv_id)
     {
-        AILog.Info("Try to connect backbone for id " + serv.ID);
         local _cost = 0;
-
-        main.Rail.Path(serv, 1, true);
+        local serv = null;
+        if (main._commander.service_tables.rawin(serv_id)) {
+            serv = main._commander.service_tables[serv_id];
+        }
+        AILog.Info("Try to connect backbone for id " + serv_id);
+        main.Rail.Path(serv, 2, true);
         main.State.TestMode = true;
 
-        if (!main.Rail.Track(serv, 1)) {
-            main.Rail.Path(serv, 1, true);
-            if (!main.Rail.Track(serv, 1)) return false;
+        if (!main.Rail.Track(serv, 2)) {
+            main.Rail.Path(serv, 2, true);
+            if (!main.Rail.Track(serv, 2)) return false;
         }
         _cost += main.State.LastCost;
         main.Rail.Vehicle(serv);
         _cost += main.State.LastCost;
-        main.Rail.Signal(serv, 0);
-        _cost += main.State.LastCost;
         main.Rail.Signal(serv, 1);
+        _cost += main.State.LastCost;
+        main.Rail.Signal(serv, 2);
         _cost += main.State.LastCost;
         if (!Bank.Get(_cost)) return false;
 
         main.State.TestMode = false;
-        if (!main.Rail.Track(serv, 1)) {
-            main.Rail.Path(serv, 1, true);
-            if (!main.Rail.Track(serv, 1)) return false;
+        if (!main.Rail.Track(serv, 2)) {
+            main.Rail.Path(serv, 2, true);
+            if (!main.Rail.Track(serv, 2)) return false;
         }
+        main.Rail.Signal(serv, 1);
+        main.Rail.Signal(serv, 2);
         if (!main.Rail.Vehicle(serv)) return false;
-        if (!main.Rail.Signal(serv, 0)) return false;
-        if (!main.Rail.Signal(serv, 1)) return false;
         return true;
     }
 
@@ -378,228 +381,56 @@ class Settings
 enum game {
     version = "version.version_string",
     subsidy_multiply = "difficulty.subsidy_multiplier",
+    long_train = "vehicle.mammoth_trains",
+    station_spread = "station.station_spread",
+    can_goto_depot = "order.gotodepot"
     }
 
-
-/**
- *  Depot & Station
- */
-class Stations
+function CheckRailConnection(path)
 {
-    id = null;
-    length = null;
-    width = null;
-    direction = null;
-    platform = null;
-    constructor()
-    {
-        this.id = -1;
-        this.length = -1;
-        this.width = -1;
-        this.direction = -1;
-        this.platform = {};
-        this.platform[0] <- Platform();
+    /* must be executed in exec mode */
+    if (path == null || path == false) return false;
+    AILog.Info("Check rail connection Length=" + path.GetLength());
+    while (path != null) {
+        local parn = path.GetParent();
+        if (parn == null ) {
+            local c = Debug.Sign(path.GetTile(), "null");
+            if (!AITile.HasTransportType(path.GetTile(), AITile.TRANSPORT_RAIL)) return false;
+            AISign.RemoveSign(c);
+        } else {
+            local grandpa = parn.GetParent();
+            if (grandpa == null) {
+                local c = Debug.Sign(parn.GetTile(), "null");
+                if (!AITile.HasTransportType(path.GetTile(), AITile.TRANSPORT_RAIL)) return false;
+                AISign.RemoveSign(c);
+            } else {
+                if (!AIRail.AreTilesConnected(path.GetTile(), parn.GetTile(), grandpa.GetTile())) {
+                    if (AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) == 1) {
+                        AIRail.BuildRail(path.GetTile(), parn.GetTile(), grandpa.GetTile());
+                    } else {
+                        local c = Debug.Sign(path.GetTile(), "null");
+                        if (AITunnel.GetOtherTunnelEnd(path.GetTile()) == parn.GetTile()) {
+                            if (!AITunnel.IsTunnelTile(path.GetTile())) {
+                                if (!AITunnel.BuildTunnel(AIVehicle.VT_RAIL, path.GetTile())) return false;
+                            }
+                        } else if (AIBridge.GetOtherBridgeEnd(path.GetTile()) == parn.GetTile()) {
+                            if (!AIBridge.IsBridgeTile(path.GetTile())) {
+                                local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) + 1);
+                                bridge_list.Valuate(AIBridge.GetMaxSpeed);
+                                bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
+                                if (!AIBridge.BuildBridge(AIVehicle.VT_RAIL, bridge_list.Begin(), path.GetTile(), parn.GetTile())) {
+                                    while (bridge_list.HasNext()) {
+                                        if (AIBridge.BuildBridge(AIVehicle.VT_RAIL, bridge_list.Next(), path.GetTile(), parn.GetTile())) break;
+                                    }
+                                }
+                            }
+                        }
+                        AISign.RemoveSign(c);
+                    }
+                }
+            }
+        }
+        path = parn;
     }
-
-    static function RoadFor(cargo_id)
-    {
-        if (AICargo.HasCargoClass(cargo_id, AICargo.CC_PASSENGERS)) return AIRoad.ROADVEHTYPE_BUS;
-        return AIRoad.ROADVEHTYPE_TRUCK;
-    }
-
-    static function RoadRadius() {return AIStation.GetCoverageRadius(AIStation.STATION_TRUCK_STOP );}
-    static function RailRadius() {return AIStation.GetCoverageRadius(AIStation.STATION_TRAIN);}
-
-    function GetID() {return this.id;}
-    function GetLength() {return this.length;}
-    function GetWidth() {return this.width;}
-    function GetDirection() {return this.direction;}
-    function GetPlatform(idx) {return this.platform[idx];}
-    function SetID(val) {this.id = val;}
-    function SetLength(val) {this.length = val;}
-    function SetWidth(val) {this.width = val;}
-    function SetDirection(val) {this.direction = val;}
-    function SetPlatform(idx, val) { this.platform[idx] <- val;}
-    function SetupAllPlatform()
-    {
-        if (this.length < 2) return false;
-        local func = null;
-        local source = this.platform[0].GetBody();
-        switch (this.direction) {
-            case AIRail.RAILTRACK_NE_SW: func = Tiles.SE_Of; break;
-            case AIRail.RAILTRACK_NW_SE: func = Tiles.SW_Of; break;
-            //case 1: func = Tiles.SE_Of;
-            //case 0: func = Tiles.SW_Of;
-            default: Debug.DontCallMe("Setup Platform", this.direction);
-        }
-        for (local w = 1; w < this.length; w++) {
-            local target = Platform();
-            target.SetBody(func(source));
-            target.SetHead(target.FindLastTile(this.direction, true, 1));
-            target.SetBack(target.FindLastTile(this.direction, false));
-            target.SetBackHead(target.FindLastTile(this.direction, false, 1));
-            this.platform[w] <- target;
-        }
-    }
-
-    function FindFree(platform_idx = 0)
-    {
-        local dtile = -1;
-        local tile = this.platform[platform_idx].GetBody();
-        switch (this.direction) {
-            case AIRail.RAILTRACK_NE_SW:
-                dtile = (AITile.IsBuildable(NE_Of(tile))) ? NE_Of(tile) : SW_Of(tile, this.length - 1);
-                break;
-            case AIRail.RAILTRACK_NW_SE:
-                dtile = (AITile.IsBuildable(NW_Of(tile))) ? NW_Of(tile) : SE_Of(tile, this.length - 1);
-                break;
-            default: Debug.DontCallMe("FindFree", this.direction);
-            break;
-        }
-        return dtile;
-    }
-}
-
-class Platform
-{
-    body = null;
-    head = null;
-    back = null;
-    backhead = null;
-    constructor()
-    {
-        this.body = -1;
-        this.head = -1;
-        this.back = -1;
-        this.backhead = -1;
-    }
-    function GetBody() { return this.body; }
-    function GetHead() { return this.head; }
-    function GetBack() { return this.back; }
-    function GetBackHead() { return this.backhead;}
-    function SetBody(val) { this.body = val; }
-    function SetHead(val) { this.head = val; }
-    function SetBack(val) { this.back = val; }
-    function SetBackHead(val) { this.backhead = val; }
-    function FindDirection(ind_object) {
-    // ===================================
-        // X + =  SW (left bottom) ; Y + =  SE (right bottom)
-        local diffX = abs(AIMap.GetTileX(this.body) - AIMap.GetTileX(ind_object));
-        local diffY = abs(AIMap.GetTileY(this.body) - AIMap.GetTileY(ind_object));
-        local maxDiff = max(diffX, diffY);
-        if (diffX < 0) return AIRail.RAILTRACK_NE_SW;
-        if (diffY < 0) return AIRail.RAILTRACK_NW_SE;
-        if (diffX < diffY) return AIRail.RAILTRACK_NW_SE;
-        return AIRail.RAILTRACK_NE_SW;
-    }
-
-    // ===================================
-    //return the NE of station if NE_SW direction
-    // return the NW of station if NW_SE direction
-    // ===================================
-    //return the SW of station if NE_SW direction
-    // return the SE of station if NW_SE direction
-    function FindLastTile(dir, is_front = true, num = 0)
-    {
-        local tmp = this.body;
-        if (!AIRail.IsRailStationTile(tmp)) return -1;
-        local func = null;
-        switch (dir)
-        {
-            case AIRail.RAILTRACK_NE_SW : func = is_front ? Tiles.NE_Of : Tiles.SW_Of; break;
-            case AIRail.RAILTRACK_NW_SE : func = is_front ? Tiles.NW_Of : Tiles.SE_Of; break;
-            default : Debug.DontCallMe("FindLastTile:" + is_front + " front", dir);
-        }
-        while (AIRail.IsRailStationTile(func(tmp))) tmp = func(tmp);
-        if (num == 0) return tmp;
-        return func(tmp, num);
-    }
-
-    static function RailTemplateNE_SW(base)
-    {
-        local to_build = [1, 2, 3, 7, 14, 18, 19, 20];
-        local nese = [2, 8];
-        local nwsw = [13, 19];
-        local signal = [[3, 2], [7, 8], [14, 15], [18, 19]];
-        local door = [[1, 2], [20, 21]];
-        local _tmp = -1;
-        while (to_build.len() > 0) {
-            local c = to_build.pop();
-            local x = c % 11;
-            local y = (c - x) / 11;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NE_SW);
-        }
-        while (nese.len() > 0) {
-            local c = nese.pop();
-            local x = c % 11;
-            local y = (c - x) / 11;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NE_SE);
-        }
-        while (nwsw.len() > 0) {
-            local c = nwsw.pop();
-            local x = c % 11;
-            local y = (c - x) / 11;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NW_SW);
-        }
-        while (signal.len() > 0) {
-            local c = signal.pop();
-            local x = c[0] % 11;
-            local y = (c[0] - x) / 11;
-            local xf = c[1] % 11;
-            local yf = (c[1] - xf) / 11;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY);
-        }
-        while (door.len() > 0) {
-            local c = door.pop();
-            local x = c[0] % 11;
-            local y = (c[0] - x) / 11;
-            local xf = c[1] % 11;
-            local yf = (c[1] - xf) / 11;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY);
-        }
-    }
-
-    static function RailTemplateNW_SE(base)
-    {
-        local to_build = [3, 5, 6, 7, 14, 15, 16, 18];
-        local swse = [4, 16];
-        local nenw = [5, 17];
-        local signal = [[6, 4], [7, 5], [14, 16], [15, 17]];
-        local door = [[3, 5], [18, 16]];
-        local _tmp = -1;
-        while (to_build.len() > 0) {
-            local c = to_build.pop();
-            local x = c % 2;
-            local y = (c - x) / 2;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NW_SE);
-        }
-        while (nenw.len() > 0) {
-            local c = nenw.pop();
-            local x = c % 2;
-            local y = (c - x) / 2;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_NW_NE);
-        }
-        while (swse.len() > 0) {
-            local c = swse.pop();
-            local x = c % 2;
-            local y = (c - x) / 2;
-            AIRail.BuildRailTrack(base + AIMap.GetTileIndex(x, y), AIRail.RAILTRACK_SW_SE);
-        }
-        while (signal.len() > 0) {
-            local c = signal.pop();
-            local x = c[0] % 2;
-            local y = (c[0] - x) / 2;
-            local xf = c[1] % 2;
-            local yf = (c[1] - xf) / 2;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_EXIT_TWOWAY);
-        }
-        while (door.len() > 0) {
-            local c = door.pop();
-            local x = c[0] % 2;
-            local y = (c[0] - x) / 2;
-            local xf = c[1] % 2;
-            local yf = (c[1] - xf) / 2;
-            AIRail.BuildSignal(base + AIMap.GetTileIndex(x, y), base + AIMap.GetTileIndex(xf, yf), AIRail.SIGNALTYPE_ENTRY_TWOWAY);
-        }
-    }
+    return true;
 }

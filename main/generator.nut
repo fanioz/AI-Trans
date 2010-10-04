@@ -33,25 +33,25 @@ class Gen
     static function Service(main)
     {
         AILog.Info("Generate Service");
-        AIController.Sleep(1);
+        AIController.Sleep(2);
         local min_priority = 10000000;
         local min_distance = 20;
         local min_production = 10;
-        local mult_transported = 1000;
+        local mult_transported = 100;
         local serv = null;
         local last_type = null;
         local speed = 0;
         local estimated_time = 0;
         /* service by drop off point */
         foreach(cargo, dst in main.drop_off_point) {
-            AIController.Sleep(1);
+            AIController.Sleep(2);
             local src_ind_lst = NotOnWater(AIIndustryList_CargoProducing(cargo));
             src_ind_lst.Valuate(AIIndustry.GetLastMonthProduction, cargo);
             src_ind_lst.KeepAboveValue(min_production);
             src_ind_lst.Valuate(AIIndustry.GetDistanceManhattanToTile, AIIndustry.GetLocation(dst));
             src_ind_lst.KeepAboveValue(min_distance);
             foreach (src, val in src_ind_lst) {
-                AIController.Sleep(1);
+                AIController.Sleep(2);
                 serv = Services.NewTable(src, dst, cargo);
                 if (serv.ID in main.expired_route)  delete main.expired_route[serv.ID];
                 if (serv.ID in main.serviced_route) continue;
@@ -59,9 +59,9 @@ class Gen
                 serv = Services.RefreshTable(serv);
                 //speed = AIEngine.GetMaxSpeed(serv.Engines.Begin());
                 //estimated_time = (serv.Distance * 429 / speed / 24) ;
-                local be_nice_factor = /*AIIndustry.GetLastMonthProduction(src, cargo)*/ -mult_transported *
+                local be_nice_factor = /*AIIndustry.GetLastMonthProduction(src, cargo) -*/ mult_transported *
                     AIIndustry.GetLastMonthTransported(src, cargo);
-                main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo, 20, 200) + (dst * 10) - be_nice_factor);
+                main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo, 20, 200) + dst + be_nice_factor);
                 //AICargo.GetCargoIncome(cargo, distance, estimated_time));
                 main.service_tables[serv.ID] <- serv;
             }
@@ -69,7 +69,7 @@ class Gen
 
         /* generate Industries -> Town cargo services*/
         foreach (idx, cargo_id in AICargoList()) {
-            AIController.Sleep(1);
+            AIController.Sleep(2);
             local industries = NotOnWater(AIIndustryList());
             industries.Valuate(AIIndustry.GetLastMonthProduction, cargo_id);
             industries.RemoveBelowValue(min_production);
@@ -88,13 +88,13 @@ class Gen
                 counter++;
             }
             foreach (src, val in industries) {
-                AIController.Sleep(1);
+                AIController.Sleep(2);
                 serv = Services.NewTable(src, town, cargo_id);
                 if (serv.ID in main.expired_route)  delete main.expired_route[serv.ID];
                 if (serv.ID in main.service_tables) continue;
                 if (serv.ID in main.serviced_route) continue;
                 serv = Services.RefreshTable(serv);
-                if (serv.Engines.IsEmpty()) continue;
+                //if (serv.Engines.IsEmpty()) continue;
                 //speed = AIEngine.GetMaxSpeed(serv.Engines.Begin());
                 //estimated_time = (serv.Distance * 429 / speed / 24) ;
                 main.service_keys.Insert(serv.ID, min_priority - AICargo.GetCargoIncome(cargo_id, 20, 200) + town);
@@ -136,7 +136,10 @@ class Gen
      */
     static function Subsidy(main)
     {
-        if (main.randomizer % 2 != 0) return;
+        /* add randomizer, not all trans AI instance would handle subsidy */
+        local skip_this = main.randomizer % 2;
+        if (skip_this != 1) return;
+        local random_factor =  (1 + skip_this) * 30;
         local list = AISubsidyList();
         local subs_service = null;
         AILog.Info("Try to generate services from subsidies");
@@ -147,7 +150,7 @@ class Gen
         foreach (i, val in list) {
             AIController.Sleep(1);
             local d = AISubsidy.GetExpireDate(i) - AIDate.GetCurrentDate();
-            if (d < 30) continue;
+            if (d < random_factor) continue;
             local source = AISubsidy.GetSource(i);
             local dest = AISubsidy.GetDestination(i);
             subs_service = Services.NewTable(source, dest, AISubsidy.GetCargoType(i));
@@ -163,7 +166,7 @@ class Gen
             subs_service.IsSubsidy = true;
             AILog.Info("Subsidy scheduled");
             AILog.Info(subs_service.Readable);
-            main.service_keys.Insert(subs_service.ID, d - 29);
+            main.service_keys.Insert(subs_service.ID, d - random_factor);
             if (subs_service.ID in main.service_tables) continue;
             main.service_tables[subs_service.ID] <- subs_service;
             return;
@@ -178,6 +181,8 @@ class Gen
     {
         local temp_var = {};
         local type_industries = AIIndustryTypeList();
+        type_industries.Valuate(AIIndustryType.IsBuiltOnWater);
+        type_industries.RemoveValue(1);
         foreach (ind_type, val in type_industries) {
             AIController.Sleep(1);
             local cargoes = AIIndustryType.GetAcceptedCargo(ind_type);

@@ -54,3 +54,9 @@ Fix: Adjust rail path finder penalty
 Fix: Combo signal has a 'feature', fall back to exit signal, and add entry signal too.
 Fix: Un-grouped vehicle after replacement now bounded to it group again
 
+* 090420
+Fix: Crash with tile not exist (happened if found unused station)
+Fix: Rail that came from the tile exactly beside of depot now redirected to come from in front of depot instead
+Feature: Check the rail connection (you may seen "null" sign walking)
+Feature: Building Head quarter is now randomized
+

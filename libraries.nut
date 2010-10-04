@@ -27,7 +27,7 @@
  * on Binary Heap, that would be enough (auto-resolved dependencies)
  */
 
-import("queue.binary_heap", "Binary_Heap", 1);
+import("queue.Binary_Heap", "BinaryHeap", 1);
 /* use these until available on bananas */
 require("path_finder/rail.nut");
 require("path_finder/road.nut");
@@ -40,8 +40,7 @@ require("main/sandbox.nut");
 require("main/generator.nut");
 require("main/services.nut");
 require("main/vehicles.nut");
+require("main/stations.nut");
 require("build/building.nut");
 require("build/road.nut");
 require("build/rail.nut");
-
-

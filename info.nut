@@ -29,8 +29,8 @@ class Trans extends AIInfo {
     function GetName()        { return "Trans"; }
     function GetShortName()   { return "FTAI"; }
     function GetDescription() { return "Trans is an effort to be a transporter ;-)"; }
-    function GetVersion()     { return 90418 }
-    function CanLoadFromVersion(version)    {return version <= 90418;}
+    function GetVersion()     { return 90425 }
+    function CanLoadFromVersion(version)    {return version <= 90425;}
     function GetDate()        { return "2009-02-1"; }
     function CreateInstance() { return "Trans"; }
     function GetSettings() {}

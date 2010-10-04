@@ -62,8 +62,9 @@ function BuildingHandler::HeadQuarter()
 
     local loc = AITownList();
     loc.Valuate(AITown.GetPopulation);
-    loc.KeepBottom(1);
-    loc = Tiles.Flat(Tiles.OfTown(loc.Begin(), Tiles.Radius(AITown.GetLocation(loc.Begin()), 20)));
+    loc.KeepBottom(this._commander.randomizer);
+    local town = loc.Begin();
+    loc = Tiles.Flat(Tiles.OfTown(town, Tiles.Radius(AITown.GetLocation(town), 10)));
     loc.Valuate(AITile.IsBuildableRectangle, 2, 2);
     loc.RemoveValue(0);
     foreach (location, val in loc) {
@@ -89,14 +90,46 @@ function BuildingHandler::ClearSigns()
 }
 
 /**
+ * Rename the drop off station
+ *@param serv service table
+ */
+function BuildingHandler::RenameStation(serv)
+{
+    local counter = 1;
+    local name = AIIndustryType.GetName(AIIndustry.GetIndustryType(serv.Destination.ID)) + " " + this._commander.randomizer;
+    while (!AIStation.SetName(serv.DestinationStation.GetID(), name + " Drop Off " + counter) && counter < 100) counter++;
+}
+
+/**
+ * Grouping vehicle
+ * @param serv Service tabel
+ */
+ function BuildingHandler::MakeGroup(serv)
+ {
+    local grp = AIGroup.CreateGroup(serv.VehicleType);
+    local g_name = this._commander.randomizer +":" + serv.ID;
+    if (!AIGroup.SetName(grp, g_name)) {
+        local grp_list = AIGroupList();
+        grp_list.Valuate(AIGroup.GetVehicleType);
+        grp_list.KeepValue(serv.VehicleType);
+        foreach (idx, val in grp_list) {
+            if (AIGroup.GetName(idx) == g_name) {
+                AIGroup.DeleteGroup(grp);
+                grp = idx;
+                break;
+            }
+        }
+    }
+    AIGroup.MoveVehicle(grp, serv.MainVhcID);
+ }
+
+/**
  * Servicing a route defined before by Road Vehicle
  */
 function BuildingHandler::RoadServicing(serv)
 {
     AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
-    //AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
-    Debug.Sign(serv.Source.Location,"Src");
-    Debug.Sign(serv.Destination.Location,"Dst");
+    //AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_TRAM);
     serv.Source.Refresh();
     serv.Destination.Refresh();
     serv.SourceDepot <- Platform();
@@ -152,18 +185,12 @@ function BuildingHandler::RoadServicing(serv)
 
     AILog.Warning("Real Mode");
     this.State.TestMode = false;
-    //if (!this.Road.Track(serv, 1)) return false;
-    if (!this.Road.Depot(serv, true)) return false;
-    if (!this.Road.Depot(serv, false)) return false;
 
     if (!this.Road.Station(serv, true)) return false;
     if (!this.Road.Station(serv, false)) return false;
 
-    //if (!this.Road.Track(serv, 0)) {
-    //serv.Path0 = false;
-    //this.Road.Path(serv, 0, true);
-    //if (!this.Road.Track(serv, 0)) return false;
-    //}
+    if (!this.Road.Depot(serv, true)) return false;
+    if (!this.Road.Depot(serv, false)) return false;
 
     if (!this.Road.Path(serv, 1, false)) {
         this.Road.Path(serv, 1, true);
@@ -193,27 +220,8 @@ function BuildingHandler::RoadServicing(serv)
     if (!this.Road.Vehicle(serv)) return false;
 
     AIVehicle.StartStopVehicle(serv.MainVhcID);
-    local grp = AIGroup.CreateGroup(serv.VehicleType);
-    local g_name = this._commander.randomizer +":" + serv.ID;
-    if (!AIGroup.SetName(grp, g_name)) {
-        local grp_list = AIGroupList();
-        grp_list.Valuate(AIGroup.GetVehicleType);
-        grp_list.KeepValue(serv.VehicleType);
-        foreach (idx, val in grp_list) {
-            if (AIGroup.GetName(idx) == g_name) {
-                AIGroup.DeleteGroup(grp);
-                grp = idx;
-                break;
-            }
-        }
-    }
-    AIGroup.MoveVehicle(grp, serv.MainVhcID);
-    if (!serv.IsSubsidy) {
-        /*name that station */
-        local counter = 1;
-        local name = AIIndustryType.GetName(AIIndustry.GetIndustryType(serv.Destination.ID)) + " " + this._commander.randomizer;
-        while (!AIStation.SetName(serv.DestinationStation.GetID(), name + " Drop Off " + counter) && counter < 100) counter++;
-    }
+    this.MakeGroup(serv);
+    if (!serv.IsSubsidy) this.RenameStation(serv);
 
     this.Road.Vehicle(serv);
     /*update table of service*/
@@ -228,8 +236,6 @@ function BuildingHandler::RoadServicing(serv)
 function BuildingHandler::RailServicing(serv)
 {
     AIRail.SetCurrentRailType(AIRailTypeList().Begin());
-    Debug.Sign(serv.Source.Location,"Src");
-    Debug.Sign(serv.Destination.Location,"Dst");
     serv.Source.Refresh();
     serv.Destination.Refresh();
     serv.SourceDepot <- Platform();
@@ -243,7 +249,7 @@ function BuildingHandler::RailServicing(serv)
     this.State.TestMode = true;
 
     if (!this.Rail.Vehicle(serv)) return false;
-    service_cost += this.State.LastCost * 3;
+    service_cost += this.State.LastCost * 2;
     if (!Bank.Get(service_cost)) return false;
     //this.State.TestMode = false;
 
@@ -255,37 +261,36 @@ function BuildingHandler::RailServicing(serv)
     service_cost += this.State.LastCost;
     if (!Bank.Get(service_cost)) return false;
 
-    this.Rail.Path(serv, 2, true);
-    if (!this.Rail.Track(serv, 2)) {
-        this.Rail.Path(serv, 2, true);
-        if (!this.Rail.Track(serv, 2)) return false;
-        this.Rail.Signal(serv, 2);
+    this.Rail.Path(serv, 0, true);
+    if (!this.Rail.Track(serv, 0)) {
+        this.Rail.Path(serv, 0, true);
+        if (!this.Rail.Track(serv, 0)) return false;
+        this.Rail.Signal(serv, 0);
     }
     service_cost += this.State.LastCost * 2;
     if (!Bank.Get(service_cost)) return false;
 
     if (!this.Rail.Depot(serv, true)) return false;
     service_cost += this.State.LastCost * 2;
-    if (!Bank.Get(service_cost)) return false;
+
 
     /* don't continue if I've not enough money */
     if (!Bank.Get(service_cost)) return false;
 
     AILog.Warning("Real Mode");
     this.State.TestMode = false;
-    //if (!this.Rail.Track(serv, 1)) return false;
 
     if (!this.Rail.Station(serv, true)) return false;
     if (!this.Rail.Station(serv, false)) return false;
 
-    this.Rail.Path(serv, 0, true);
-    this.State.TestMode = true;
-    if (!this.Rail.Track(serv, 0)) {
-        this.Rail.Path(serv, 0, true);
-        if (!this.Rail.Track(serv, 0)) return false;
-    }
-    this.State.TestMode = false;
-    if (!this.Rail.Track(serv, 0)) return false;
+    this.Rail.Path(serv, 1, true);
+    //this.State.TestMode = true;
+    //if (!this.Rail.Track(serv, 1)) {
+        //this.Rail.Path(serv, 1, true);
+        //if (!this.Rail.Track(serv, 1)) return false;
+    //}
+    //this.State.TestMode = false;
+    if (!this.Rail.Track(serv, 1)) return false;
 
     if (!this.Rail.Depot(serv, true)) return false;
     if (!this.Rail.Depot(serv, false)) return false;
@@ -294,30 +299,11 @@ function BuildingHandler::RailServicing(serv)
     if (!this.Rail.Vehicle(serv)) return false;
     AIVehicle.StartStopVehicle(serv.MainVhcID);
 
-    local grp = AIGroup.CreateGroup(serv.VehicleType);
-    local g_name = this._commander.randomizer +":" + serv.ID;
-    if (!AIGroup.SetName(grp, g_name)) {
-        local vhc_list = AIGroupList();
-        vhc_list.Valuate(AIGroup.GetVehicleType);
-        vhc_list.KeepValue(serv.VehicleType);
-        foreach (idx, val in vhc_list) {
-            if (AIGroup.GetName(idx) == g_name) {
-                AIGroup.DeleteGroup(grp);
-                grp = idx;
-                break;
-            }
-        }
-    }
-    AIGroup.MoveVehicle(grp, serv.MainVhcID);
+    this.MakeGroup(serv);
+    if (!serv.IsSubsidy) this.RenameStation(serv);
 
-    if (!serv.IsSubsidy) {
-        /*name that station */
-        local counter = 1;
-        local name = AIIndustryType.GetName(AIIndustry.GetIndustryType(serv.Destination.ID)) + " " + this._commander.randomizer;
-        while (!AIStation.SetName(serv.DestinationStation.GetID(), name + " Drop Off " + counter) && counter < 100) counter++;
-    }
-
-    if (!Assist.Connect_BackBone(this, serv)) this._commander.rail_backbones.push(serv);
+    //if (!Assist.Connect_BackBone(this, serv))
+    this._commander.rail_backbones.push(serv.ID);
 
     /*update table of service*/
     this._commander.service_tables[serv.ID] <- serv;

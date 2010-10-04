@@ -380,8 +380,9 @@ function Tiles::WholeMap()
 
 function Tiles::Flat(tiles)
 {
-    tiles.Valuate(AITile.GetSlope);
-    tiles.KeepValue(AITile.SLOPE_FLAT);
+    local tile = tiles;
+    tile.Valuate(AITile.GetSlope);
+    tile.KeepValue(AITile.SLOPE_FLAT);
     return tiles;
 }
 
@@ -397,13 +398,13 @@ function Tiles::BodiesOf(head)
     return Tiles.Roads(Tiles.Waters(Tiles.Adjacent(head), 0), 0);;
 }
 
-function Tiles::Depot(base, rad = 10)
+function Tiles::DepotOn(base, rad = 10)
 {
     local area = Tiles.Radius(base, rad);
     area.Valuate(Tiles.IsMine);
-    area.RemoveValue(0);
+    area.KeepValue(1);
     area.Valuate(Tiles.IsDepotTile);
-    area.RemoveValue(0);
+    area.KeepValue(1);
     area.Valuate(AITile.GetDistanceManhattanToTile, base);
     area.Sort(AIAbstractList.SORT_BY_VALUE, true);
     return area;
@@ -467,4 +468,63 @@ function Tiles::IsDepotTile(tile)
 {
     return  (AIRoad.IsRoadDepotTile(tile) || AIRail.IsRailDepotTile(tile) ||
                 AIAirport.IsHangarTile(tile) || AIMarine.IsWaterDepotTile(tile));
+}
+
+function Tiles::GetAdjacentHeight(tile)
+{
+    local tiles = [[0, 0], [0, 1], [1, 0], [1, 1]];
+    local bh = BinaryHeap();
+    foreach (idx in tiles) {
+        local x = AIMap.GetTileIndex(idx[0], idx[1]);
+        local valu = 100 - AITile.GetHeight(x);
+        if (AIMap.IsValidTile(x)) bh.Insert(x, valu);
+    }
+    return (bh.Count() > 0) ? AITile.GetHeight(bh.Pop()) : AITile.GetHeight(tile);
+}
+
+function Tiles::AverageHeight(tiles)
+{
+    local sam = 0, count = 0;
+    foreach (idx, val in tiles) {
+        sam += Tiles.GetAdjacentHeight(idx);
+        count++;
+    }
+    local mod = sam % count;
+    local rounded = (mod / count > 0.5) ? 1: 0;
+    return (count == 0) ? null : (sam - mod) / count + rounded;
+}
+
+function Tiles::SetHeight(tile, height)
+{
+    local act_h = -1;
+    local do_cmd = null;
+    while (act_h != height) {
+        act_h = Debug.ResultOf("curren height", Tiles.GetAdjacentHeight(tile));
+        local slope = AITile.GetSlope(tile);
+        AILog.Info("target = " + height);
+        if (act_h == height &&
+            slope != AITile.SLOPE_STEEP &&
+            (slope == AITile.SLOPE_FLAT || slope == AITile.SLOPE_ELEVATED)) break;
+        if (act_h <= height) do_cmd = AITile.RaiseTile;
+        if (act_h > height) do_cmd = AITile.LowerTile;
+        local to_slope = -1;
+        if ((slope && AITile.SLOPE_W == AITile.SLOPE_W) ||
+            (slope == AITile.SLOPE_STEEP_E)) to_slope = AITile.SLOPE_W;
+        if ((slope && AITile.SLOPE_N == AITile.SLOPE_N) ||
+            (slope == AITile.SLOPE_STEEP_S)) to_slope = AITile.SLOPE_N;
+        if ((slope && AITile.SLOPE_S == AITile.SLOPE_S) ||
+            (slope == AITile.SLOPE_STEEP_N)) to_slope = AITile.SLOPE_S;
+        if ((slope && AITile.SLOPE_E == AITile.SLOPE_E) ||
+            (slope == AITile.SLOPE_STEEP_W)) to_slope = AITile.SLOPE_E;
+        if (!do_cmd(tile, to_slope)) return false;
+    }
+    return true;
+}
+
+function Tiles::MakeLevel(tiles)
+{
+    local target_h = Tiles.AverageHeight(tiles);
+    foreach (idx, val in tiles) {
+        Tiles.SetHeight(idx, target_h);
+    }
 }

@@ -236,7 +236,7 @@ class Vehicles
 
     static function SortedEngines(engines)
     {
-        local heap = Binary_Heap();
+        local heap = BinaryHeap();
         foreach (idx, val in engines) {
             AIController.Sleep(1);
             local score = AIEngine.GetPrice(idx);

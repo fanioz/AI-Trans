@@ -341,7 +341,9 @@ function Rail::_Estimate(cur_tile, cur_direction, goal_tiles)
    * looping was moved to InitializePath() */
     local dx = abs(AIMap.GetTileX(cur_tile) - AIMap.GetTileX( this._goal_estimate_tile));
     local dy = abs(AIMap.GetTileY(cur_tile) - AIMap.GetTileY( this._goal_estimate_tile));
-    return (min(dx, dy) * this._cost_diagonal_tile * 2 + (max(dx, dy) - min(dx, dy)) * this._cost_tile) * this._estimate_multiplier;
+    local min_d = min(dx, dy);
+    local max_d = max(dx, dy);
+    return ((min_d * this._cost_diagonal_tile * 2) + ((max_d - min_d) * this._cost_tile)) * this._estimate_multiplier;
 }
 
 function Rail::_Neighbours(path, cur_node)

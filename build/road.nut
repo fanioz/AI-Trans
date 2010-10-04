@@ -84,7 +84,7 @@ function BuildingHandler::road::Depot(service, is_source)
     AILog.Info("Try to Build Depot");
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
-    local built_s = Tiles.Depot(is_source ? service.Source.Location : service.Destination.Location);
+    local built_s = Tiles.DepotOn(is_source ? service.Source.Location : service.Destination.Location);
     local c_pos = Platform();
     /* check if i've one */
     foreach (pos, val in built_s) {
@@ -140,7 +140,7 @@ function BuildingHandler::road::pre_build(body, head)
         if (!Tiles.IsRoadBuildable(head)) return false;
         AIRoad.BuildRoad(head, body);
     }
-    if (!this._mother.State.TestMode && !AIRoad.AreRoadTilesConnected(head, body)) return false;
+    if (!this._mother.State.TestMode) return AIRoad.AreRoadTilesConnected(head, body);
     return true;
 }
 
@@ -194,10 +194,9 @@ function BuildingHandler::road::Station(service, is_source)
     if (!AIStation.IsValidStation(validID)) validID = 0;
     while (pos = resume Gpos) {
         AIController.Sleep(1);
-        //AIStation.IsValidStation(c_pos.ID) ? c_pos.ID :
         //Debug.Sign(pos.GetBody(), "B");
         //Debug.Sign(pos.GetHead(), "H");
-        if (check_fn(pos.GetBody(), service.Cargo, 1, 1, Stations.RoadRadius()) < 7) continue;
+        if (!this._mother.State.TestMode && check_fn(pos.GetBody(), service.Cargo, 1, 1, Stations.RoadRadius()) < 7) continue;
         if (!this.pre_build(pos.GetBody(), pos.GetHead())) continue;
         local result = AIRoad.BuildRoadStation(pos.GetBody(), pos.GetHead(), Stations.RoadFor(service.Cargo), AIStation.STATION_JOIN_ADJACENT || validID);
         if (Debug.ResultOf("Road station at " + name, result)) {
@@ -243,10 +242,9 @@ function BuildingHandler::road::Path(service, number, is_finding = false)
         ignored_tiles.push(service.DestinationDepot.GetBody());
     }
 
-    local tile_cost = Finder.cost.tile;
-    //Finder.cost.max_cost = distance * tile_cost * 10;
-    //Finder.cost.no_existing_road = 2 * tile_cost;
-    //Finder.cost.tile = 0.2 * tile_cost;
+    local tile_cost = 10;
+    Finder.cost.tile = tile_cost;
+    Finder.cost.no_existing_road = 2 * tile_cost;
     Finder.cost.turn = 3 * tile_cost;
     Finder.cost.slope = 2 * tile_cost;
     Finder.cost.bridge_per_tile = 6 * tile_cost;
@@ -291,7 +289,7 @@ function BuildingHandler::road::Path(service, number, is_finding = false)
         default : Debug.DontCallMe("Path Selection");
     }
 
-    if (service.IsSubsidy) Finder.cost.estimate_multiplier = 2;
+    if (service.IsSubsidy) Finder.cost.estimate_multiplier = 3;
 
     /* if we are only check is it connected, do bread first search */
     if (!is_finding) {
