@@ -309,25 +309,22 @@ class Vehicles
 	static function SortedEngines(engines)
 	{
 		local heap = FibonacciHeap();
-		local score = 1000000;
 		foreach (idx, val in engines) {
 			AIController.Sleep(1);
+			local score = 1000000;
 			if (AIEngine.IsWagon(idx)) {
 				score -= AIEngine.GetCapacity(idx);
 				heap.Insert(idx, score);
 				continue;
 			}
 			
-			local vtype = AIEngine.GetVehicleType(idx);
-			if (vtype == AIVehicle.VT_ROAD) {
-				score -=  AIEngine.GetMaxSpeed(idx);
-			}
-			
-			if (vtype == AIVehicle.VT_RAIL) {
-				score -= AIEngine.GetPower(idx);
-				if (!TransAI.Setting.Get(Const.Settings.realistic_acceleration)) {
+			if (
+				AIEngine.GetVehicleType(idx) == AIVehicle.VT_RAIL &&
+				!TransAI.Setting.Get(Const.Settings.realistic_acceleration)
+				) {
 						score -= AIEngine.GetMaxTractiveEffort(idx);
-				}
+			} else {
+				score -=  AIEngine.GetMaxSpeed(idx);
 			}
 			heap.Insert(idx, score);
 		}
