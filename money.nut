@@ -2,7 +2,7 @@
  * 		 09.02.05
  *      money.nut
  *      
- *      Copyright 2009 fanio zilla <fanio@arx-ads>
+ *      Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *      
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by

@@ -4,3 +4,10 @@ Trans Changelog
 Release: AI named FanAI
 Feature: Using road vehicle for servicing industries
 
+* 90312
+Fix: Sleep value should be at least 1
+Fix: some typos
+Fix: forget to remark un-finished generator code
+Fix: Road Station Heading & Building (Join Distance Station)
+Fix: even handler on vehicle lost and unprofitable
+Fix: adust some operational parameter.

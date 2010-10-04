@@ -2,7 +2,7 @@
  *		09.02.08
  *      company.nut
  *
- *      Copyright 2009 fanio zilla <fanio@arx-ads>
+ *      Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  */
 class CompanyManager
 {
-	Name = null;              /// Name of my company
+	_name = null;              /// _name of my company
 	Live= null;               /// Should I keep alive or retire ?
 	Factor = null;            /// Factor of cost;
 	StartDate = null;         /// Company launching date
@@ -43,7 +43,7 @@ _serv_gen = null;
  * @param main main instance
  */
 	constructor(main) {
-		Name = "Fanioz";
+		_name = "Fanioz";
 		Live = 1;
 		Factor = 0;
 		StartDate = 0;
@@ -106,13 +106,13 @@ function CompanyManager::Born()
 	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
 	local rt = AIRailTypeList();
   AIRail.SetCurrentRailType(rt.Begin());
-	/* Set my Name and greeting you */
-	if (!AICompany.SetPresidentName(Name)) {
+	/* Set my name and greeting you */
+	if (!AICompany.SetPresidentName(_name)) {
 		local i = 1;
-		while (!AICompany.SetPresidentName(Name + " " + i + " (jr.)")) { i ++;}
+		while (!AICompany.SetPresidentName(_name + " " + i + " (jr.)")) { i ++;}
 	}
-	Name = AICompany.GetPresidentName(AICompany.COMPANY_SELF);
-	AICompany.SetName(Name + " Corp. Ltd");
+	_name = AICompany.GetPresidentName(AICompany.COMPANY_SELF);
+	AICompany.SetName(_name + " Corp. Ltd");
 	if (StartDate == 0)	StartDate = AIDate.GetCurrentDate();
 	AILog.Info("Powered by " + _version_);
 	AILog.Info("" + AICompany.GetName(AICompany.COMPANY_SELF) + " has been started since " + DateStr(this.StartDate)	+".");
@@ -122,7 +122,7 @@ function CompanyManager::Born()
 	ErrMessage("Build HQ cost = " + this.Factor);
 	Bank.PayLoan();
 	this.Live = 1;
-	_serv_gen = Gen.Service(5);
+	_serv_gen = Gen.Service(10);
 }
 
 function CompanyManager::Evaluate()
@@ -133,8 +133,9 @@ function CompanyManager::Evaluate()
 	GatherSubsidy();
   AILog.Info("service count=" + service_key.Count());
   if (service_key.Count() < 1) {
-    if (_serv_gen.getstatus() == "dead") _serv_gen = Gen.Service(10);
-    resume _serv_gen;
+    if (_serv_gen.getstatus() != "dead") resume _serv_gen;
+    /* stop iterating service generator */
+    ///_serv_gen = Gen.Service(10);
   }
   if (Bank.Balance() > 50000) this.Live = 1;
   if (this.Live < 0) return;
@@ -159,16 +160,17 @@ function CompanyManager::Evaluate()
     }
     if (ssta == null || depot == null) {
       AILog.Warning("Vehicle has no station/depot order!");
-      AIEventController.InsertEvent(AIEventVehicleLost(vhcID));
+      HandleUnprofitable(vhcID);
       continue;
     }
+    local ssta_ID = AIStation.GetStationID(ssta);
     local cargo = AIEngine.GetCargoType(AIVehicle.GetEngineType(vhcID));
     //AILog.Info("Check cargo " + AICargo.GetCargoLabel(cargo));
-    local staname = AIStation.GetName(AIStation.GetStationID(ssta));
-    AILog.Info("Waiting at " + staname + "=" + AIStation.GetCargoWaiting(AIStation.GetStationID(ssta), cargo));
-    if (AIStation.GetCargoWaiting(AIStation.GetStationID(ssta), cargo) > 100) {
-      if (AIVehicleList_Station(AIStation.GetStationID(ssta)).Count() > 30) continue;
-      StartClonedVehicle(vhcID, depot, 1);
+    local staname = AIStation.GetName(ssta_ID);
+    AILog.Info("Waiting at " + staname + "=" + AIStation.GetCargoWaiting(ssta_ID, cargo));
+    if (AIStation.GetCargoWaiting(ssta_ID, cargo) > 100) {
+      if (AIVehicleList_Station(ssta_ID).Count() > 30) continue;
+      StartClonedVehicle(vhcID, depot, 2);
       ErrMessage("Extending vehicle");
     }
   }
@@ -247,34 +249,37 @@ function CompanyManager::Events()
 			 	*/
 			 case AIEvent.AI_ET_VEHICLE_LOST:
 			 	local me = AIEventVehicleLost.Convert(e);
-			 	AILog.Info("Nothing todo except sell");
-			 	/*AIOrder.RemoveOrder(me.GetVehicleID(), 0);
-			 	AIOrder.RemoveOrder(me.GetVehicleID(), 1);*/
-			 	AIVehicle.SendVehicleToDepot(me.GetVehicleID());
-			 	break;
+        local vhc_ID = me.GetVehicleID();
+			 	AILog.Info("Nothing todo except sell this " + vhc_ID);
+        HandleVehicleLost(me.GetVehicleID());
+        break;
+        
 			 case AIEvent.AI_ET_VEHICLE_WAITING_IN_DEPOT:
 			 	local me = AIEventVehicleWaitingInDepot.Convert(e);
-			 	// let assume that the
-			 	AILog.Info("Vehicle Ready to sell");
-			 	AIVehicle.SellVehicle(me.GetVehicleID());
+			 	/* sell the vehicle if it has no order */
+        local vhc_ID = me.GetVehicleID();
+			 	AILog.Info("Ready to sell Vehicle " + vhc_ID);
+			 	if (AIOrder.GetOrderCount(vhc_ID) == 0)AIVehicle.SellVehicle(me.GetVehicleID());
+        /* reserved for vehicle_refit feature in future */
 			 	break;
+        
 			 case AIEvent.AI_ET_VEHICLE_UNPROFITABLE:
 			 	local me = AIEventVehicleUnprofitable.Convert(e);
-			 	AILog.Info("Hey, let me sell you anyway");
-			 	/*AIOrder.RemoveOrder(me.GetVehicleID(), 0);
-			 	AIOrder.RemoveOrder(me.GetVehicleID(), 1);*/
-			 	AIVehicle.SendVehicleToDepot(me.GetVehicleID());
-			 	break;
+        HandleUnprofitable(me.GetVehicleID());
+        break;
+        
 			 case AIEvent.AI_ET_INDUSTRY_OPEN:
 				local me = AIEventIndustryOpen.Convert(e);
 			 	AILog.Info("Congratulation on grand opening " + AIIndustry.GetName(me.GetIndustryID()));
 			 	break;
+        
 			 case AIEvent.AI_ET_INDUSTRY_CLOSE:
 			 	local me = AIEventIndustryClose.Convert(e);
 			 	local id = me.GetIndustryID();
-			 	AILog.Info("Sadly enough"+ AIIndustry.GetName(id));
+			 	AILog.Info("Sadly enough, Good bye "+ AIIndustry.GetName(id));
 			 	HandleClosingIndustry(id);
 			 	break;
+        
 			 case AIEvent.AI_ET_ENGINE_AVAILABLE:
 			 	local me = AIEventEngineAvailable.Convert(e);
 				local x = me.GetEngineID();
@@ -331,7 +336,8 @@ function CompanyManager::Service()
       executor.Path(serv, 1);
       local cost = AIAccounting();
       if (!executor.Track(serv, 1, false)) break;
-      if (!Bank.Get((cost.GetCosts() * 1.2).tointeger())) break;
+      /* don't continue if I've not enough money */
+      if (!Bank.Get(max((cost.GetCosts() * 1.5).tointeger(), 10000))) break;
       if (!executor.Track(serv, 1)) break;
       if (!executor.Station(serv, true)) break;
       if (!executor.Station(serv, false)) break;
@@ -375,20 +381,29 @@ function CompanyManager::GatherSubsidy()
 		local d = AISubsidy.GetExpireDate(i) - AIDate.GetCurrentDate();
 		if (d < 30) continue;
 		//AILog.Info("Gathering subsidyID " + i);
-		local service = Services(AISubsidy.GetSource(i), AISubsidy.GetDestination(i), AISubsidy.GetCargoType(i));
-		//AILog.Info("Gathering servis id " + service.Info.CurrentID);
-		//if (service_key.Exists(service.Info.CurrentID)) continue;
-		if (this.service_table.rawin(service.Info.CurrentID)) continue;
-		if ((!AISubsidy.SourceIsTown(i) && AIIndustry.IsBuiltOnWater(AISubsidy.GetSource(i))) ||
-		  (!AISubsidy.DestinationIsTown(i) && AIIndustry.IsBuiltOnWater(AISubsidy.GetDestination(i)))) continue;
-    service.Info.SourceIsTown = AISubsidy.SourceIsTown(i);
-		service.Info.DestinationIsTown = AISubsidy.DestinationIsTown(i);
-		AILog.Info(service.Update());
-		if ((AIMap.DistanceManhattan(service.Info.SourcePos, service.Info.DestinationPos)) < 5) continue;
-		this.service_key.Insert(service.Info.CurrentID, d - 29);
-		this.service_table[service.Info.CurrentID] <- service;
+    local source = AISubsidy.GetSource(i);
+    local dest = AISubsidy.GetDestination(i);
+		local subs_service = Services(source, dest, AISubsidy.GetCargoType(i));
+		//AILog.Info("Gathering servis id " + service.Info.CurrentID);    
+    if ((!AISubsidy.SourceIsTown(i) && AIIndustry.IsBuiltOnWater(source)) ||
+       (!AISubsidy.DestinationIsTown(i) && AIIndustry.IsBuiltOnWater(dest))) continue;
+    /* update the table of service to avoid double service */
+    /* not found better than this yet */
+    if (this.service_table.rawin(subs_service.Info.CurrentID)) {
+       /*
+      subs_service = this.service_table[subs_service.Info.CurrentID];
+      if (subs_service.Info.Serviced) */
+      continue;
+    } else {
+      subs_service.Info.SourceIsTown = AISubsidy.SourceIsTown(i);
+      subs_service.Info.DestinationIsTown = AISubsidy.DestinationIsTown(i);
+      AILog.Info(subs_service.Update());
+      if ((AIMap.DistanceManhattan(subs_service.Info.SourcePos, subs_service.Info.DestinationPos)) < 5) continue;
+      this.service_key.Insert(subs_service.Info.CurrentID, d - 29);
+      this.service_table[subs_service.Info.CurrentID] <- subs_service;
+    }
 	}
-	AILog.Info("Finished");
+	AILog.Info("Subsidy Gathered");
 }
 
 function CompanyManager::Test() 
@@ -398,6 +413,6 @@ function CompanyManager::Test()
 
 function CompanyManager::SleepTime() 
 {
-	return (100000 / Bank.Balance()).tointeger() + 10;
+	return max((100000 / Bank.Balance()).tointeger(), 10);
 }
 

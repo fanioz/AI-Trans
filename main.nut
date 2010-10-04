@@ -2,7 +2,7 @@
  *	    09.02.01
  *      main.nut
  *      
- *      Copyright 2009 fanio zilla <fanio@arx-ads>
+ *      Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *      
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ function FanAI::Start()
 	local wait_time = GetTick();
 	while (this._manager.Live != 0){
 		Sleep(this._manager.SleepTime());
-		if (GetTick() - wait_time > 500) {
+		if (GetTick() - wait_time > 1000) {
 		  wait_time = GetTick();
 			AILog.Info("============" + DateStr(AIDate.GetCurrentDate()) + "============");
 			this._manager.Evaluate();
@@ -97,7 +97,6 @@ function FanAI::Start()
 	/**
 	* ====================================
 	*/
-	AICompany.SetName("Resigned " + this._manager.Name);
 	AILog.Info("I'm resign :-)");	
 }
 

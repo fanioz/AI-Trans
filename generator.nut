@@ -2,7 +2,7 @@
  *      09.03.08
  *      generator.nut
  *
- *      Copyright 2009 fanio zilla <fanio@arx-ads>
+ *      Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -24,31 +24,31 @@ function Gen::Service(max_num)
 {
   AILog.Info("Generate Service");
   AIController.Sleep(1);
-	local counter = 400;
+	local counter = 10000;
 	local serv = null;
 	local cargos = HighPriceCargos();
 	local last_type = null;
-	for (local cargoID = cargos.Begin(); cargos.HasNext(); cargoID = cargos.Next()) {
+	for (local cargo_ID = cargos.Begin(); cargos.HasNext(); cargo_ID = cargos.Next()) {
 	  AIController.Sleep(1);
-	  local dstIndLst = NotOnWater(AIIndustryList_CargoAccepting (cargoID));
+	  local dstIndLst = NotOnWater(AIIndustryList_CargoAccepting (cargo_ID));
     dstIndLst.Valuate(AIIndustry.GetLocation);
     dstIndLst.Sort(AIAbstractList.SORT_BY_VALUE, true);    
 	  for (local dst = dstIndLst.Begin(); dstIndLst.HasNext();dst = dstIndLst.Next()) {
 	    AIController.Sleep(1);
 	    if (AIIndustry.GetIndustryType(dst) == last_type) continue;
-	    else last_type = AIIndustry.GetIndustryType(dst);
+	    last_type = AIIndustry.GetIndustryType(dst);
 	    local cargo2 = AIIndustryType.GetAcceptedCargo(last_type);
-	    for (local cargo2D = cargo2.Begin(); cargo2.HasNext(); cargo2D = cargo2.Next()) {
+	    for (local cargo_2_ID = cargo2.Begin(); cargo2.HasNext(); cargo_2_ID = cargo2.Next()) {
 	      AIController.Sleep(1);
-	      local srcIndLst = NotOnWater(AIIndustryList_CargoProducing(cargo2D));
-	      srcIndLst.Valuate(AIIndustry.GetDistanceManhattanToTile, AIIndustry.GetLocation(dst));
-	      srcIndLst.Sort(AIAbstractList.SORT_BY_VALUE, true);
-	      srcIndLst.KeepAboveValue(10);
-	      srcIndLst.Valuate(AIIndustry.GetLastMonthProduction, cargo2D);
-	      srcIndLst.KeepAboveValue(5);
-	      for (local src = srcIndLst.Begin(); srcIndLst.HasNext(); src = srcIndLst.Next()) {
+	      local src_ind_lst = NotOnWater(AIIndustryList_CargoProducing(cargo_2_ID));
+	      src_ind_lst.Valuate(AIIndustry.GetDistanceManhattanToTile, AIIndustry.GetLocation(dst));
+	      src_ind_lst.Sort(AIAbstractList.SORT_BY_VALUE, true);
+	      src_ind_lst.KeepAboveValue(10);
+	      src_ind_lst.Valuate(AIIndustry.GetLastMonthProduction, cargo_2_ID);
+	      src_ind_lst.KeepAboveValue(10);
+	      for (local src = src_ind_lst.Begin(); src_ind_lst.HasNext(); src = src_ind_lst.Next()) {
 	        AIController.Sleep(1);
-	        serv = Services(src, dst, cargo2D);
+	        serv = Services(src, dst, cargo_2_ID);
 	        if (service_key.Exists(serv.Info.CurrentID)) continue;
 	        service_key.Insert(serv.Info.CurrentID, counter + AIIndustry.GetDistanceManhattanToTile(src, AIIndustry.GetLocation(dst)));
 	        serv.Info.SourceIsTown = false;
@@ -59,11 +59,17 @@ function Gen::Service(max_num)
 	      }
 	    }      
 	  }
+	  local min_pop = 300;
 	  local dst_town_lst = AITownList();
+	  dst_town_lst.Valuate(AITown.GetPopulation);
+	  dst_town_lst.KeepBelowValue(min_pop);
 	  dst_town_lst.Valuate(AITown.GetLocation);
 	  dst_town_lst.Sort(AIAbstractList.SORT_BY_VALUE, true);
+    /*
 	  for (local dst_town = dst_town_lst.Begin(); dst_town_lst.HasNext(); dst_town = dst_town_lst.Next()) {
+	    
 	  }
+    */
   }
   AILog.Info("Service Generator Stopped");
 	return false;

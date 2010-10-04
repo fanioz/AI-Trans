@@ -41,39 +41,6 @@ function CargoID_Of(CClass) {
 	return cargos.Begin();
 }
 // =======================================
-// Get tiles of My station arround "IsTown"-"ID"
-function GetMyStations(IsTown, ID) {
-// =======================================
-	local stations = AIStationList(AIStation.STATION_ANY);
-	if (IsTown) {
-		stations.Valuate(AIStation.IsWithinTownInfluence,ID);
-		stations.RemoveValue(0);
-		return stations;
-	}
-	else {
-		local tiles = AITileList_IndustryProducing(ID,RoadStationRadius(true));
-		tiles.Valuate(AITile.IsStationTile);
-		tiles.RemoveValue(0);
-		stations.Valuate(IsInsideOf,tiles);
-		stations.RemoveValue(0);
-		return stations;
-	}
-	
-}
-// =======================================
-// check if this "stationId" is inside of "tiles"
-// dependant of GetMyStations
-function IsInsideOf(stationID,tiles) {
-// =======================================
-	if (tiles.IsEmpty()) {return false;}
-	local tile = tiles.Begin();
-	while (true) {
-		if (AIStation.GetLocation(stationID) == tile) {return true;}
-		if (!tiles.HasNext()) {return false;}
-		tile = tiles.Next();
-	}
-}
-// =======================================
 // Get tile of My station arround "base"
 function MyStationTile(base) {
 // =======================================
@@ -131,7 +98,7 @@ function HighPriceCargos() {
 // =======================================
 function IsMyStation(tile) {
 // =======================================
-return AITile.IsStationTile(tile) && TileIsMine(tile);;
+return AITile.IsStationTile(tile) && Tile.IsMine(tile);;
 }
 // =======================================
 function NonStopOrder(addition) {
@@ -273,12 +240,9 @@ function FrontOf(tile, ind_object) {
 // X + =  SW (left bottom) ; Y + =  SE (right bottom)
 	local diffX = AIMap.GetTileX(tile) - AIMap.GetTileX(ind_object);
 	local diffY = AIMap.GetTileY(tile) - AIMap.GetTileY(ind_object);
-	local face = Tile.NE_Of(tile);
-	
-	if (diffX < 0) face = Tile.NE_Of(tile);
-	if (diffY < 0) face = Tile.NW_Of(tile);
-	if (diffX > 3) face = Tile.SW_Of(tile);	
-  if (diffY > 3) face = Tile.SE_Of(tile);
+	local face = Tile.SW_Of(tile);
+	if (diffX <= 0) face = Tile.NE_Of(tile);
+	if (diffY <= 0) face = Tile.NW_Of(tile);	
 	return face;
 }
 // =======================================
@@ -409,4 +373,51 @@ function Rail(path) {
 		 }
 	 }
 }
+}
+
+/**
+* Handle the lost vehicle, as AIEventController.InsertEvent can't be used ?
+* 
+* - Unshare the vehicle order
+* - Remove all order still there
+* - Give a try to send vehicle to depot
+* @param vhc_ID The ID of vehicle to handle
+*/
+function HandleVehicleLost(vhc_ID)
+{
+  AIOrder.UnshareOrders(vhc_ID);
+  while (AIOrder.GetOrderCount(vhc_ID) > 0) AIOrder.RemoveOrder(vhc_ID, 0);
+  local retry = 5;
+	while (!AIVehicle.SendVehicleToDepot(vhc_ID) && retry > 0) {
+    AIController.Sleep(retry * 10);
+    ErrMessage("Sending vehicle to depot");
+    if (AIVehicle.IsStoppedInDepot(vhc_ID)) return;
+    retry --;
+  }
+}
+
+/**
+* Handle Un profitable vehicle
+*
+*/
+function HandleUnprofitable(vhc_ID)
+{
+  if (AIVehicle.GetProfitLastYear(vhc_ID) > 0) return false;
+  if (AIVehicle.GetProfitThisYear(vhc_ID) > 0) return false;
+  AILog.Info("It would be better if I sell " + vhc_ID + " anyway");
+  /* But, I only delete your source station only and mark you as a loss vehicle :) */
+  AIOrder.UnshareOrders(vhc_ID);
+  /* AIOrder.SkipOrder(not available) */
+  AIController.Sleep(10);
+	if (AIOrder.GetOrderCount (vhc_ID) > 2 ) AIOrder.RemoveOrder(vhc_ID, 0);
+  if (AIVehicle.GetCargoLoad(vhc_ID, VehicleCargo(vhc_ID)) == 0) HandleVehicleLost(vhc_ID);
+} 	
+/**
+* Get cargo of vehicle by check it engine
+* @param vhc_ID The ID of vehicle
+* @return cargoID of that vehicle
+*/
+function VehicleCargo(vhc_ID)
+{
+ return AIEngine.GetCargoType(AIVehicle.GetEngineType(vhc_ID));
 }
