@@ -235,6 +235,10 @@ class Route.RailFinder extends RailPF_1
 				}
 			}
 		}
+		
+		if (AIRoad.IsRoadTile(new_tile) && Tiles.IsMine(new_tile)) {
+			cost += self._cost_crossing * 10;
+		}
 		/* dont call path.getcost */
 		return cost;
 	}
