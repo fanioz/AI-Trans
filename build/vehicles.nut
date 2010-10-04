@@ -25,12 +25,6 @@
  */
 class Vehicles
 {
-    id = -1;
-    constructor(id)
-    {
-        this.id = id;
-    }
-
 	/**
 	 * Try to send vehicle to depot
 	 * @param vhc_ID The ID of vehicle to handle
@@ -91,51 +85,63 @@ class Vehicles
         return AIEngine.GetCargoType(engine);
     }
 
-    /**
-     * Can Send vehicle to depot ?
-     * - Give a try to send vehicle to depot
-     * @param vhc_ID The ID of vehicle to handle
-     * @return true if vehicle has been sent to depot
-     */
-    static function IsSendToDepot(vhc_ID)
-    {
-        AIController.Sleep(5);
-        if (AIVehicle.IsStoppedInDepot(vhc_ID)) return true;
-        /* maybe yes .. maybe no, but let assume true because we checked it :-)*/
-        //if (Tiles.IsDepotTile(AIOrder.GetOrderDestination(vhc_ID, AIOrder.ORDER_CURRENT))) return true;
-        if (AIOrder.GetOrderCount(vhc_ID) < 5) AIOrder.RemoveOrder(vhc_ID, 0);
-        local retry = 3;
-        local msg = "Sending " + AIVehicle.GetName(vhc_ID) + " to depot(" +  retry + ")";
-        while (retry-- > 0) {
-            AIController.Sleep(retry);
-            if (Debug.ResultOf(msg, AIVehicle.SendVehicleToDepot(vhc_ID))) return true;
-            if (AIVehicle.GetVehicleType(vhc_ID) != AIVehicle.VT_RAIL) AIVehicle.ReverseVehicle(vhc_ID);
-            AIController.Sleep(retry * 2);
-            if (Debug.ResultOf(msg, AIVehicle.SendVehicleToDepot(vhc_ID))) return true;
-        }
-        /*can't send, maybe congested line */
-        return false
-    }
+	/**
+	 * Can Send vehicle to depot ?
+	 * - Give a try to send vehicle to depot
+	 * @param vhc_ID The ID of vehicle to handle
+	 * @return true if vehicle has been sent to depot
+	 */
+	static function IsSendToDepot(vhc_ID)
+	{
+		AIController.Sleep(5);
+		if (AIVehicle.IsStoppedInDepot(vhc_ID)) return true;
+		/* maybe yes .. maybe no, but let assume true because we checked it :-)*/
+		//if (Tiles.IsDepotTile(AIOrder.GetOrderDestination(vhc_ID, AIOrder.ORDER_CURRENT))) return true;
+		if (AIOrder.GetOrderCount(vhc_ID) < 5) AIOrder.RemoveOrder(vhc_ID, 0);
+		local retry = 3;
+		local msg = "Sending " + AIVehicle.GetName(vhc_ID) + " to depot(" +  retry + ")";
+		while (retry-- > 0) {
+			AIController.Sleep(retry);
+			if (Debug.ResultOf(msg, AIVehicle.SendVehicleToDepot(vhc_ID))) return true;
+			if (AIVehicle.GetVehicleType(vhc_ID) != AIVehicle.VT_RAIL) AIVehicle.ReverseVehicle(vhc_ID);
+			AIController.Sleep(retry * 2);
+			if (Debug.ResultOf(msg, AIVehicle.SendVehicleToDepot(vhc_ID))) return true;
+		}
+		/*can't send, maybe congested line */
+		return false
+	}
 
-    static function Sold(vhc_ID)
+	/**
+	 * CanClone a vehicle in depot 
+	 * @param vhc_ID_new The vehicle ID to clone
+	 * @return 0 if no vehicle is cloned
+	 */
+	static function CanClone(vhc_ID)
+	{
+		local ord_pos = AIOrder.ResolveOrderPosition(vhc_ID, 4);
+		local srcdepot = AIOrder.IsGotoDepotOrder(vhc_ID, ord_pos) ? AIOrder.GetOrderDestination(vhc_ID, ord_pos) : AIVehicle.GetLocation(vhc_ID);
+		
+		return Vehicles.StartCloned(vhc_ID, srcdepot, 2);	
+	}
+
+	/**
+	 * CanReplace vehicle
+	 * @param vhc_ID Vehicle ID to select
+	 */
+ 	static function CanReplace(vhc_ID)
     {
-        if (!AIVehicle.IsStoppedInDepot(vhc_ID)) return false;
         local depot = AIVehicle.GetLocation(vhc_ID);
         switch (AIVehicle.GetVehicleType(vhc_ID)) {
             case AIVehicle.VT_RAIL :
-                if (AIOrder.GetOrderCount(vhc_ID) < 5) {
-                    AIVehicle.SellWagonChain(vhc_ID, 0);
-                    return AIVehicle.SellVehicle(vhc_ID);
-                }
                 /* pick a loco */
                 local vhc_eng = AIVehicle.GetEngineType(vhc_ID);
                 local wagon_id = AIVehicle.GetWagonEngineType(vhc_ID, 1);
-                local cargo = AIEngine.GetCargoType(wagon_id);
+                local cargo = Vehicles.CargoType(vhc_ID, true);
                 
-                local locos = Vehicles.WagonEngine(0);
+                local locos = Vehicles.RailEngine(1, AIEngine.GetRailType(vhc_eng));
                 locos.Valuate(AIEngine.HasPowerOnRail, AIEngine.GetRailType(vhc_eng));
                 locos.KeepValue(1);
-                if (Debug.ResultOf("loco found", locos.Count()) < 1) return false;
+                if (Debug.ResultOf("loco found", locos.Count()) < 1) return;
                 locos = Vehicles.SortedEngines(locos);
                 while (locos.Count() > 0) {
                     local MainEngineID = locos.Pop();
@@ -144,7 +150,7 @@ class Vehicles
                     local loco_id = AIVehicle.BuildVehicle(depot, MainEngineID);
                     if (!AIVehicle.IsValidVehicle(loco_id)) continue;
                     if (AIEngine.CanRefitCargo(MainEngineID, cargo)) AIVehicle.RefitVehicle(loco_id, cargo);
-                    if (AIVehicle.HasSharedOrders(vhc_ID)) AIOrder.ShareOrders(loco_id,vhc_ID);
+                    if (AIVehicle.HasSharedOrders(vhc_ID)) AIOrder.ShareOrders(loco_id,vhc_ID)
                     else AIOrder.CopyOrders (loco_id,vhc_ID);
                     if (AIOrder.GetOrderCount(loco_id) != AIOrder.GetOrderCount(vhc_ID)) {
                         AIVehicle.SellVehicle(loco_id);
@@ -155,24 +161,50 @@ class Vehicles
                         continue;
                     }
                     AIGroup.MoveVehicle(AIVehicle.GetGroupID(vhc_ID), loco_id);
-                    AIVehicle.StartStopVehicle(loco_id);
-                    return AIVehicle.SellVehicle(vhc_ID);
+                    return AIVehicle.StartStopVehicle(loco_id);
                 }
                 break;
             case AIVehicle.VT_ROAD :
-            	Vehicles.StartCloned(vhc_ID, depot, 2);
-                return AIVehicle.SellVehicle(vhc_ID);
+	            local myVhc = null;
+	            local vhc_eng = AIVehicle.GetEngineType(vhc_ID);
+	            local cargo = Vehicles.CargoType(vhc_ID, false);
+		        local engines = Vehicles.RVEngine(AIEngine.GetRoadType(vhc_eng));
+		        engines = Vehicles.EngineCargo(engines, cargo);
+		        engines = Vehicles.SortedEngines(engines);
+		        while (Debug.ResultOf("engine found", engines.Count()) > 0) {
+		            local MainEngineID = engines.Pop();
+		            local name = Debug.ResultOf("RV name", AIEngine.GetName(MainEngineID));
+		            myVhc = AIVehicle.BuildVehicle(depot, MainEngineID);
+		            if (!AIVehicle.IsValidVehicle(myVhc)) continue;
+		            if (AIEngine.GetCargoType(MainEngineID) != cargo) {
+		                AIVehicle.RefitVehicle(myVhc, cargo);
+		            }
+		            /* ordering */
+		            if (AIVehicle.HasSharedOrders(vhc_ID)) AIOrder.ShareOrders(myVhc, vhc_ID)
+                    else AIOrder.CopyOrders (myVhc, vhc_ID);
+                    if (AIOrder.GetOrderCount(myVhc) != AIOrder.GetOrderCount(vhc_ID)) {
+                        AIVehicle.SellVehicle(myVhc);
+                        continue;
+                    }
+                    if (!AIVehicle.MoveWagonChain(vhc_ID, 1, myVhc, 0)) {
+                        AIVehicle.SellVehicle(myVhc);
+                        continue;
+                    }
+                    AIGroup.MoveVehicle(AIVehicle.GetGroupID(vhc_ID), myVhc);
+                    return AIVehicle.StartStopVehicle(myVhc);
+		        }
             default : Debug.DontCallMe("stop in depot" , AIVehicle.GetVehicleType(vhc_ID));
         }
     }
-
+    
 	/**
-	 * upgrade vehicle by check it engine
+	 * Upgrade vehicle by check it engine
 	 * @param engine_id_new The new engine ID of vehicle
 	 */
 	static function UpgradeEngine(engine_id_new)
 	{
 		AILog.Info("Try Upgrading Vehicle");
+		local cargo = -1;
 		foreach(vhc_id, val in AIVehicleList()) {
 			AIController.Sleep(1);
 			local group_id = AIVehicle.GetGroupID(vhc_id);            
@@ -180,8 +212,9 @@ class Vehicles
 			if (AIGroup.GetEngineReplacement(group_id, engine_id_old) == engine_id_new) continue; 
 			local old_v_type = AIVehicle.GetVehicleType(vhc_id);
 			local new_v_type = AIEngine.GetVehicleType(engine_id_new);
-			if (new_v_type != old_v_type) continue; 
-			local cargo = Vehicles.CargoType(vhc_id, old_v_type == AIVehicle.VT_RAIL);			 			
+			if (new_v_type != old_v_type) continue;
+			if (AIEngine.IsArticulated(engine_id_new) && new_v_type == AIVehicle.VT_ROAD) 
+			cargo = Vehicles.CargoType(vhc_id, old_v_type == AIVehicle.VT_RAIL);			 			
 			if (!Cargo.IsFit(engine_id_new, cargo)) continue;
 			if (new_v_type == AIVehicle.VT_RAIL) {
 				if (!AIEngine.CanPullCargo(engine_id_new, cargo)) continue;
@@ -193,78 +226,156 @@ class Vehicles
 		}
 	}
 
-    static function ReplaceVhc(vhc_id)
-    {
-    }
-
     /**
      * Start the cloned vehicle
      * @param vhc_id The ID of main vehicle
      * @param depot The tile of depot to build a clone
      * @param number The number of clone to build
      */
-    static function StartCloned(vhc_id, depot, number)
-    {
-      local built = 0;
-      AILog.Info("Try clone " + number + " Vehicle");
-        for (local x = 0; x < number; x++) {
-            if (AIVehicle.StartStopVehicle(AIVehicle.CloneVehicle (depot, vhc_id, true))) built++;
-        }
-        return built;
-    }
+	static function StartCloned(vhc_id, depot, number)
+	{
+		local built = 0;
+		AILog.Info("Try clone " + number + " Vehicle");
+		for (local x = 0; x < number; x++) {
+			local id = AIVehicle.CloneVehicle (depot, vhc_id, true);
+			if (AIVehicle.IsValidVehicle(id)) {
+				built++;
+			 	AIVehicle.StartStopVehicle(id);
+			}
+		}
+		return built;
+	}
+	
+	/**
+	 * Filter engine that is fit for cargo
+	 * @param engines AIEngineList
+	 * @param cargo Cargo to fit
+	 * @return AIEngine list that is fit
+	 */
+	static function EngineCargo(engines, cargo)
+	{
+		local eng = engines;
+		eng.Valuate(Cargo.IsFit, cargo);
+		eng.KeepValue(1);
+		return eng;
+	}
 
-    static function EngineCargo(engines, cargo)
-    {
-        engines.Valuate(Cargo.IsFit, cargo);
-        engines.KeepValue(1);
-        return engines;
-    }
+    /**
+     * Road vehicle engine list
+     * @param track_type Type of track usable
+     * @return Road EngineList for track type
+     */
+	static function RVEngine(track_type)
+	{
+		local engines = AIEngineList(AIVehicle.VT_ROAD);
+		engines.Valuate(AIEngine.IsArticulated);
+		engines.KeepValue(0);
+		engines.Valuate(AIEngine.GetRoadType);
+		engines.KeepValue(track_type);
+		return engines;
+	}
 
-    static function RVEngine(track_type)
-    {
-        local engines = AIEngineList(AIVehicle.VT_ROAD);
-        engines.Valuate(AIEngine.IsArticulated);
-        engines.KeepValue(0);
-        engines.Valuate(AIEngine.GetRoadType);
-        engines.KeepValue(track_type);
-        return engines;
-    }
+	/**
+	 * AIEngineList of wagon or not types
+	 * @param yes 0 to select wagon 1 to select loco
+	 * @param track_type Track type needed for this engine
+	 * @return AIEngineList for the type
+	 */
+	static function RailEngine(yes, track_type)
+	{
+		local engines = AIEngineList(AIVehicle.VT_RAIL);
+		engines.Valuate(AIEngine.IsWagon);
+		engines.RemoveValue(yes);
+		engines.Valuate(AIEngine.CanRunOnRail, track_type);
+		engines.KeepValue(1);
+		return engines;
+	}
 
-    static function WagonEngine(yes)
-    {
-        local engines = AIEngineList(AIVehicle.VT_RAIL);
-        engines.Valuate(AIEngine.IsWagon);
-        engines.KeepValue(yes);
-        return engines;
-    }
-
+	/**
+	 * Get group name of vehicle. Its contain service key.
+	 * @param vc_id Vehicle ID to get
+	 * @return string name of it group
+	 */
     static function GroupName(vhc_id)
     {
-        return AIGroup.GetName(AIVehicle.GetGroupID(vhc_id));
+		return AIGroup.GetName(AIVehicle.GetGroupID(vhc_id));
     }
 
-    static function SortedEngines(engines)
-    {
-        local heap = FibonacciHeap();
-        foreach (idx, val in engines) {
-            AIController.Sleep(1);
-            local score = AIEngine.GetPrice(idx) / (AIEngine.GetReliability(idx) + 2);
-            score += AIEngine.GetRunningCost(idx) / (AIEngine.GetMaxSpeed(idx) + 2);
-            score -=  AIEngine.GetCapacity(idx) * 50;
-            score -= AIEngine.GetMaxAge (idx) + 1;
-            score -= AIEngine.GetPower(idx) + 1;
-            heap.Insert(idx, score);
-        }
-        return heap;
-    }
+	/**
+	 * Sort engine list by scoring them
+	 * @param engines AIEngineList
+	 * @return Heap of sorted list
+	 */
+	static function SortedEngines(engines)
+	{
+		local heap = FibonacciHeap();
+		local score = 1000000;
+		foreach (idx, val in engines) {
+			AIController.Sleep(1);
+			if (AIEngine.IsWagon(idx)) {
+				score -= AIEngine.GetCapacity(idx);
+				heap.Insert(idx, score);
+				continue;
+			}
+			
+			local vtype = AIEngine.GetVehicleType(idx);
+			if (vtype == AIVehicle.VT_ROAD) {
+				score -=  AIEngine.GetMaxSpeed(idx);
+			}
+			
+			if (vtype == AIVehicle.VT_RAIL) {
+				score -= AIEngine.GetPower(idx);
+				if (!TransAI.Setting.Get(Const.Settings.realistic_acceleration)) {
+						score -= AIEngine.GetMaxTractiveEffort(idx);
+				}
+			}
+			heap.Insert(idx, score);
+		}
+		return heap;
+	}
 
-    static function CountAtTile(tileID)
-    {
-        local vc = AIVehicleList();
-        vc.Valuate(AIVehicle.GetLocation);
-        vc.KeepValue(tileID);
-        return vc.Count();
-    }
+	/**
+	 * Count vehicle at tile
+	 * @param vhc_lst Vehicle list to count ( use AIVehicleList() to all)
+	 * @param ... Tile index of location
+	 * @return number of vehicle on that tile
+	 */
+	static function CountAtTile(vhc_lst, ...)
+	{
+		if (vargc < 1) return 0;
+		local vc = 0;
+		for(local c = 0; c < vargc; c++) {
+			foreach (idx, val in vhc_lst) {
+				if (AIVehicle.GetLocation(idx) == vargv[c]) vc++;
+			}
+		}
+		return vc;
+	}
+	
+	/**
+	 * Set common depot and conditional order
+	 * @param myVhc Vehicle ID
+	 * @param srcDepot Source depot
+	 * @param dstDepot Destination depot
+	 */
+	static function SetNextOrder(myVhc, srcDepot, dstDepot)
+	{ 
+		AIOrder.AppendOrder(myVhc, dstDepot, AIOrder.AIOF_STOP_IN_DEPOT);
+		AIOrder.AppendOrder(myVhc, srcDepot, AIOrder.AIOF_NON_STOP_INTERMEDIATE);
+		AIOrder.InsertConditionalOrder(myVhc, 2, 3);
+		AIOrder.SetOrderCondition(myVhc, 2, AIOrder.OC_AGE);
+		AIOrder.SetOrderCompareFunction(myVhc, 2, AIOrder.CF_LESS_THAN);
+		AIOrder.SetOrderCompareValue(myVhc, 2, (AIVehicle.GetMaxAge(myVhc) / 366).tointeger());
+	}
+	
+	/**
+	 * Sell completely
+	 */
+	function SellRailVhc(vhcid)
+	{
+		AIVehicle.SellWagonChain(vhcid, 0);
+		return AIVehicle.SellVehicle(vhcid);
+	}
 }
 
 /**
@@ -272,88 +383,102 @@ class Vehicles
  */
 class Task.AddVehicle extends DailyTask
 {
-	Info = null;
-	_max_num = 0;
-    constructor()
-    {    	
-        ::DailyTask.constructor("Vehicle Addition task");
-        ::DailyTask.SetRemovable(false);
-        ::DailyTask.SetKey(7);        
-    }
-    
-    function Execute()
-    {
-    	if (TransAI.Info.Serviced_Route.len() == 0) return;
-    	::DailyTask.Execute();    	
-    	foreach (idx, tabel in TransAI.Info.Serviced_Route) {	        
-	        AILog.Info("" + AIVehicle.GetName(tabel.MainVhcID));
-	        local dist = Debug.ResultOf("Distance", max(tabel.A_Distance, tabel.R_Distance));
-	        local vlen = Debug.ResultOf("Vehicle len", AIVehicle.GetLength(tabel.MainVhcID));
-	        this._max_num = ( dist * 16 / vlen).tointeger();
-	        local vhclst = AIVehicleList_Station(tabel.SourceStation);
-	        tabel.VehicleNum = vhclst.Count();
-	        tabel.MainVhcID = vhclst.Begin();
-	        AILog.Info("Vehicle count:" + tabel.VehicleNum);
-	        this.Info = tabel;
-	        if (tabel.VehicleNum > Debug.ResultOf("Max", this._max_num)) {
-				AILog.Warning("Maximum reached: Not adding");				
+	constructor()
+	{    	
+		::DailyTask.constructor("Vehicle Addition task");
+		::DailyTask.SetKey(7);        
+	}
+
+	function Execute()
+	{
+		if (TransAI.Info.Serviced_Route.len() == 0) return;
+		::DailyTask.Execute();    	
+		foreach (idx, tabel in TransAI.Info.Serviced_Route) {
+			if ((tabel.VehicleType == AIVehicle.VT_RAIL) && !tabel.RailDoubled) continue;
+			AILog.Info("=>" + AIVehicle.GetName(tabel.MainVhcID));
+			if (tabel.VehicleMaxNum == 0) {
+				local dist = Debug.ResultOf("Distance", max(tabel.A_Distance, tabel.R_Distance));
+				local vlen = Debug.ResultOf("Vehicle len", AIVehicle.GetLength(tabel.MainVhcID));
+				TransAI.Info.Serviced_Route[idx].VehicleMaxNum = ( dist * 16 / vlen).tointeger();
+				continue;
+			}
+			local st_id = tabel.SourceStation;
+			local vhclst = AIVehicleList_Station(st_id);
+			if (tabel.VehicleNum != vhclst.Count()) {
+				TransAI.Info.Serviced_Route[idx].VehicleNum = vhclst.Count();
+				continue;
+			}
+			vhclst.Valuate(AIVehicle.GetAge);
+			vhclst.Sort(AIAbstractList.SORT_BY_VALUE, true);
+			if (!AIVehicle.IsValidVehicle(tabel.MainVhcID)) {
+				TransAI.Info.Serviced_Route[idx].MainVhcID = vhclst.Begin();
+				continue;
+			}
+			local st_loc = AIStation.GetLocation(st_id);
+			local depot = tabel.SourceDepot;
+			local vhc_count = Vehicles.CountAtTile(vhclst, st_loc, depot);
+			if (vhc_count) continue;
+			if (Debug.ResultOf("Max. reached", tabel.VehicleNum > tabel.VehicleMaxNum)) {
+				AILog.Warning("Try Adding");
+				
+				local min_capacity = AIVehicle.GetCapacity(tabel.MainVhcID, tabel.Cargo);
+				local string_x = "Cargo waiting at " + AIStation.GetName(st_id);
+				if (Debug.ResultOf(string_x, AIStation.GetCargoWaiting(st_id, tabel.Cargo)) > min_capacity) {
+					Bank.Get(0);
+					Debug.ResultOf("Vehicle build", Vehicles.StartCloned(tabel.MainVhcID, depot, 1));
+				}
 			} else {
-				this.TryAdd();
-	        }
-	        TransAI.Info.Serviced_Route[idx] = this.Info;
+				AILog.Warning("Try maximizing");
+				Bank.Get(0);
+				Debug.ResultOf("Vehicle build", Vehicles.StartCloned(tabel.MainVhcID, depot, 1));
+			}
     	}
     }
+}
 
-    function TryAdd()
-    {		
-		
-		local min_capacity = 0;
-		local vhc_count = 0;
-		local name = AIVehicle.GetName(this.Info.MainVhcID);
-		/* sometime not work */
-		local ssta = AIStation.GetLocation(this.Info.SourceStation);		
-		//local ssta = AIOrder.GetOrderDestination((this.Info.MainVhcID), AIOrder.ResolveOrderPosition(this.Info.MainVhcID, 0));
-		local depot = this.Info.SourceDepot;
-		switch (this.Info.VehicleType) {
-			case AIVehicle.VT_ROAD :
-				if (!Debug.ResultOf(name + " valid station order", AIRoad.IsRoadStationTile(ssta))  ||
-					!Debug.ResultOf(name + " valid depot order", AIRoad.IsRoadDepotTile(depot))) {
-						TransAI.Info.Lost_Vehicle.push(this.Info.MainVhcID);						
-						return;
-				}
-				//vhc_count = Vehicles.CountAtTile(AIRoad.GetRoadStationFrontTile(ssta));
-				break;
-			case AIVehicle.VT_RAIL :
-				if (!Debug.ResultOf(name + " valid station order", AIRail.IsRailStationTile(ssta))  ||
-					!Debug.ResultOf(name + " valid depot order", AIRail.IsRailDepotTile(depot))) {
-						TransAI.Info.Lost_Vehicle.push(this.Info.MainVhcID);						
-						return;
-				}
-				//vhc_count = Vehicles.CountAtTile(AIRail.GetRailDepotFrontTile(depot));
-				break;
-			case AIVehicle.VT_AIR:
-	        	AILog.Warning("Using Air");
-	        	break;
-            case AIVehicle.VT_WATER:
-            	AILog.Warning("Using Water");
-            	break;
-			default : Debug.DontCallMe("Unsupported V_Type", this.Info.MainVhcID);
-		}
-		vhc_count += Vehicles.CountAtTile(ssta);
-		//vhc_count += Vehicles.CountAtTile(depot);
-		if (Debug.ResultOf("Vehicle waiting:", vhc_count) > 0) return;
-		local ssta_ID = this.Info.SourceStation;
-		if (AIStation.GetCargoRating(ssta_ID, this.Info.Cargo) > 60) return;
-		min_capacity = Debug.ResultOf("Min. Cap", AIVehicle.GetCapacity(this.Info.MainVhcID, this.Info.Cargo));		
-		local string_x = "cargo waiting at " + AIStation.GetName(ssta_ID);
-		if  (Debug.ResultOf(string_x, AIStation.GetCargoWaiting(ssta_ID, this.Info.Cargo)) > min_capacity) {
-			if (this.Info.VehicleType == AIVehicle.VT_RAIL) {
-				if (!this.Info.RailDoubled) return;
-			} else {
-				//do other stuff for non rail veh
+/**
+ * Task to sell vehicle 
+ */
+class Task.SellVehicle extends DailyTask
+{
+	constructor()
+	{    	
+		::DailyTask.constructor("Vehicle Seller task");
+		::DailyTask.SetKey(7);        
+	}
+
+	function Execute()
+	{
+		::DailyTask.Execute();
+		foreach (idx, val in AIVehicleList()) {
+			AIController.Sleep(1);
+			if (!AIVehicle.IsStoppedInDepot(idx)) continue;
+			AILog.Info("" + AIVehicle.GetName(idx) + " is inside depot");
+			if (AIOrder.GetOrderCount(idx) < 5) {
+				/* it has invalid order */
+				Vehicles.SellRailVhc(idx);
+				continue;
 			}
-			Bank.Get(0);
-			Debug.ResultOf("Vehicle build", Vehicles.StartCloned(this.Info.MainVhcID, depot, 1));
-		}		
+			if (AIVehicle.GetAgeLeft(idx) > 0) AIVehicle.StartStopVehicle(idx);
+			
+			local g = AIVehicle.GetGroupID(idx);
+			local num = AIGroup.GetNumEngines(g, AIVehicle.GetEngineType(idx)); 
+    		switch (num) {
+    			case 0 : Debug.DontCallMe("impossible vehicle num", num);
+    			case 1 : 
+    				if (Vehicles.CanClone(idx) == 0) {
+		    			switch (AIError.GetLastError()) {
+		    				case AIError.ERR_NOT_ENOUGH_CASH : 
+		    					AIVehicle.StartStopVehicle(idx);
+		    					continue;
+		    				default :
+		    					if (Vehicles.CanReplace(idx)) break;
+	    						AIVehicle.StartStopVehicle(idx);
+	    						continue;
+		    			}
+    				}
+	    		default : Vehicles.SellRailVhc(idx); 
+    		}
+		}
 	}
 }

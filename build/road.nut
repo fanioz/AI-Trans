@@ -32,6 +32,7 @@ class BuildingHandler.road {
 	/** ignored tiles */
 	_ignored_tiles = null;
 
+	/** road builder constructor */
 	constructor(main) {
 		this._mother = main;
 		this._path_table = {};
@@ -50,18 +51,15 @@ function BuildingHandler::road::Depot(service, is_source)
     AILog.Info("Try to Build Road Depot");
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
-    
-    local c_pos = Platform();
+
     local name = "", areas = null, location = null, is_town = false, t_location = -1;
     if (is_source) {
-        c_pos = service.SourceDepot;
         name = service.Source.GetName();
         areas = Tiles.Flat(service.Source.GetArea());
         t_location = service.Info.Destination;
         location = service.Info.Source;
         is_town = service.Source.IsTown();
     } else {
-        c_pos = service.DestinationDepot;
         name = service.Destination.GetName();
         areas = Tiles.Flat(service.Destination.GetArea());
         t_location = service.Info.Source;
@@ -70,38 +68,32 @@ function BuildingHandler::road::Depot(service, is_source)
     }
     
     /* check if i've one */
-    local built_s = Tiles.DepotOn(location);
+    local built_s = Tiles.DepotOn(location, 10);
     foreach (pos, val in built_s) {
         if (!AIRoad.IsRoadDepotTile(pos)) continue;
-        c_pos.SetBody(pos);
-        c_pos.SetHead(AIRoad.GetRoadDepotFrontTile(pos));
-        if (is_source) {
-        	service.SourceDepot = c_pos;
-        	service.Info.SourceDepot = pos;
-        } else service.DestinationDepot = c_pos;
+        if (is_source) service.Info.SourceDepot = pos
+        else service.Info.DstDepot = pos;
         AILog.Info("Depot Not need as I have one");
         this._mother.State.LastCost = money_need.GetCosts();
         return true;
     }
     /* find a good place */
     
-    //if (is_town) areas = Tiles.Roads(areas);
     areas.Valuate(AIMap.DistanceManhattan, location);
     areas.KeepBelowValue(10);
     local Gpos = Generate.Pos(areas, t_location, true);
-    while (c_pos = resume Gpos) {
+    while (Gpos.getstatus() == "suspended") {
+    	local pos = resume Gpos;
+    //if (is_town) areas = Tiles.Roads(areas);
         AIController.Sleep(1);
-        if (!this.pre_build(c_pos.GetBody(), c_pos.GetHead())) continue;
-        if (Debug.ResultOf("Build Road Depot at " + name, AIRoad.BuildRoadDepot(c_pos.GetBody(), c_pos.GetHead()))) {
-            if (is_source) {
-	        	service.SourceDepot = c_pos;
-	        	service.Info.SourceDepot = c_pos.GetBody();
-        	} else service.DestinationDepot = c_pos;
+        if (!this.pre_build(pos.GetLocation(), pos.GetHead())) continue;
+        if (Debug.ResultOf("Build Road Depot at " + name, AIRoad.BuildRoadDepot(pos.GetLocation(), pos.GetHead()))) {
+            if (is_source) service.Info.SourceDepot = pos.GetLocation()
+        	else service.Info.DstDepot = pos.GetLocation();
             this._mother.State.LastCost = money_need.GetCosts();
             return true;
         } else {
             money_need.ResetCosts();
-            if (AIRoad.IsRoadTile(c_pos.GetHead())) AIRoad.RemoveRoad(c_pos.GetBody(), c_pos.GetHead());
             if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH)  return false;
         }
     }
@@ -128,10 +120,11 @@ function BuildingHandler::road::pre_build(body, head)
     //if (!this._mother.State.TestMode) Tiles.SetHeight(body, AITile.GetHeight(head));
     if (!AIRoad.AreRoadTilesConnected(head, body)) {        
         AITile.LevelTiles(body, head);
+        AITile.LevelTiles(head, body);
         AIRoad.BuildRoad(body, head);
     }
-    if (!this._mother.State.TestMode) return AIRoad.AreRoadTilesConnected(head, body);
-    return true;
+    if (this._mother.State.TestMode) return true;
+    return AIRoad.AreRoadTilesConnected(head, body); 
 }
 
 /**
@@ -142,96 +135,82 @@ function BuildingHandler::road::pre_build(body, head)
  */
 function BuildingHandler::road::Station(service, is_source)
 {
-    AILog.Info("Try to Build Road Station");
     local ex_test = this._mother.State.TestMode ? AITestMode() : AIExecMode();
     local money_need = AIAccounting();
-    local c_pos = Stations();
-    local key = "UTIL";
     local validID = -1;
-    local table_util = {};
-    
+    local check_fn = null, name = null, areas = null, 
+    	location = null, acceptance = null, stasiun = null;
     if (is_source) {
-    	table_util = {
-	    	check_fn = AITile.GetCargoProduction,
-	    	name = service.Source.GetName(),
-	    	areas = service.Source.GetArea(),
-	    	location = service.Source.GetLocation(),
-    	}
+    	check_fn = AITile.GetCargoProduction;
+    	name = service.Source.GetName();
+    	areas = service.Source.GetArea();
+    	location = service.Source.GetLocation();
+    	stasiun = service.SourceStation.weakref();
+    	acceptance = 5;
     } else {
-    	table_util = {
-	    	check_fn = AITile.GetCargoAcceptance,
-	    	name = service.Destination.GetName(),
-	    	areas = service.Destination.GetArea(),
-	    	location = service.Destination.GetLocation(),
-    	}
+    	check_fn = AITile.GetCargoAcceptance;
+    	name = service.Destination.GetName();
+    	areas = service.Destination.GetArea();
+    	location = service.Destination.GetLocation();
+    	stasiun = service.DestinationStation.weakref();
+    	acceptance = 8;
     }
-    
-    local _read = {};
-	_read[key] <- table_util;
-	local prodacc = Assist.GetMaxProd_Accept(_read[key].areas, service.Info.Cargo, is_source);
-    local validID = -1;
-    local built_s = Tiles.StationOn(_read[key].location);
-    built_s.Valuate(_read[key].check_fn, service.Info.Cargo, 1, 1, Stations.RoadRadius());
-    built_s.KeepAboveValue(prodacc - 2);
+	AILog.Info("Try to Build Road Station at " + name);
+    local built_s = Tiles.StationOn(location);
     /* check if i've one */
-    foreach (pos, val in built_s) {
-        c_pos.SetID(AIStation.GetStationID(pos));
-        if (AIStation.IsValidStation(c_pos.GetID())) validID = c_pos.GetID();
-        if (!AIStation.HasRoadType(c_pos.GetID(), AIRoad.ROADTYPE_ROAD)) continue;
-        c_pos.GetPlatform(0).SetBody(AIStation.GetLocation(c_pos.GetID()));
+    foreach (id, val in built_s) {
+    	local loc = AIStation.GetLocation(id);
+    	if (!AIRoad.IsRoadStationTile(loc)) continue;
+    	if (AIRoad.HasRoadType(loc) != service.Info.TrackType) continue;
+    	if (check_fn(loc, service.Info.Cargo, 1, 1, stasiun.ref().GetRadius()) < acceptance) continue;
+    	stasiun.ref().SetLocation(loc);
+        stasiun.ref().SetID(id);
+        validID = id;
+        
         /* check if i really need to build other one */
-        if (AIVehicleList_Station(c_pos.GetID()).Count() > 1) continue;
-        c_pos.GetPlatform(0).SetHead(AIRoad.GetRoadStationFrontTile(c_pos.GetPlatform(0).GetBody()));
+        if (stasiun.ref().GetVehicleList().Count() > 1) continue;
         if (is_source) {
-            service.SourceStation = c_pos;
-            service.Info.SourceStation = c_pos.GetID();
-        } else {
-            service.DestinationStation = c_pos;
+            service.Info.SourceStation = id;
         }
         AILog.Info("I have empty station one");
         this._mother.State.LastCost = money_need.GetCosts();
         return true;
     }
     /* find a good place */
-    //if (is_town) areas = Tiles.Flat(Tiles.Roads(areas));
     AILog.Info("find a good place");
+    stasiun.ref().SetStationType(service.Info.RoadStationType);
+    areas.Valuate(check_fn, service.Info.Cargo, 1, 1, stasiun.ref().GetRadius());
+    areas.RemoveBelowValue(acceptance);
+    AILog.Info("Count:" + areas.Count());
+    local Gpos = Generate.Pos(areas, location, true);
+    if (!AIStation.IsValidStation(validID)) validID = AIStation.STATION_JOIN_ADJACENT;
+    Debug.ClearErr();
     
-    _read[key].areas.Valuate(_read[key].check_fn, service.Info.Cargo, 1, 1, Stations.RoadRadius());
-    _read[key].areas.KeepAboveValue(prodacc - 2);
-    local Gpos = Generate.Pos(_read[key].areas, _read[key].location, true);
-    if (!AIStation.IsValidStation(validID)) validID = 0;
-    local pos = null;
-    while (pos = resume Gpos) {
+    while (Gpos.getstatus() == "suspended") {
+    	local pos = resume Gpos;
+    	if (typeof pos != "instance") continue;
+    	if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) return;
+    	if (AIError.GetLastError() == AIError.ERR_LOCAL_AUTHORITY_REFUSES) return;
         AIController.Sleep(1);
         //Debug.Sign(pos.GetBody(), "B");
         //Debug.Sign(pos.GetHead(), "H");        
-        if (!this.pre_build(pos.GetBody(), pos.GetHead())) continue;
-        local result = AIRoad.BuildRoadStation(pos.GetBody(), pos.GetHead(), Stations.RoadFor(service.Info.Cargo), AIStation.STATION_JOIN_ADJACENT || validID);
-        if (Debug.ResultOf("Road station at " + _read[key].name, result)) {
-            if (!this._mother.State.TestMode) {
-                local posID =AIStation.GetStationID(pos.GetBody());
-                if (!AIStation.IsValidStation(posID)) continue;
-                local result = Stations();
-                result.SetPlatform(0, pos);
-                result.SetID(posID);
-                if (is_source) {
-                	service.SourceStation = result;
-                	service.Info.SourceStation = result.GetID();
-                } else service.DestinationStation  = result;
+        if (!this.pre_build(pos.GetLocation(), pos.GetHead())) continue;
+        AILog.Info("Prebuild passed");
+        local result = AIRoad.BuildRoadStation(pos.GetLocation(), pos.GetHead(), service.Info.RoadStationType, validID);
+        if (Debug.ResultOf("Road station at " + name, result)) {
+            if (this._mother.State.TestMode) {
+            	this._mother.State.LastCost = money_need.GetCosts();
+            	return true;
             }
-            this._mother.State.LastCost = money_need.GetCosts();
+            stasiun.ref().SetID(AIStation.GetStationID(pos.GetLocation()));
+            stasiun.ref().SetLocation(pos.GetLocation());
+            if (is_source) {
+            	service.Info.SourceStation = stasiun.ref().GetID();
+            }
             return true;
         } else {
             money_need.ResetCosts();
-            if (AIRoad.IsRoadTile(pos.GetHead())) AIRoad.RemoveRoad(pos.GetBody(), pos.GetHead());
-            if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) {
-                AILog.Info("Have no money");
-                break;
-            }
-            if (AIError.GetLastError() == AIError.ERR_LOCAL_AUTHORITY_REFUSES) {
-                AILog.Info("Local authority angry");
-                break;
-            }
+            if (AIRoad.IsRoadTile(pos.GetHead())) AIRoad.RemoveRoad(pos.GetLocation(), pos.GetHead());
         }
     }
     AILog.Info("not found");
@@ -251,103 +230,91 @@ function BuildingHandler::road::Path(service, number, is_finding)
     AILog.Info("Road Path " + number + txt);
     local _from = [];
     local _to = [];
-    local Finder = RoadPF();
+    local Finder = null;
     local distance = 0;
     local result = false;
     local path = false;
-    
-    local tile_cost = 20;
-    Finder.cost.tile = tile_cost;
-    Finder.cost.no_existing_road = 2 * tile_cost;
-    Finder.cost.turn = 4 * tile_cost;
-    Finder.cost.slope = 2 * tile_cost;
-    Finder.cost.bridge_per_tile = 6 * tile_cost;
-    Finder.cost.tunnel_per_tile = 10 * tile_cost;
-    Finder.cost.coast = 4 * tile_cost;
-    Finder.cost.crossing = 12 * tile_cost;
-    Finder.cost.allow_demolition = true;
-    Finder.cost.demolition = 12 * tile_cost;
-    Finder.cost.max_bridge_length = 50;
-    Finder.cost.max_tunnel_length = 50;
-    Finder.RegisterCostCallback(Assist.RoadDiscount, service);
-
+    	
     switch (number) {
         case 0:
             if (service.Source.IsTown()) {
                 _from.push(service.Source.GetLocation());
             } else {
                 local area = Tiles.Flat(service.Source.GetArea());
-                area.Valuate(Tiles.IsRoadBuildable);
+                area.Valuate(
+                	function(idx, dst)
+                	{
+                		return (AIRoad.IsRoadTile(idx) || (AIMap.DistanceMax(idx, dst) < 2))
+                	}, service.Source.GetLocation()
+                	);
                 area.KeepValue(1);
-                area.Valuate(AIMap.DistanceMax, service.Source.GetLocation());
-                area.KeepBelowValue(5);
                 _from = Assist.ListToArray(area);
             }
             if (service.Destination.IsTown()) {
                 _to.push(service.Destination.GetLocation());
             } else {
                 local area = Tiles.Flat(service.Destination.GetArea());
-                area.Valuate(Tiles.IsRoadBuildable);
+                area.Valuate(
+                	function(idx, dst)
+                	{
+                		return (AIRoad.IsRoadTile(idx) || (AIMap.DistanceMax(idx, dst) < 2))
+                	}, service.Destination.GetLocation()
+                	);
                 area.KeepValue(1);
-                area.Valuate(AIMap.DistanceMax, service.Destination.GetLocation());
-                area.KeepBelowValue(5);
                 _to = Assist.ListToArray(area);
             }
-            Finder.cost.estimate_multiplier = 5;
             break;
         case 1:
-            _from.push(service.SourceDepot.GetHead());
-            _to.push(service.SourceStation.GetPlatform(0).GetHead());
-            //Finder.cost.estimate_multiplier = 1;
+            _from.push(AIRoad.GetRoadDepotFrontTile(service.Info.SourceDepot));
+            _to.push(AIRoad.GetRoadStationFrontTile(service.SourceStation.GetLocation()));
             break;
         case 2:
-            _from.push(service.DestinationStation.GetPlatform(0).GetHead());
-            _to.push(service.DestinationDepot.GetHead());
-            //Finder.cost.estimate_multiplier = 1;
+            _from.push(AIRoad.GetRoadStationFrontTile(service.DestinationStation.GetLocation()));
+            _to.push(AIRoad.GetRoadDepotFrontTile(service.Info.DstDepot));
             break;
         case 3:
-            _from.push(service.DestinationStation.GetPlatform(0).GetHead());
-            _from.push(service.DestinationDepot.GetHead());
-            _to.push(service.SourceDepot.GetHead());
-            _to.push(service.SourceStation.GetPlatform(0).GetHead());
-            //Finder.cost.estimate_multiplier = 1.2;
+            _from.push(AIRoad.GetRoadStationFrontTile(service.DestinationStation.GetLocation()));
+            _from.push(AIRoad.GetRoadDepotFrontTile(service.Info.DstDepot));
+            _to.push(AIRoad.GetRoadDepotFrontTile(service.Info.SourceDepot));
+            _to.push(AIRoad.GetRoadStationFrontTile(service.SourceStation.GetLocation()));
             break;
         default : Debug.DontCallMe("Path Selection");
     }
-    
-    try {
-        distance = Debug.ResultOf("Distance",1 + AIMap.DistanceManhattan(_from.top(), _to.top()));		
-    } catch (distance) {
-        AILog.Warning("source:" + service.Source.GetName());
-        AILog.Warning("dest:" + service.Destination.GetName());        
-        return false;
-    }
 	
-	if (is_finding) {
-		if (number != 0) {
-			this._ignored_tiles.push(service.SourceStation.GetPlatform(0).GetBody());
-        	this._ignored_tiles.push(service.DestinationStation.GetPlatform(0).GetBody());
-        	this._ignored_tiles.push(service.SourceDepot.GetBody());
-        	this._ignored_tiles.push(service.DestinationDepot.GetBody());
-		}		
-	    local m = max(Finder.cost.estimate_multiplier * 10, (distance / 4).tointeger());
-	    Finder.cost.estimate_multiplier = Debug.ResultOf("Multiplier", m / 10);
-    } else {
-    /* if we are only check is it connected, do bread first search */
-        Finder.cost.estimate_multiplier = 0.1;
-        Finder.cost.no_existing_road = Finder.cost.max_cost;
-    }
-        
-    local c =  200;
-    Finder.InitializePath(_from, _to, 1.5, 100, this._ignored_tiles);
+	/* pre condition */
+	if (_from.len() == 0) return;
+	if (_to.len() == 0) return;
+	if (!AIMap.IsValidTile(_from.top())) return;
+	if (!AIMap.IsValidTile(_from.top())) return;
+    local dist = AIMap.DistanceManhattan(_from.top(), _to.top());
     
-    while (path == false && c-- > 0) {        
-        path  = Finder.FindPath(distance);
+	if (is_finding) {
+		Finder = Route.RoadFinder();
+		if (number == 0) {
+			Finder._estimate_multiplier = 10;
+		} else {
+			Finder._estimate_multiplier = 2;
+			this._ignored_tiles.push(service.SourceStation.GetLocation());
+        	this._ignored_tiles.push(service.DestinationStation.GetLocation());
+        	this._ignored_tiles.push(service.Info.SourceDepot);
+        	this._ignored_tiles.push(service.Info.DstDepot);
+		}
+    } else {
+    	Finder = Route.RoadTracker();
+    }
+    
+    Finder.InitializePath(_from, _to, this._ignored_tiles);
+    
+    local c = 0;
+    while (path == false) {
+    	Finder._max_bridge_length = max(5, c + 3);
+    	if (c % 10 == 0) Finder._estimate_multiplier ++;
+        path = Finder.FindPath(dist);
         AIController.Sleep(1);
+        if (Debug.ResultOf("Road Path " + txt, c++) == 102) break;
     }
     result = Debug.ResultOf("Path " + txt + " stopped at "+ c, (path != null && path != false));
     this._path_table[number] <- path;
-    
     return result;
 }
 
@@ -366,19 +333,22 @@ function BuildingHandler::road::Track(service, number)
     if (number in this._path_table) path = this._path_table[number];
     if (path == null || path == false) return false;
     if (number == 3) service.Info.A_Distance = path.GetLength();
+    local last_node = path.GetTile();
+    local first_node = -1;
     AILog.Info("Build Road Track " + number + " Length=" + path.GetLength() + txt);
     while (path != null) {
+    	first_node = path.GetTile();
         local parn = path.GetParent();
-        if (parn != null) {
-            //local last_node = path.GetTile();            
+        if (parn != null) {            
             if (AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) == 1 ) {
+            	local track_cost = money_need.GetCosts();
                 if (!AIRoad.BuildRoad(path.GetTile(), parn.GetTile())) {
                     // An error occured while building a piece of road. TODO: handle some.
                     switch (AIError.GetLastError()) {
                         case AIError.ERR_AREA_NOT_CLEAR:
                         	if (!Tiles.IsMine(parn.GetTile())) AITile.DemolishTile(parn.GetTile());
                         	if (AIRoad.BuildRoad(path.GetTile(), parn.GetTile())) break;
-                        	service.IgnoreTileList.AddTile(path.GetTile());
+                        	this._ignored_tiles.push(path.GetTile());
                         	break;
                         case AIError.ERR_ALREADY_BUILT:
                             // thanks
@@ -391,7 +361,7 @@ function BuildingHandler::road::Track(service, number)
                                 if (AIError.GetLastError() == AIError.ERR_ALREADY_BUILT) break;
                                 if (AIError.GetLastError() != AIError.ERR_VEHICLE_IN_THE_WAY) break;
                             }
-                            service.IgnoreTileList.AddTile(path.GetTile());
+                            this._ignored_tiles.push(path.GetTile());
                             break;
                         case AIError.ERR_NOT_ENOUGH_CASH:
                             local addmoney = 0;
@@ -408,7 +378,7 @@ function BuildingHandler::road::Track(service, number)
                             Debug.ResultOf("Unhandled error Build Road", null);
                             break;
                     }
-                }
+                } else TransAI.Cost.Road[service.Info.TrackType] <- money_need.GetCosts() - track_cost;
             } else {
                 if (!AIRoad.BuildRoadFull(path.GetTile(), parn.GetTile())) {
                     if (!AIBridge.IsBridgeTile(path.GetTile()) && !AITunnel.IsTunnelTile(path.GetTile())) {
@@ -451,8 +421,8 @@ function BuildingHandler::road::Track(service, number)
     }
     this._mother.State.LastCost = money_need.GetCosts();
     /* inconsistent return to handle test mode: As long as the cash enough give it true */
-    local r = this._mother.State.TestMode ?
-        (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH) : this.Path(service, number, false) ;
+    if (this._mother.State.TestMode) return (AIError.GetLastError() != AIError.ERR_NOT_ENOUGH_CASH);
+    local r = this.Path(service, number, false);
     AILog.Info("Tracking:" + r +" " + txt);
     return r;
 }
@@ -472,7 +442,7 @@ function BuildingHandler::road::Vehicle(service)
         //local number = service.SourceIsTown ? AITown.GetMaxProduction(service.Info.Source.ID, service.Info.Cargo) :
         //AIIndustry.GetLastMonthProduction(service.Info.SourceID, service.Info.Cargo);
         //number = (number / AIVehicle.GetCapacity(service.Info.MainVhcID, service.Info.Cargo) / 1.5).tointeger();
-        service.Info.VehicleNum += Debug.ResultOf("Vehicle build", Vehicles.StartCloned(service.Info.MainVhcID, service.SourceDepot.GetBody(), 2));
+        service.Info.VehicleNum += Debug.ResultOf("Vehicle build", Vehicles.StartCloned(service.Info.MainVhcID, service.Info.SourceDepot, 2));
         return true;
     } else {
         local myVhc = null;
@@ -484,34 +454,30 @@ function BuildingHandler::road::Vehicle(service)
             local MainEngineID = engines.Pop();
             local name = Debug.ResultOf("RV name", AIEngine.GetName(MainEngineID));
             /* due to needed to check it price in Test Mode */
+            service.Info.BusTruckEngine = MainEngineID; 
             this._mother.State.LastCost  = AIEngine.GetPrice(MainEngineID) * 2;
             if (this._mother.State.TestMode && this._mother.State.LastCost > 0) return true;
             /* and don't care with Exec Mode */
             if (AIEngine.GetCargoType(MainEngineID) == service.Info.Cargo) {
-                myVhc = AIVehicle.BuildVehicle(service.SourceDepot.GetBody(), MainEngineID);
+                myVhc = AIVehicle.BuildVehicle(service.Info.SourceDepot, MainEngineID);
             } else {
                 if (!AIEngine.CanRefitCargo(MainEngineID, service.Info.Cargo)) continue;
-                myVhc = AIVehicle.BuildVehicle(service.SourceDepot.GetBody(), MainEngineID);
+                myVhc = AIVehicle.BuildVehicle(service.Info.SourceDepot, MainEngineID);
                 AIVehicle.RefitVehicle(myVhc, service.Info.Cargo);
             }
             if (!AIVehicle.IsValidVehicle(myVhc)) continue;
             /* ordering */
-            if (!AIOrder.AppendOrder(myVhc, service.SourceStation.GetPlatform(0).GetBody(), AIOrder.AIOF_FULL_LOAD_ANY)) {
+            if (!AIOrder.AppendOrder(myVhc, service.SourceStation.GetLocation(), AIOrder.AIOF_FULL_LOAD_ANY)) {
                 Debug.ResultOf("Order failed on Vehicle", name);
                 AIVehicle.SellVehicle(myVhc);
                 continue;
             }
-            if (!AIOrder.AppendOrder(myVhc, service.DestinationStation.GetPlatform(0).GetBody(), AIOrder.AIOF_NONE)) {
+            if (!AIOrder.AppendOrder(myVhc, service.DestinationStation.GetLocation(), AIOrder.AIOF_NONE)) {
                 Debug.ResultOf("Order failed on Vehicle", name);
                 AIVehicle.SellVehicle(myVhc);
                 continue;
             }
-            AIOrder.AppendOrder(myVhc, service.DestinationDepot.GetBody(), AIOrder.AIOF_STOP_IN_DEPOT);
-            AIOrder.AppendOrder(myVhc, service.SourceDepot.GetBody(), AIOrder.AIOF_NON_STOP_INTERMEDIATE);
-            AIOrder.InsertConditionalOrder(myVhc, 2, 3);
-            AIOrder.SetOrderCondition(myVhc, 2, AIOrder.OC_AGE);
-            AIOrder.SetOrderCompareFunction(myVhc, 2, AIOrder.CF_LESS_THAN);
-            AIOrder.SetOrderCompareValue(myVhc, 2, 2);
+            Vehicles.SetNextOrder(myVhc, service.Info.SourceDepot, service.Info.DstDepot);
             service.Info.MainVhcID = myVhc;
             service.Info.VehicleNum = 1;
             this._mother.State.LastCost += money_need.GetCosts();

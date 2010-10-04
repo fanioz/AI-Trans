@@ -25,10 +25,49 @@
  */
 class Assist
 {
+	
+	static function BuildAllTrack(head) {
+		assert(AIMap.IsValidTile(head));
+		foreach (track in Const.RailTrack) AIRail.BuildRailTrack(head, track);
+	}
+	
+	/**
+	 * Find modus
+	 * @param anarray Array of numbers to find
+	 */
+	 static function Modus(anarray)
+	 {
+	 	local t = AIList();
+	 	foreach (num in anarray) t.AddItem(num, t.GetValue(num) + 1);
+	 	t.Sort(AIAbstractList.SORT_BY_VALUE, false);
+	 	return t.Begin();
+	 }
+	 
+	 /**
+	 * Valuator function that return array of value
+	 * @param list AIList to valuate
+	 * @param valuator Function to be used as valuator
+	 * @param ... Additional argument to be passed to
+	 */
+	 static function ValuateToArray(list, valuator, ...)
+	{
+		assert(typeof list == "instance");
+		assert(typeof valuator == "function");
+		local anarray = [];
+		local args = [this, null];
+		for(local c = 0; c < vargc; c++) args.append(vargv[c]);
+		foreach(idx, val in list) {
+			args[1] = idx;
+			anarray.push(Assist.ACall(valuator, args));
+		}
+		return anarray;
+	}
+	 
 	/**
 	 * Convert an AIList to a human-readable string.
 	 * @param list The AIList to convert.
 	 * @return A string containing all item => value pairs from the list.
+	 * @author Yexo (Admiral)
 	 */
 	static function AIListToString(list)
 	{
@@ -71,16 +110,6 @@ class Assist
 			default: throw "Too many arguments to ACall Function";
 		}
 	}
-   
-   /**
-	 * Sleep Time
-	 * @return The amount time for company to sleep :-)
-	 */
-	function SleepTime()
-	{
-		if (AICompany.GetLoanAmount() < 20000) return 20;
-		return (AICompany.GetLoanAmount() / 500).tointeger();
-	}
 
 	/**
 	 * Rename the drop off station
@@ -91,16 +120,6 @@ class Assist
 	{
 		local counter = 1;		
 		while (!AIStation.SetName(st_id, name + " Drop Off:" + TransAI.Info.ID + ":" + counter) && counter < 100) counter++;
-	}
-
-	/**
-	 * ClearSigns is AISign cleaner
-	 * Clear all sign that I have been built while servicing.
-	 */
-	static function ClearSigns()
-	{
-		AILog.Info("Clearing signs ...");
-		for (local c = AISign.GetMaxSignID(); c > 0; c--) if (AISign.IsValidSign(c)) AISign.RemoveSign(c);
 	}
 
 	/**
@@ -121,37 +140,10 @@ class Assist
 
 	/**
 	 * Temporary service cost
-	 * @param src Source ID (industry/town)
-	 * @param istown Fill true if this is town
-	 * @param cargo ID of cargo to be used
 	 */
-	static function ServiceCost(src, istown, cargo)
+	static function ServiceCost(dist)
 	{
-		local cost = 0;
-		local multiplier = 1;
-		local fnAPI = istown ? AITown : AIIndustry ;
-		if (istown) cost += AITown.GetMaxProduction(src, cargo)
-		else cost += fnAPI.GetLastMonthProduction(src, cargo);
-		cost -= fnAPI.GetLastMonthTransported(src, cargo) * multiplier;
-		cost +=  AICargo.GetCargoIncome(cargo, 20, 200);
-		return cost;
-	}
-
-	/**
-	 * Average an integer list in array
-	 * @param parray Array of integer number
-	 * @return Average of number
-	 */
-	static function Average(parray)
-	{
-		assert(typeof parray == "array");
-		assert(parray.len());
-		local sam = 0, count = parray.len();
-		foreach (idx, val in parray) sam += val;
-		local orgi = (sam * 10 / count).tointeger();
-		local mod = orgi % 10;
-        local rounded = (mod > 5) ? 1 : 0;
-		return  (orgi - mod) / 10 + rounded;
+		return (dist / 50).tointeger();
 	}
 
 	/**
@@ -159,22 +151,21 @@ class Assist
 	 * @param list AIList to valuate
 	 * @param valuator Function to be used as valuator
 	 * @param ... Additional argument to be passed to
+	 * @return the list too
 	 */
 	 static function Valuate(list, valuator, ...)
 	{
-		assert(typeof(list) == "instance");
-		assert(typeof(valuator) == "function");
+		assert(typeof list == "instance");
+		assert(typeof valuator == "function");
 
 		local args = [this, null];
 		for(local c = 0; c < vargc; c++) args.append(vargv[c]);
 		foreach(idx, val in list) {
 			args[1] = idx;
 			local value = Assist.ACall(valuator, args);
-			if (typeof(value) == "bool") {
-				value = value ? 1 : 0;
-			} else if (typeof(value) != "integer") throw("Invalid return type from valuator");
-			list.SetValue(idx, value);
+			list.SetValue(idx, (value ? 1 : 0));
 		}
+		return list;
 	}
 
 	/**
@@ -215,7 +206,7 @@ class Assist
     */
     static function HexToDec(Hex_number)
     {
-        if (Hex_number.length() > 2) return 0;
+        if (Hex_number.len() > 2) return 0;
         local aSet = "0123456789ABCDEF";
         return aSet.find(Hex_number.slice(0,1)).tointeger() * 16 + aSet.find(Hex_number.slice(1,2)).tointeger();
     }
@@ -275,32 +266,26 @@ class Assist
 	static function Path2Array(path)
 	{
 		local anArray = [];
-		local cur = -1;
 		while (path != null) {
-			anArray.push(path.GetTile());
+			anArray.push(path.GetTile(), path.GetDirection(), path.GetCost());
 			path = path.GetParent();
 		}
-		return anArray; //.reverse();
+		return anArray;
 	}
 	
-	static function ArrayToPath(anArray, PF)
+	/**
+	 * Convert array to path
+	 * @param anArray array of converted path
+     * @return AyStar.Path class
+     */
+	static function ArrayToPath(anArray)
 	{
 		if (typeof anArray != "array") return;
-		assert(typeof PF == "instance");
-		anArray.reverse();
-		local Ay = import("graph.aystar", "", 6);				 
+		local Ay = Route.Finder;
 		local path = null;
 		while (anArray.len()) {
-			if (path == null) {
-				path = Ay.Path(path, anArray.pop(), 0xFF, PF._Cost, PF);
-			} else {
-				local par_tile = path.GetParent() ? path.GetParent().GetTile() : null;				
-				local cur_node = anArray.pop();
-				local next_tile = anArray.len() ? anArray.top() : 0xFF;
-				//local isbridge = AIMap.DistanceManhattan(cur_node, next_tile) > 1;
-				//local dir = Assist.ACall(PF._GetDirection, [PF, par_tile, cur_node, next_tile, isbridge]); 
-				path = Ay.Path(path, cur_node, next_tile, PF._Cost, PF);
-			}
+			local node = anArray.pop();
+			path = Ay.Path(path, node[0], node[1], function(a, b, c, d) { return a;}, node[2]);
 		}
 		return path;
 	}
@@ -317,92 +302,12 @@ class Assist
         anIndustry.RemoveValue(1);
         return anIndustry;
     }
-
-    /**
-     * Additional cost for road path finder
-     * @param path Path class
-     * @param new_tile The next tile
-     * @param new_direction The next direction
-     * @return integer cost
-     */
-    static function RoadDiscount(self, path, new_tile, new_direction, serv)
-    {
-        local new_cost = 0;
-        this = self;
-        local prev_tile = (path.GetParent() == null) ? new_tile : path.GetParent().GetTile();
-        if (AIBridge.IsBridgeTile(new_tile) && (AIBridge.GetOtherBridgeEnd(new_tile) == prev_tile)) {
-            local b_id = AIBridge.GetBridgeID(new_tile);
-            if (AIBridge.IsValidBridge(b_id)) new_cost -= (AIBridge.GetMaxSpeed(b_id)  + this._cost_bridge_per_tile);
-        }
-        if (AITunnel.IsTunnelTile(new_tile) && AITunnel.GetOtherTunnelEnd(new_tile) == prev_tile) {
-            new_cost -= this._cost_tunnel_per_tile;
-        }
-        if (AIRoad.IsRoadTile(new_tile) && AIRoad.AreRoadTilesConnected(prev_tile, new_tile)) {
-            new_cost -= this._cost_tile * 2;
-        }
-
-        if (!AITile.DemolishTile(new_tile) && AIError.GetLastError() == AIError.ERR_VEHICLE_IN_THE_WAY) {
-            new_cost += this._cost_bridge_per_tile * 2;
-        }
-        //AILog.Info("cost:" + new_cost);
-        return new_cost * AIMap.DistanceManhattan(new_tile, prev_tile);
-    }
-
-    /**
-     * @deprecated Deprecated
-     */
-    static function Connect_BackBone(serv)
-    {
-        local _cost = 0;
-        if (serv.Info.VehicleType != AIVehicle.VT_RAIL) return true;
-        AILog.Info("Try to connect backbone for id " + serv.Info.Key);
-        TransAI.Builder.Rail.Path(serv, 2, true);
-        TransAI.Builder.State.TestMode = true;
-
-        if (!TransAI.Builder.Rail.Track(serv, 2)) {
-            TransAI.Builder.Rail.Path(serv, 2, true);
-            if (!TransAI.Builder.Rail.Track(serv, 2)) return false;
-        }
-        _cost += TransAI.Builder.State.LastCost;
-        TransAI.Builder.Rail.Vehicle(serv);
-        _cost += TransAI.Builder.State.LastCost;
-        TransAI.Builder.Rail.Signal(serv, 1);
-        _cost += TransAI.Builder.State.LastCost;
-        TransAI.Builder.Rail.Signal(serv, 2);
-        _cost += TransAI.Builder.State.LastCost;
-        if (!Bank.Get(_cost)) return false;
-
-        TransAI.Builder.State.TestMode = false;
-        if (!TransAI.Builder.Rail.Track(serv, 2)) {
-            TransAI.Builder.Rail.Path(serv, 2, true);
-            if (!TransAI.Builder.Rail.Track(serv, 2)) return false;
-        }
-        TransAI.Builder.Rail.Signal(serv, 1);
-        TransAI.Builder.Rail.Signal(serv, 2);
-        TransAI.Builder.Rail.Vehicle(serv);
-        return true;
-    }
-
-	/**
-	 * Get maximum number of tile acceptance/production
-	 * @return integer_number
-	 */
-    static function GetMaxProd_Accept(tiles, cargo, is_source)
-    {
-        local check_fn = is_source ? AITile.GetCargoProduction : AITile.GetCargoAcceptance;
-		tiles.Valuate(check_fn, cargo, 1, 1, Stations.RoadRadius());
-        return check_fn(tiles.Begin(), cargo, 1, 1, Stations.RoadRadius());
-    }
-    
-    static function CheckRail(path, new_tile)
-	{
-	    local new_cost = 0;
-	    local prev_tile = path.GetTile();
-	    local prev_prev = (path().GetParrent() == null) ? null : path().GetParrent().GetTile() ;
-	    if (!AIRail.AreTilesConnected(new_tile, prev_tile, path().GetParrent().GetTile())) new_cost = this._max_cost;
-	    return new_cost;
-	}
 	
+	/**
+	 * Check existing rail connection
+	 * @param path Path class of Rail PF
+	 * @return true if it was connected
+	 */
 	static function CheckRailConnection(path)
 	{
 	    /* must be executed in exec mode */
@@ -414,13 +319,13 @@ class Assist
 	        if (parn == null ) {
 	            local c = Debug.Sign(path.GetTile(), "null");
 	            if (!AITile.HasTransportType(path.GetTile(), AITile.TRANSPORT_RAIL)) return false;
-	            AISign.RemoveSign(c);
+	            Debug.UnSign(c);
 	        } else {
 	            local grandpa = parn.GetParent();
 	            if (grandpa == null) {
 	                local c = Debug.Sign(parn.GetTile(), "null");
 	                if (!AITile.HasTransportType(path.GetTile(), AITile.TRANSPORT_RAIL)) return false;
-	                AISign.RemoveSign(c);
+	                Debug.UnSign(c);
 	            } else {
 	                if (!AIRail.AreTilesConnected(path.GetTile(), parn.GetTile(), grandpa.GetTile())) {
 	                    if (AIMap.DistanceManhattan(path.GetTile(), parn.GetTile()) == 1) {
@@ -443,7 +348,7 @@ class Assist
 	                                }
 	                            }
 	                        }
-	                        AISign.RemoveSign(c);
+	                        Debug.UnSign(c);
 	                    }
 	                }
 	            }
@@ -472,31 +377,32 @@ class Assist
 	}
 	
 	/**
-	 * Temporary handle closing industry
+	 * Handle closing industry
+	 * @param tabel Tabel of structure catched on Event catcher
 	 */
-	static function HandleClosingIndustry(id)
+	static function HandleClosingIndustry(tabel)
 	{
-		local location = -1;
-		location = TransAI.ServableMan.Item(id);
-		if (location) TransAI.Info.DropPointIsValid = false;
-		//foreach (loc, val in TransAI.Info.Drop_off_point) {			
-		//}
-		local station_list = Tiles.StationOn(AIIndustry.GetLocation(id));
+		/* validating Drop off point */
+		if (TransAI.Info.Drop_off_point.rawin(tabel.Loc)) TransAI.Info.Drop_off_point.rawdelete(tabel.Loc);
+		TransAI.ServableMan.RemoveItem(tabel.Loc);
+		/* is there my station ? */
+		local station_list = Tiles.StationOn(tabel.Loc);
 		if (station_list.Count() == 0) return;
-		//todo : handle it !
-		local ind_type = AIIndustry.GetIndustryType(id);
+		local location = -1;
+		tabel.CargoAccept.extend(tabel.CargoProduce);
+		/* mark vehicle as lost */
 		foreach (sta, val in station_list) {
-		foreach (vhc, val in AIVehicleList_Station(sta)) {
-		foreach (cargo, val in AIIndustryType.GetProducedCargo(ind_type).AddList(AIIndustryType.GetAcceptedCargo(ind_type))) {
-		AIController.Sleep(1);
-		if (Vehicles.CargoType(vhc) == cargo) TransAI.Info.Lost_Vehicle.push(vhc);
-		}
-		}
+			foreach (vhc, val in AIVehicleList_Station(sta)) {
+				foreach (cargo in tabel.CargoAccept) {
+					if (Vehicles.CargoType(vhc) == cargo) {
+						TransAI.Info.Lost_Vehicle.push(vhc);
+						AIController.Sleep(1);
+					}
+				}
+			}
 		}
 	}
-		    
 }
-
 
 /**
  * Debug static functions class
@@ -515,10 +421,15 @@ class Debug
     {
         if (AIError.GetLastError() == AIError.ERR_NONE) AILog.Info("" + msg + ":" + exp +" -> Good Job :-D");
         else AILog.Warning("" + msg + ":" + exp + ":" + AIError.GetLastErrorString().slice(4));
-        /* no other methode found to clear last err */
-        //AISign.RemoveSign(Debug.Sign(AIMap.GetTileIndex(2, 2), "debugger"));
         return exp;
     }
+    
+    /** 
+     * No other methode found to clear last err
+     */
+    static function ClearErr() {
+        AISign.RemoveSign(AISign.BuildSign(AIMap.GetTileIndex(2, 2), "debugger"));
+    } 
 
     /**
      * The function that should never called / passed by flow of code.
@@ -530,40 +441,71 @@ class Debug
     {
         /* I've said, don't call me. So why you call me ?
          * okay, I'll throw you out ! :-( */
-        AILog.Warning("Should not come here!" + msg + " suspected --> " + suspected);
-        //TransAI.Info.Live = 0;
+        AILog.Warning("Should not come here!" + msg + " suspected --> " + suspected);        
 		throw msg;
     }
 
     /**
 	 * Wrapper for build sign.
-	 * prepared for use with Game.Settings
+	 * Its used with Game.Settings
+	 * @param tile TileID where to build sign
+	 * @param txt Text message to be displayed
+	 * @return a valid signID if its allowed by game setting
 	*/
 	static function Sign(tile, txt)
     {
-        if (1 == 1) return AISign.BuildSign(tile, txt);
+        if (TransAI.Setting.DebugSign) {
+        	if (typeof txt != "string") txt = txt.tostring();
+        	return AISign.BuildSign(tile, txt);
+        }
     }
-
-	/**
-	 * Assert replacement for custom handling
-	 */
-	static function Assert(exp)
+    
+    /**
+     * Unsign is to easy check wether we have build sign before
+     * @param id Suspected signID
+     */
+	static function UnSign(id)
 	{
-		if (exp) return true;
-		Debug.DontCallMe("Try call null:", exp);
-	}
+		if (id != null) if (AISign.IsValidSign(id)) AISign.RemoveSign(id); 
+	}	
 }
 
+/**
+ * Game settings related class
+ */
 class Settings
 {
-    /* usage : AILog.Info(Const.Settings.long_train + " -> " +  Settings.Get(Const.Settings.long_train)) */
-    static function Get(setting_str)
+	/** Enable build sign */
+	DebugSign = 0;
+	/** Bus allowed */
+	AllowBus = 0;
+	/** Truck allowed */
+	AllowTruck = 0;
+	/** Train allowed */
+	AllowTrain = 0;
+	/** Last Month Transported */
+	LastMonth = 0;
+	/** Loop Time for TaskManager */
+	LoopTime = 0;
+	
+	/**
+	 * Get settings from .cfg file
+	 * @param setting_str String of settings. Get it from Cons.Settings
+	 * @return false if setting is not valid, otherwise return value from .cfg
+	 * @note usage : 
+	 * AILog.Info(Const.Settings.long_train + " -> " +  Settings.Get(Const.Settings.long_train))
+	 */
+    function Get(setting_str)
     {
-        local temp = AIGameSettings.GetValue(setting_str);
-        return (temp == -1) ? false : temp;
+        if (!AIGameSettings.IsValid(setting_str)) throw "Setting no longer valid :" + setting_str;
+        return AIGameSettings.GetValue(setting_str);
     }
-
-	static function Version()
+	
+	/**
+	 * Check current OpenTTD running version
+	 * @return throw if the version is not match
+	 */
+	function CheckVersion()
 	{
 		local v = AIController.GetVersion();
 		local maj = (v & 0xF0000000) >> 28;
@@ -572,18 +514,31 @@ class Settings
 		local rel = (v & 0x00080000) != 0;
 		local rev = v & 0x0007FFFF;
 		if (maj < 1) maj = 0;
-		AILog.Info("Running Ver:" + maj + "." + minor + " Build:" + build + " (" + (rel ?  "Release" : "Rev." + rev) + ")");
+		AILog.Info("Run On OpenTTD Ver:" + maj + "." + minor + " Build:" + build + " (" + (rel ?  "Release" : "Rev." + rev) + ")");
 		if (((minor < 7) && (build < 1)) || (rev < 16537)) throw "Not supported version";
 	}
 }
 
+/**
+ * Ticker class
+ */
 class Ticker
 {
-	_tick = null; ///< the ticker
+	/** the ticker */
+	_tick = null;
+	/** class contructor */
 	constructor(){
 		this._tick = AIController.GetTick();
 	}
 
+	/**
+	 * Get elapsed tick
+	 * @return number of tick elapsed
+	 */
 	function Elapsed() {return AIController.GetTick() - this._tick; }
+	
+	/**
+	 * Reset tick
+	 */
 	function Reset() { this._tick = AIController.GetTick(); }
 }

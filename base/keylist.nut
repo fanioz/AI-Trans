@@ -159,25 +159,6 @@ class KeyLists extends Storage
 		this.list.Sort(AIAbstractList.SORT_BY_VALUE, false);
 	}
 
-	/**
-	 * Valuate list for sorting
-	 * @param valuator function to be used
-	 * @param ... list of arguments
-	 */
-	function Valuate(valuator, ...)
-	{
-		assert(typeof(valuator) == "function");
-		local args = [this, null];
-		for(local c = 1; c < vargc; c++) args.push(vargv[c]);
-		foreach(idx, val in this.list) {
-			args[1] = idx;
-			local value = Assist.ACall(valuator, args);
-			if (typeof(value) == "bool") {
-				value = value ? 1 : 0;
-			} else if (typeof(value) != "integer") throw("Invalid return type from valuator");
-			this.SetValue(idx, value);
-		}
-	}
 
 	/**
 	 * Clear list and rebuild using storage table

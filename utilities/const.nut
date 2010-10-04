@@ -24,6 +24,7 @@
  * Constanta useful in program
  */
 Const <- {
+
 	/** Direction */
 	Direction = {
 		NE_SW = 1,
@@ -31,6 +32,7 @@ Const <- {
 		SE_NW = 4,
 		NW_SE = 8,
 	},
+	
 	/** Settings from config file */
 	Settings = {
 		subsidy_multiply = "difficulty.subsidy_multiplier",
@@ -52,10 +54,43 @@ Const <- {
 		modified_catchment = "station.modified_catchment",
 		adjacent_stations = "station.adjacent_stations",
 		distant_join_stations = "station.distant_join_stations",
-		forbid_90_deg = "pf.forbid_90_deg",
-		disable_train = "ai.ai_disable_veh_train",
-		disable_roadveh = "ai.ai_disable_veh_roadveh",
-		disable_aircraft = "ai.ai_disable_veh_aircraft",
-		disable_ship = "ai.ai_disable_veh_ship",
-    },    
+		game_start = "game_creation.starting_year",
+	},
+	
+	/** Vehicle type - order is important */
+	VType = [AIVehicle.VT_RAIL, AIVehicle.VT_ROAD, AIVehicle.VT_WATER, AIVehicle.VT_AIR],
+	/** Vehicle type in string - order is important */
+	VType_Str = ["RAIL", "ROAD", "WATER", "AIR"],
+	
+	/** Corner tile */
+	Corner = [AITile.CORNER_W, 	//West corner.
+			AITile.CORNER_S,	//South corner.
+			AITile.CORNER_E,	//East corner.
+			AITile.CORNER_N,	//North corner.
+		],
+		
+	/** Store the cost of track */
+	Cost = {
+			Road = {},
+			Rail = {},
+			Water = {},
+	},
+	
+	/** Industry closed structure */
+	IndustryClosed = {
+		ID = 0,
+		Loc = 0,
+		CargoAccept = [],
+		CargoProduce = [],
+	},
+	
+	/** All rail track */
+	RailTrack = [AIRail.RAILTRACK_NE_SW, AIRail.RAILTRACK_NW_SE, AIRail.RAILTRACK_NW_NE,
+		AIRail.RAILTRACK_SW_SE, AIRail.RAILTRACK_NW_SW, AIRail.RAILTRACK_NE_SE],
+		
+	/** Rail station direction */
+	RailStationDir = [AIRail.RAILTRACK_NE_SW, AIRail.RAILTRACK_NW_SE],
+	
+	/** AIRoad type list */
+	RoadTypeList = [AIRoad.ROADTYPE_TRAM, AIRoad.ROADTYPE_ROAD],
 }

@@ -52,26 +52,50 @@ class StationManager extends Manager
 	constructor() {
 		::Manager.constructor("Station");
 	}
+	
+	/**
+	 * Insert new station item
+	 * @param st_class Class of Station
+	 * @return a valid ID of servable class
+	 */
+	function New(st_class)
+	{
+		assert(st_class instanceof Station);
+        local c = st_class.GetLocation();
+        local i = Memory("station")
+        foreach (idx, val in st_class.GetStorage())
+        {
+        	i.idx = val;
+        }
+        this.AddItem(c, i.GetStorage());
+        return c;
+	}
+	
+	/**
+	 * Pop class of station from storage
+	 * @param idx Index of station in manager
+	 * @return class of station and remove it from manager 
+	 */
+	 function PopClass(idx)
+	 {
+	 	local the_class = null;
+	 	local the_storage = this.Item(idx);
+	 	if (the_storage == null) return;
+	 	this.RemoveItem(idx);
+	 	switch (the_storage._name) {
+	 		case "RailStation" : the_class = RailStation; break;
+	 		case "RoadStation" : the_class = RoadStation; break;
+	 		default : Debug.DontCallMe("not registered yet", the_storage._name);  
+	 	}
+	 	the_class.SetStorage(the_storage);
+	 	return the_class;
+	 }
 }
 
 class VehicleManager extends Manager
 {
 	constructor() {
 		::Manager.constructor("Vehicle");
-	}
-}
-
-class DepotManager extends Manager
-{
-	constructor() {
-		::Manager.constructor("Depot");
-	}
-}
-
-class InfrastructureManager extends Manager
-{
-	constructor() {
-		::Manager.constructor("Infrastructure");
 	}
 }
 

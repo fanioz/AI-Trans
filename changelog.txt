@@ -71,3 +71,9 @@ Feature: Using Task management.
 Fix: rail pathfinder, so you may not seen again an old-AI-style rail route
 Feature: Improvement in many areas (included but not limited to): cargo, industries, towns, and vehicles handling.
 
+* 090713
+Feature: Using Small rail station 1x3
+Feature: Using Path Based Signal
+Feature: Adjustable AI run parameter
+Fix: Make a more robust vehicle management
+

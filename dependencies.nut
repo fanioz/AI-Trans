@@ -23,25 +23,20 @@
 /*
  * Define all required files here.
  * 1 : use 'import' for files that available on Bananas
- * 2 : use 'required' for own files or modified version of NoAI library.
- * In fact, the only required from Bananas right now is Aystar.6, and since AyStar.6 depend
  * on Binary Heap, that would be enough (auto-resolved dependencies)
  */
 
 import("queue.fibonacci_heap", "FibonacciHeap", 2);
 import("graph.aystar", "AyStar_6", 6);
-
-require("pathfinder/aystar.nut");
-require("pathfinder/rail.nut");
-require("pathfinder/road.nut");
-require("pathfinder/water.nut");
-require("pathfinder/air.nut");
+import("pathfinder.road", "RoadPF_3", 3);
+import("pathfinder.rail", "RailPF_1", 1);
 
 /* ---------------- Own --------------- */
 require("base/storage.nut");
 require("base/task.nut");
 require("base/services.nut");
 require("base/keylist.nut");
+require("base/servable.nut");
 
 require("utilities/const.nut");
 require("utilities/cargo.nut");
@@ -50,6 +45,9 @@ require("utilities/sandbox.nut");
 require("utilities/generator.nut");
 
 require("infrastructure/tile.nut");
+require("infrastructure/infrastructure.nut");
+require("infrastructure/station.nut");
+require("infrastructure/route.nut");
 
 require("manager/managers.nut");
 require("manager/task.nut");
@@ -60,5 +58,4 @@ require("manager/builder.nut");
 require("build/building.nut");
 require("build/road.nut");
 require("build/rail.nut");
-require("build/stations.nut");
 require("build/vehicles.nut");

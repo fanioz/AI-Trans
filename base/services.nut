@@ -27,8 +27,6 @@ class Services
 {
 	/** Memory - the storage of class */
 	Info = null;
-	/** Ignored pathfindng AITileList(); */
-	IgnoreTileList = null;
 	/** Servable source */
 	Source = null;
 	/** Servable destination */
@@ -37,19 +35,15 @@ class Services
 	SourceStation = null;
 	/** Destination Station */
 	DestinationStation = null;
-	/** Source Depot */
-	SourceDepot = null;
-	/** Destination Depot */
-	DestinationDepot = null;
-	/** Path finder */
-	PathFinder = null;
+	/** Caching area */
+	SourceCacheArea = AIList();
+	DestCacheArea = AIList();
 	/**
 	 * constructor class
 	 */ 
 	constructor()
 	{
 		Info = Memory("Services");
-		this.IgnoreTileList = AITileList();
 	}
 
 	/**
@@ -61,20 +55,12 @@ class Services
 	 */
 	static function New (src, dst, cargoid)
 	{
-
 		assert(src instanceof Servable);
-		assert(dst instanceof Servable);
-		local ptabel = {
-			Depart = [],
-			Arrive = [],
-			PM = [],
-			Test = [],
-			Reserved = [],
-		};
+		assert(dst instanceof Servable);		
 		local serv = Services();
-		serv.Info.ID = 0;
-		serv.Info.Path = [];		
-		serv.Info.Key = Services.CreateID(src.GetLocation(), dst.GetLocation(), cargoid);
+		
+		serv.Info.ID = 0;		
+		serv.Info.Key = Services.CreateID(src.GetID(), dst.GetID(), cargoid);
 		serv.Info.Source = src.GetLocation();
 		serv.Info.Destination = dst.GetLocation();
 		serv.Info.Cargo = cargoid;		
@@ -82,15 +68,26 @@ class Services
 		serv.Info.R_Distance = src.GetDistanceManhattanToTile(dst.GetLocation());
 		serv.Info.A_Distance = 0;
 		serv.Info.IsSubsidy = false;
-		serv.Info.PastCost = 0;
-		serv.Info.Priority = 0;
 		serv.Info.MainVhcID = -1;
 		serv.Info.RailDoubled = false;
+		/* station ID */
 		serv.Info.SourceStation = -1;
+		/* tile index of body */
 		serv.Info.SourceDepot = -1;
+		serv.Info.DstDepot = -1;
 		serv.Info.VehicleType = -1;
 		serv.Info.TrackType = -1;
+		serv.Info.RoadStationType = AIRoad.GetRoadVehicleTypeForCargo(cargoid);
 		serv.Info.VehicleNum = 0;
+		serv.Info.VehicleMaxNum = 0;
+		/* engines selected */
+		serv.Info.LocoEngine = -1;
+		serv.Info.WagonEngine = -1;
+		serv.Info.RoadEngine = -1;
+		serv.Info.StartPath = [];
+        serv.Info.DepotStart = [];
+        serv.Info.EndPath = [];
+        serv.Info.DepotEnd = [];
 		return serv;
 	}
 
@@ -99,12 +96,11 @@ class Services
      * @param source Source ID
      * @param dest Destination ID
      * @param cargo Cargo ID
-     * @return ID of service table
+     * @return string ID of service table
      */
     static function CreateID(source, dest, cargo)
     {
-        local n = Assist.LeadZero(TransAI.Info.ID) + Assist.LeadZero(source) + Assist.LeadZero(dest) + Assist.LeadZero(cargo);
-        return n;
+        return Assist.LeadZero(TransAI.Info.ID) + Assist.LeadZero(source) + Assist.LeadZero(dest) + Assist.LeadZero(cargo);
     }
 }
 
@@ -115,9 +111,8 @@ class Task.Service extends DailyTask
 {
 	constructor()
     {
-        ::DailyTask.constructor("Service Task");
-        ::DailyTask.SetRemovable(false);
-        ::DailyTask.SetKey(10);
+        ::DailyTask.constructor("Service Builder");
+        this.SetKey(30);
     }
     
     function Execute()
@@ -131,50 +126,32 @@ class Task.Service extends DailyTask
 			serv = TransAI.ServiceMan.Item(idx);
 			servkey = serv.Info.Key;
 			if (servkey in TransAI.Info.Expired_Route) continue;			
-			if (servkey in TransAI.Info.Serviced_Route) continue;			            
-
-			if (TransAI.Builder.Service(serv)) {
-				TransAI.Info.Serviced_Route[servkey] <- serv.Info.GetStorage();
-				::DailyTask.SetKey(60);
-			} else {
-				TransAI.Info.Expired_Route[servkey] <- servkey;
-				AILog.Info("Can't afford a service right now");
-				::DailyTask.SetKey(5);
+			if (servkey in TransAI.Info.Serviced_Route) continue;
+			
+			local result = TransAI.Builder.Service(serv);
+			switch (result) {
+				case "success" :
+					TransAI.Info.Serviced_Route[servkey] <- serv.Info.GetStorage();
+					this.SetKey(90);
+					break;
+				case "no_money" :
+					TransAI.Info.Expired_Route[servkey] <- servkey;
+					AILog.Info("Have not enough money right now");
+					this.SetKey(10);
+					break;
+				default :
+					TransAI.Info.Expired_Route[servkey] <- servkey;
+					AILog.Info("Can't afford a service right now");
+					TransAI.Builder.ClearSigns();
+					continue;
 			}
 			TransAI.Builder.ClearSigns();
+			TransAI.ServiceMan.ChangeItem(idx, serv);
 			// do one service each call
             return;
         }
         // Reset what we 've skipped in the past
         TransAI.Info.Expired_Route = {};
+        this.SetKey(30);
     }
-}
-
-/**
- * class to analyze the cost needed
- */
-class Services.Cost
-{	constructor(s)
-	{
-	}
-
-	function SetInfrastructure(infra)
-	{
-	}
-
-	function Route()
-	{
-	}
-
-	function Depot()
-	{
-	}
-
-	function Station()
-	{
-	}
-
-	function Vehicle()
-	{
-	}
 }

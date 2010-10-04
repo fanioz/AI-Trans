@@ -49,8 +49,13 @@ class TaskManager extends Manager
 	function New(task)
 	{		
 		if (task instanceof TaskItem) {			
-			local c = ::Manager.FindNewID();
-			::Manager.AddItem(c, task);
+			local c = this.FindByName(task.GetClassName());
+			if (c) {
+				this.ChangeItem(c, task);
+			} else {
+				c = this.FindNewID();
+				this.AddItem(c, task);
+			}
 			return c;
 		}
 		throw "need an instance of TaskItem"; 
@@ -72,15 +77,12 @@ class TaskManager extends Manager
 	function Run () {
 		if (this.Count()) {
 			local task = null;
-			//local msg = "[" + this.tick + "]";
 			this.SortValueAscending();
-			for (local i= this.list.Begin(); this.list.HasNext(); i = this.list.Next()) {				
-				task = this.Item(i);
-				if (task.TryExecute(this.tick)) {					
-					AIController.Sleep(this._sleep_time);
-					if (task.IsRemovable()) this.RemoveItem(i);
-				} else {
-					//AILog.Info(msg + "Suspend:" + task.GetClassName());					
+			for (local i= this.list.Begin(); this.list.HasNext(); i = this.list.Next()) {
+				AIController.Sleep(this._sleep_time);				
+				task = this.Item(i).weakref();
+				if (task.ref().TryExecute(this.tick)) {
+					if (task.ref().IsRemovable()) this.RemoveItem(i);
 				}
 			}
 			this.tick ++;

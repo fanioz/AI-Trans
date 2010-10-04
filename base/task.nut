@@ -157,6 +157,7 @@ class DailyTask extends TaskItem
 	{
 		::TaskItem.constructor(name);
 		this._storage._lastdate <- AIDate.GetCurrentDate();
+		this.SetRemovable(false);
 	}
 	
 	/**

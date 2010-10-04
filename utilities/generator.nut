@@ -1,3 +1,4 @@
+
 /*  09.03.08 - generator.nut
  *
  *  This file is part of Trans AI
@@ -22,7 +23,7 @@
 
 /**
  *
- * Generator Class for Service, Subsidy and Position
+ * Generator Class for Subsidy and Position
  */
 class Generate
 {
@@ -43,13 +44,9 @@ class Generate
             local bodies = Tiles.BodiesOf(head);
             foreach (body, val in bodies){
                 AIController.Sleep(1);
-                local _pos =  Platform();
-                _pos.SetBody(body);
-                _pos.SetHead(head);
-                yield _pos;
+                yield ::Depot(body, head);
             }
         }
-        return false;
     }
 
     /**
@@ -95,38 +92,31 @@ class Generate
         AILog.Info("No more Subsidy");
         subs_service = null;
     }
-
-
 }
 
 /**
- * Yield Task to generate service
+ * Task to generate service
  */
-class Task.GenerateService extends YieldTask
+class Task.GenerateService extends YieldTask 
 {
 	constructor()
 	{
-		::YieldTask.constructor("Service Generator");
-		::YieldTask.SetRepeat(true);
-		::YieldTask.SetKey(5);
+		::YieldTask.constructor("Service Finder");
+		this.SetRepeat(false);
+		this.SetKey(5);
 	}
 
 	function _exec()
     {
-    	::YieldTask._exec;        
-        local min_priority = 10000000;
-        local min_distance = 20;
-        local min_production = 10;
-        local mult_transported = 100;
-        local serv = null;
-        local last_type = null;
-        local speed = 0;
-        local estimated_time = 0;
+    	::YieldTask._exec();
+		local serv = null;
 		local src_lst = null;
 		local src = null, dst = null;
-		local dst_istown = null, src_istown = null; 
-        foreach(cargo, val in  Cargo.Sorted()) {
-            AIController.Sleep(1);
+		local dst_istown = null, src_istown = null;
+		local c = 0;
+		local priority = AICargoList().Count() + 100;
+		foreach(cargo, val in  Cargo.Sorted()) {
+			priority --;
 			if (!(cargo in TransAI.Info.Drop_off_point)) continue;
 			AILog.Info("Cargo type " + AICargo.GetCargoLabel(cargo));			
 			dst = TransAI.ServableMan.Item(TransAI.Info.Drop_off_point.rawget(cargo));
@@ -140,30 +130,27 @@ class Task.GenerateService extends YieldTask
 				/* let's assume working with industry */
 				src_lst = Assist.NotOnWater(AIIndustryList_CargoProducing(cargo));
 			}
-			src_lst.Valuate(Assist.ServiceCost, src_istown, cargo);
-			src_lst.RemoveBelowValue(min_production);
-			//AILog.Info("Count of src:" + src_lst.Count());
-            local c = 0;
 			local key = "";
 			local id = 0;
             foreach (source, val in src_lst) {
-                AIController.Sleep(1);
 				key = Services.CreateID(source, dst.GetID(), cargo);
 				id = TransAI.ServiceMan.FindKey(key);
 				if (id) {
-					AILog.Info("Found duplicate");
-					//TODO: upgrade services
-					
-				/// service key not found
+					//AILog.Info("Found duplicate");
+					//TODO: refresh cost
+					continue;
 				} else {
+					/// service key not found = New
 					src = TransAI.ServableMan.Item(TransAI.ServableMan.FindID(source, src_istown));
 					if (src == null) continue;
 					// skip if source and destination is same
 					if (src.GetKey() == dst.GetKey()) continue;
+					//skip if not producing yet
+					if (src.GetLastMonthProduction(cargo) < 5) continue;
 					//AILog.Info("src:" + src.GetName());
-					//src.SetTown(src.IsTown());					
 					serv = Services.New(src, dst, cargo);
-					id = TransAI.ServiceMan.New(serv, AICargo.GetCargoIncome(cargo, 20, 200));					
+					priority -= Assist.ServiceCost(serv.Info.R_Distance);
+					id = TransAI.ServiceMan.New(serv, priority);					
 					//AILog.Info("Source:" + src.GetName());
 					//speed = AIEngine.GetMaxSpeed(serv.Engines.Begin());
 					//estimated_time = (serv.Distance * 429 / speed / 24) ;
@@ -172,12 +159,11 @@ class Task.GenerateService extends YieldTask
 					c++;
 					AILog.Info(AICargo.GetCargoLabel(cargo) +
 					   " from " + src.GetName()+ " to " + dst.GetName());
-					yield c;
+					if (c > 4) yield true;
 				}
             }
 			AILog.Info("Source count:" + c);
         }
-        AILog.Info("Service Generator Stopped");
     }
 }
 
@@ -185,18 +171,18 @@ class Task.GenerateService extends YieldTask
  * Task to generate drop off point.
  * Generate table of drop off point by industry types.
  */
-class Task.GenerateDropOff extends TaskItem
+class Task.GenerateDropOff extends DailyTask
 {
 	constructor()
 	{
-		::TaskItem.constructor("Drop Off Point Generator");
-		::TaskItem.SetRemovable(true);
-		::TaskItem.SetKey(3);
+		::DailyTask.constructor("Drop Off Point Finder");
+		this.SetRemovable(true);
+		this.SetKey(2);
 	}
 
 	function Execute()
 	{
-		::TaskItem.Execute();
+		::DailyTask.Execute();
 		local tick = Ticker();
 		local random_factor = TransAI.Info.ID;
 		local destiny = AIList();
@@ -204,6 +190,15 @@ class Task.GenerateDropOff extends TaskItem
 		local dst_istown = null;
 		foreach (cargo, val in AICargoList()) {
 			AIController.Sleep(1);
+			if (TransAI.Info.Drop_off_point.rawin(cargo)) {
+				local dst = TransAI.Info.Drop_off_point[cargo];
+				local dstclass = TransAI.ServableMan.Item(dst);
+				if (dstclass) {
+					if (dstclass.IsValid()) continue;
+					TransAI.ServableMan.RemoveItem(dst);
+				}
+				TransAI.Info.Drop_off_point.rawdelete(cargo);
+			}
 			destiny = Assist.NotOnWater(AIIndustryList_CargoAccepting(cargo));
 			number = destiny.Count();            
 			if (number) {
@@ -212,8 +207,8 @@ class Task.GenerateDropOff extends TaskItem
 				dst_istown = false;
 			} else {
 				destiny = Cargo.TownList_Accepting(cargo);
-				destiny.Valuate(AITown.GetPopulation);
-				destiny.Sort(AIAbstractList.SORT_BY_VALUE, true);
+				destiny.Valuate(AITown.GetMaxProduction, cargo);
+				destiny.Sort(AIAbstractList.SORT_BY_VALUE, false);
 				dst_istown = true;
 				number = destiny.Count();
 			}
@@ -230,7 +225,8 @@ class Task.GenerateDropOff extends TaskItem
 					} else {
 						local dst_serv = Servable.New(dst, dst_istown);
 						dst_id = dst_serv.GetLocation();
-					}                	
+					}
+					if (dst_id in TransAI.Info.Dont_Drop_off) continue;                	
 					TransAI.Info.Drop_off_point.rawset(cargo, dst_id);
 					break;
 			    }
@@ -238,27 +234,33 @@ class Task.GenerateDropOff extends TaskItem
 			}            
         }
         /*
-		foreach (idx, val in TransAI.Info.Drop_off_point) {
+		foreach (;
+			TransAI.TaskMan.New(Task.GenerateService());idx, val in TransAI.Info.Drop_off_point) {
 			AILog.Info(TransAI.ServableMan.Item(val).GetName() + ":" + AICargo.GetCargoLabel(idx));
 		}*/
-		AILog.Info("Drop off point Finished in " + tick.Elapsed());
-		TransAI.DropPointIsValid = true;
+		Debug.ResultOf("Drop off point length", TransAI.Info.Drop_off_point.len()) > 0;
+		AILog.Info(" Finished in " + tick.Elapsed());
+		::TransAI.TaskMan.New(Task.GenerateService());
+		this.SetKey(31);
 	}
 }
 
+/**
+ * Scan servable object in map
+ */
 class Task.GenerateServable extends DailyTask
 {
 	constructor()
 	{
-        ::DailyTask.constructor("Servable Object scanner");
-        ::DailyTask.SetRemovable(false);
-        ::DailyTask.SetKey(2);
+        ::DailyTask.constructor("Servable Finder");
+        this.SetKey(1);
     }
     
     function Execute()
     {
     	::DailyTask.Execute();
     	TransAI.ServableMan.ScanMap();
-    	::DailyTask.SetKey(30);
+    	TransAI.TaskMan.New(Task.GenerateDropOff());
+    	this.SetKey(30);
     }	
 }

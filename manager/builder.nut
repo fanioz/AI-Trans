@@ -28,9 +28,9 @@ class Task.HeadQuarter extends YieldTask
 {
 	constructor()
 	{
-		::YieldTask.constructor("Build HeadQuarter Task");
+		::YieldTask.constructor("HeadQuarter Builder Task");
 		::YieldTask.SetRepeat(false);
-		::YieldTask.SetKey(10);
+		::YieldTask.SetKey(2);
 	}
 
 	function _exec()
@@ -51,17 +51,58 @@ class Task.HeadQuarter extends YieldTask
 		for (local town = loc.Begin(); loc.HasNext(); town = loc.Next()) {
 			counter++;
 			if (counter % TransAI.Info.ID != 0) continue;
-			tiles = Tiles.Flat(Tiles.OfTown(town, Tiles.Radius(AITown.GetLocation(town), 10)));
+			tiles = Tiles.Flat(Tiles.OfTown(town, Tiles.Radius(AITown.GetLocation(town), 10, 10), 1));
 			tiles.Valuate(AITile.IsBuildableRectangle, 2, 2);
 			tiles.RemoveValue(0);
 			foreach (location, val in tiles) {
-				if (AICompany.BuildCompanyHQ (location)) {
+				local mode = AITestMode();
+ 				if (AICompany.BuildCompanyHQ (location)) {
+					this._execRail(location);
+					this._execRoad(location);
+					local xmode = AIExecMode();
+					AICompany.BuildCompanyHQ (location)
 					AILog.Info("I've just build a Headquarter");					
-					return location;
+ 					return location;
+ 				}
+ 				yield true;
+			}
+		}
+	}
+
+	function _execRail(tile_to_try)
+	{
+		local acc = AIAccounting();		
+		local types = AIRailTypeList();
+		/* rail */
+		for (local rt = types.Begin(); types.HasNext(); rt = types.Next()) {
+			AIRail.SetCurrentRailType(rt);
+			if (!TransAI.Cost.Rail.rawin(rt)) {
+				acc.ResetCosts();
+				if (AIRail.BuildRailTrack(tile_to_try, AIRail.RAILTRACK_NW_SE)) {
+					TransAI.Cost.Rail.rawset(rt, acc.GetCosts());
+					//AILog.Info("Cost rail track:" + rt + "=" + acc.GetCosts());
 				}
-				AISign.RemoveSign(AISign.BuildSign(location,"here"));
-				AILog.Info("I've not found a spot yet for Headquarter");
-				yield location;
+			}
+		}
+	}
+				
+	function _execRoad(tile_to_try)
+	{
+		local acc = AIAccounting();		
+		local types = AIList();
+		types.AddItem(AIRoad.ROADTYPE_ROAD, 0);
+		types.AddItem(AIRoad.ROADTYPE_TRAM, 0);
+		/* road */
+		for (local rt = types.Begin(); types.HasNext(); rt = types.Next()) {
+			AIRoad.SetCurrentRoadType(rt);
+			foreach (head , val in Tiles.Adjacent(tile_to_try)) {
+				if (!TransAI.Cost.Road.rawin(rt)) {
+					acc.ResetCosts();
+					if (AIRoad.BuildRoad(tile_to_try, head)) {
+						TransAI.Cost.Road.rawset(rt, acc.GetCosts());
+						//AILog.Info("Cost road track:" + rt + "=" + acc.GetCosts());
+					}
+				}				
 			}
 		}
 	}

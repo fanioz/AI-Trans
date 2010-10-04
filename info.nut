@@ -20,11 +20,11 @@
  *  MA 02110-1301, USA.
  */
 
-class Trans71 extends AIInfo
+class Trans extends AIInfo
 {
     version = null;
     constructor() {
-    	this.version = 90619;
+    	this.version = 90713;
         ::AIInfo.constructor();
     }
 
@@ -33,15 +33,78 @@ class Trans71 extends AIInfo
     function GetShortName() { return "FTAI"; }
     function GetDescription(){ return "Trans is an effort to be a transporter ;-) "; }
     function GetVersion() { return this.version; }
-    function CanLoadFromVersion(version) { return version <= this.version; }
+    /* only change the version if the structure is changed */
+    function MinVersionToLoad() { return 90619; }
     function GetDate(){ return "2009-02-1"; }
     function CreateInstance(){ return "Trans"; }
-	function GetURL() {	return "https://bugs.launchpad.net/transai";	}
+	function GetURL() {	return "https://bugs.launchpad.net/transai"; }
     function GetSettings(){
-    	//AddSetting({name = "dbg_sign", description = "Enable building debug signs", easy_value = 0, medium_value = 0, hard_value = 0, custom_value = 0, flags = AICONFIG_BOOLEAN});
+		AddSetting({
+			name = "allow_bus", 
+			description = "Allow build bus",
+			easy_value = 1, 
+			medium_value = 1, 
+			hard_value = 1, 
+			custom_value = 1, 
+			flags = AICONFIG_BOOLEAN
+		});
+		AddSetting({
+			name = "allow_truck", 
+			description = "Allow build truck", 
+			easy_value = 1, 
+			medium_value = 1, 
+			hard_value = 1, 
+			custom_value = 1, 
+			flags = AICONFIG_BOOLEAN
+		});
+		AddSetting({
+			name = "allow_train", 
+			description = "Allow build train", 
+			easy_value = 1, 
+			medium_value = 1, 
+			hard_value = 1, 
+			custom_value = 1, 
+			flags = AICONFIG_BOOLEAN
+		});
+		AddSetting({
+			name = "last_transport", 
+			description = "percent of last month transported cargo. Trans AI won't compete above this value", 
+			min_value = 0, 
+			max_value = 100, 
+			easy_value = 60, 
+			medium_value = 30, 
+			hard_value = 0, 
+			custom_value = 0, 
+			step_size = 10, 
+			flags = 0
+		});
+		AddSetting({
+			name = "loop_time", 
+			description = "Trans AI processing speed", 
+			min_value = 1, 
+			max_value = 5, 
+			easy_value = 3, 
+			medium_value = 2, 
+			hard_value = 1, 
+			custom_value = 1, 
+			flags = 0
+		});
+		AddSetting({
+			name = "debug_signs", 
+			description = " debug signs", 
+			min_value = 0, 
+			max_value = 1, 
+			easy_value = 0, 
+			medium_value = 0, 
+			hard_value = 0, 
+			custom_value = 0, 
+			flags = 0
+		});
+		AddLabels("loop_time", {_1 = "Fastest", _2 = "Medium", _3 = "Sligthly slow", _4 = "Very slow", _5 = "Slowest"});
+		AddLabels("debug_signs", {_0 = "Don't build", _1 = "Build"});
     }
 }
 /*
 *Tell the core, I'm an AI too ...
 */
-RegisterAI(Trans71());
+RegisterAI(Trans());

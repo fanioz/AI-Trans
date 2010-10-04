@@ -26,6 +26,7 @@
  */
 class CompanyManager
 {
+	/** company manager constructor */
 	constructor()
 	{
 		TransAI.Info.ID = null;	///< Used ID as randomizer
@@ -34,6 +35,7 @@ class CompanyManager
 		TransAI.Info.Name = "Fanioz";	///<  President name of my company
 		TransAI.Info.Factor = 0;	///< factor of fluctuation
 		TransAI.Info.Drop_off_point = {}; ///< Drop off table
+		TransAI.Info.Dont_Drop_off = {}; ///< Don't Drop off table
 		TransAI.Info.Industry_Close = []; ///< Store will closing industry		
 		TransAI.Info.New_Engines = []; ///< Store new available engines
 		TransAI.Info.Lost_Vehicle = []; ///< Store Lost_Vehicle marked
@@ -65,7 +67,6 @@ class CompanyManager
 			if (!AICompany.SetPresidentName(TransAI.Info.Name)) {
 				while (!AICompany.SetPresidentName(TransAI.Info.Name + " " + i + " (jr.)")) {
 					i++;
-					AIController.Sleep(1);
 				}
 			}
 			TransAI.Info.Name = AICompany.GetPresidentName(TransAI.Info.ID);
@@ -74,9 +75,9 @@ class CompanyManager
 		/* greeting you */
 		AILog.Info("" + AICompany.GetName(TransAI.Info.ID) + " has been started since " + Assist.DateStr(TransAI.Info.Start_date));
 		AILog.Info("Powered by " + _version_);
-		Settings.Version();
 		Debug.ResultOf("Random factor", TransAI.Info.ID);
 		if (TransAI.Info.Factor == 0) TransAI.Info.Factor = AICompany.GetMaxLoanAmount() / 10000;
+		TransAI.Factor10 <- AICompany.GetMaxLoanAmount() / TransAI.Info.Factor;
 	}
 
 
@@ -93,44 +94,6 @@ class CompanyManager
 }
 
 /**
- * Evaluate all vehicles, stations, connections
- */
-function CompanyManager::Evaluate()
-{
-    AILog.Info("Evaluating...");
-
-    /* if it getting old register it*/
-    vhc_list = AIVehicleList();
-    vhc_list.Valuate(AIVehicle.GetAge);
-    vhc_list.KeepAboveValue(730);
-    foreach (vhc, val in vhc_list) this.old_vehicle.Insert(vhc, 1000 - AIVehicle.GetAge(vhc));
-
-    /* check to see an old vhc */
-    while (this.old_vehicle.Count() > 0) {
-        AIController.Sleep(1);
-        local vhc_ID = this.old_vehicle.Pop();
-        /* skip an invalid ID */
-        if (!AIVehicle.IsValidVehicle(vhc_ID)) continue;
-        /* don't sell if the only one */
-        if (AIVehicleList_Group(AIVehicle.GetGroupID(vhc_ID)).Count() == 1) continue;
-        /* check if has been sent before */
-        if ((vhc_ID in this.vehicle_sent) && this.vehicle_sent[vhc_ID]) {
-            /* try to sell if sent */
-            if (Vehicles.Sold(vhc_ID)) {
-                this.vehicle_sent.rawdelete(vhc_ID);
-                AILog.Info("Finally, we can sell");
-                break;
-            }
-            /* else update the sent status */
-        } else this.vehicle_sent[vhc_ID] <- Vehicles.TryToSend(vhc_ID);
-        break;
-    }
-
-    
-}
-
-
-/**
  * Clearing events routine before save
  * @note Make sure, never use do command
  */
@@ -139,7 +102,6 @@ class Task.Events extends DailyTask
     constructor()
     {
         ::DailyTask.constructor("Events Check");
-        ::DailyTask.SetRemovable(false);
         ::DailyTask.SetKey(1);
     }
 
@@ -159,12 +121,11 @@ class Task.Events extends DailyTask
                 case AIEvent.AI_ET_SUBSIDY_OFFER_EXPIRED:
                     local esoe = AIEventSubsidyOfferExpired.Convert(e);
                     si = esoe.GetSubsidyID();
-                    AILog.Info("SubsidyID " + si + " offer expired" );
-                    local _func = function(val) { return val ? AITown : AIIndustry; };
-                    local src = _func(AISubsidy.SourceIsTown(si)).GetLocation(AISubsidy.GetSource(si));
-                    local dst = _func(AISubsidy.DestinationIsTown(si)).GetLocation(AISubsidy.GetDestination(si));
+                    AILog.Info("SubsidyID " + si + " offer expired" );                    
+                    local src = AISubsidy.GetSource(si);
+                    local dst = AISubsidy.GetDestination(si);
                     si = Services.CreateID(src, dst, AISubsidy.GetCargoType(si));                    
-                    if (!TransAI.Info.Serviced_Route.rawin(si)) TransAI.Info.Expired_Route[si] <- {};                    
+                    if (!TransAI.Info.Serviced_Route.rawin([si])) TransAI.Info.Expired_Route[si] <- {};                    
                 break ;
 
                 case AIEvent.AI_ET_SUBSIDY_AWARDED:
@@ -172,11 +133,10 @@ class Task.Events extends DailyTask
                     si = esa.GetSubsidyID();
                     AILog.Info("SubsidyID " + si + " awarded");
                     if (AICompany.IsMine(AISubsidy.GetAwardedTo(si))) break;
-                    local _func = function(val) { return val ? AITown : AIIndustry; };
-                    local src = _func(AISubsidy.SourceIsTown(si)).GetLocation(AISubsidy.GetSource(si));
-                    local dst = _func(AISubsidy.DestinationIsTown(si)).GetLocation(AISubsidy.GetDestination(si));
+                    local src = AISubsidy.GetSource(si);
+                    local dst = AISubsidy.GetDestination(si);
                     si = Services.CreateID(src, dst, AISubsidy.GetCargoType(si));
-                    if (!TransAI.Info.Serviced_Route.rawin(si)) TransAI.Info.Expired_Route[si] <- {};
+                    if (!(si in TransAI.Info.Serviced_Route)) TransAI.Info.Expired_Route[si] <- {};
                 break;
 
                 case AIEvent.AI_ET_SUBSIDY_EXPIRED:
@@ -266,7 +226,15 @@ class Task.Events extends DailyTask
                     local me = AIEventIndustryClose.Convert(e);
                     si = me.GetIndustryID();
                     AILog.Info("Sadly enough, Good bye "+ AIIndustry.GetName(si));
-                    TransAI.Info.Industry_Close.push(si);
+					if (AIIndustry.IsValidIndustry(si)) {
+							local struct = Const.IndustryClosed;
+							struct.ID = si;
+							struct.Loc = AIIndustry.GetLocation(si);
+							local type = AIIndustry.GetIndustryType(si);
+							struct.CargoAccept = Assist.ListToArray(AIIndustryType.GetAcceptedCargo(type));
+							struct.CargoProduce = Assist.ListToArray(AIIndustryType.GetProducedCargo(type));
+							TransAI.Info.Industry_Close.push(struct);
+                    }
                 break;
 
                 case AIEvent.AI_ET_ENGINE_AVAILABLE:
@@ -321,7 +289,6 @@ class Task.CurrentValue extends DailyTask
 	constructor()
 	{
 		::DailyTask.constructor("Current Value");
-		::DailyTask.SetRemovable(false);
 		::DailyTask.SetKey(30);
 	}
 
@@ -341,14 +308,13 @@ class Task.Inflation extends DailyTask
 	constructor()
 	{
 		::DailyTask.constructor("Inflation Check");
-		::DailyTask.SetRemovable(false);
 		::DailyTask.SetKey(365);
 	}
 
 	function Execute()
 	{
 		::DailyTask.Execute();
-		TransAI.Factor10 <- (AICompany.GetMaxLoanAmount() / TransAI.Info.Factor).tointeger();
+		TransAI.Factor10 = (AICompany.GetMaxLoanAmount() / TransAI.Info.Factor).tointeger();
 		AILog.Info("10000 => " + TransAI.Factor10);
 	}
 }
@@ -362,7 +328,6 @@ class Task.Maintenance extends DailyTask
 	constructor()
 	{
 		::DailyTask.constructor("Maintenance Task");
-		::DailyTask.SetRemovable(false);
 		::DailyTask.SetKey(30);
 	}
 
@@ -383,43 +348,36 @@ class Task.Monitor extends DailyTask
     constructor()
     {
         ::DailyTask.constructor("Monitor Task");
-        ::DailyTask.SetRemovable(false);
         ::DailyTask.SetKey(2);        
     }
 
     function Execute()
     {
     	::DailyTask.Execute();
-    	if (Debug.ResultOf("Drop point invalid", !TransAI.DropPointIsValid)) TransAI.TaskMan.New(Task.GenerateDropOff());
     	
     	/// see we are in trouble ?
-    	if (TransAI.Info.InTrouble) Bank.Get(AICompany.GetLoanInterval());
+    	if (TransAI.Info.InTrouble) Bank.Get(2 * AICompany.GetLoanInterval());
     	
     	/// see are we have pending backbone
-    	if (TransAI.RailBackBones.len()) {
-    		foreach (idx, serv in TransAI.RailBackBones) {
-    			if (Assist.Connect_BackBone(serv)) {
-    				TransAI.RailBackBones.rawdelete(idx);
-    			}
-    		} 
+    	while (TransAI.RailBackBones.len()) {
+    		local key = TransAI.RailBackBones.pop(); 
+    		if (TransAI.Builder.BackBoner(key) == "no_money") TransAI.RailBackBones.push(key);
+    		TransAI.Builder.ClearSigns();
+    		break; 
     	}
+    	
     	/* check to see a will close industry */
     	if (TransAI.Info.Industry_Close.len()) Assist.HandleClosingIndustry(TransAI.Info.Industry_Close.pop());
     	
     	if (TransAI.Info.Lost_Vehicle.len()) {
     	}
     	
+    	foreach (id, val in TransAI.Info.Dont_Drop_off) {
+    		if (TransAI.ServableMan.Item(val) == null) TransAI.Info.Dont_Drop_off.rawdelete(id);
+    	}
+    	
     	/* check to see any new engine */
     	if (TransAI.Info.New_Engines.len() > 0) Vehicles.UpgradeEngine(TransAI.Info.New_Engines.pop());
-    	
-    	/* check vehicle in depot */
-    	foreach(vhc_id, val in AIVehicleList()) {
-    		if (!AIVehicle.IsStoppedInDepot(vhc_id)) continue;
-    		AILog.Info("" + AIVehicle.GetName(vhc_id) + " is inside depot");
-    		local g = AIVehicle.GetGroupID(vhc_id);
-    		if (AIGroup.GetNumEngines(g, AIVehicle.GetEngineType(vhc_id)) == 1) Vehicles.Sold(vhc_id)
-    		else AIVehicle.SellVehicle(vhc_id);
-    	}
     }
 }
 

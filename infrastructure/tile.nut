@@ -32,7 +32,7 @@ class Tiles
      * @param num number of tile from 'tile'
      * @return amount 'num' North of 'tile'
      */
-    static function N_Of(tile = 0, num = 1)
+    static function N_Of(tile, num)
     {
       return tile + AIMap.GetTileIndex(-num, -num);
     }
@@ -43,7 +43,7 @@ class Tiles
     * @param num number of tile from 'tile'
     * @return amount 'num' West of 'tile'
     */
-    static function W_Of(tile = 0, num = 1)
+    static function W_Of(tile, num)
     {
       return tile + AIMap.GetTileIndex(num, -num);
     }
@@ -54,7 +54,7 @@ class Tiles
     * @param num number of tile from 'tile'
     * @return amount 'num' South of 'tile'
     */
-    static function S_Of(tile = 0, num = 1)
+    static function S_Of(tile, num)
     {
       return tile + AIMap.GetTileIndex(num, num);
     }
@@ -65,7 +65,7 @@ class Tiles
     * @param num number of tile from 'tile'
     * @return amount 'num' East of 'tile'
     */
-    static function E_Of(tile = 0, num = 1)
+    static function E_Of(tile, num)
     {
         return tile + AIMap.GetTileIndex(-num, num);
     }
@@ -77,7 +77,7 @@ class Tiles
     * @param num number of tile from 'tile'
     * @return amount 'num' North East of 'tile'
     */
-    static function NE_Of(tile = 0, num = 1)
+    static function NE_Of(tile, num)
     {
       return tile + AIMap.GetTileIndex(-num, 0);
     }
@@ -88,7 +88,7 @@ class Tiles
     * @param num number of tile from 'tile'
     * @return amount 'num' North West of 'tile'
     */
-    static function NW_Of(tile = 0,  num = 1)
+    static function NW_Of(tile,  num)
     {
       return tile + AIMap.GetTileIndex(0, -num);
     }
@@ -99,7 +99,7 @@ class Tiles
     * @param num number of tile from 'tile'
     * @return amount 'num' South East of 'tile'
     */
-    static function SE_Of(tile = 0, num = 1)
+    static function SE_Of(tile, num)
     {
       return tile + AIMap.GetTileIndex(0, num);
     }
@@ -110,7 +110,7 @@ class Tiles
     * @param num number of tile from 'tile'
     * @return amount 'num' South West of 'tile'
     */
-    static function SW_Of(tile = 0,  num = 1)
+    static function SW_Of(tile,  num)
     {
       return tile + AIMap.GetTileIndex(num, 0);
     }
@@ -123,10 +123,10 @@ class Tiles
     static function Adjacent(tile)
     {
         local adjacen = AITileList();
-        adjacen.AddTile(Tiles.NE_Of(tile));
-        adjacen.AddTile(Tiles.NW_Of(tile));
-        adjacen.AddTile(Tiles.SW_Of(tile));
-        adjacen.AddTile(Tiles.SE_Of(tile));
+        adjacen.AddTile(Tiles.NE_Of(tile, 1));
+        adjacen.AddTile(Tiles.NW_Of(tile, 1));
+        adjacen.AddTile(Tiles.SW_Of(tile, 1));
+        adjacen.AddTile(Tiles.SE_Of(tile, 1));
         return Tiles.Validated(adjacen);
     }
 
@@ -143,30 +143,7 @@ class Tiles
         return true;
     }
 
-    /**
-     * @return average height of tile list
-     */
-    static function AverageHeight(tiles)
-    {
-		assert(typeof tiles == "array");
-		local heights = [];
-		local ht = 0;
-		foreach (idx, val in tiles) {
-			ht = AITile.GetMaxHeight(val);
-			if (ht != AITile.GetMinHeight(val)) {
-				local hcor = [];
-				foreach (idx, corner in Const.Corner) hcor.push(AITile.GetCornerHeight(val, corner));
-				ht = Assist.Average(hcor);
-				if (ht == 0) ht = 1;				
-			}
-			heights.push(ht);
-		}
-		ht = Assist.Average(heights);
-		if (ht == 0) ht = 1;
-		return ht;
-	}
-
-    /**
+   /**
     * Get tiles of an area in number of radius
     * @param tile center of tile
     * @param rad_X radius of area to get by X axis
@@ -174,12 +151,12 @@ class Tiles
     * @return  tiles of "radius" from "tile"
     * @note leave undefined rad_Y to get squared area
     */
-    static function Radius(tile, rad_X, rad_Y = null)
+    static function Radius(tile, rad_X, rad_Y)
     {
         local area = Tiles.Radius_N(tile, rad_X, rad_Y);
-        area.AddList(Tiles.Radius_N(tile, -rad_X, rad_Y));
+        area.AddList(Tiles.Radius_N(tile, -rad_X, -rad_Y));
         area.AddList(Tiles.Radius_W(tile, rad_X, rad_Y));
-        area.AddList(Tiles.Radius_W(tile, -rad_X, rad_Y));
+        area.AddList(Tiles.Radius_W(tile, -rad_X, -rad_Y));
         area.Sort(AIAbstractList.SORT_BY_ITEM, true);
         return area;
     }
@@ -193,7 +170,7 @@ class Tiles
     * @note use negative value to get South of tile
     * @note leave undefined rad_Y to get squared area
     */
-    static function Radius_N(tile, rad_X, rad_Y = null)
+    static function Radius_N(tile, rad_X, rad_Y)
     {
         rad_Y = (rad_Y == null) ? rad_X : rad_Y;
         local area = AITileList();
@@ -210,7 +187,7 @@ class Tiles
     * @note use negative value to get East of tile
     * @note leave undefined rad_Y to get squared area
     */
-    static function Radius_W(tile, rad_X, rad_Y = null)
+    static function Radius_W(tile, rad_X, rad_Y)
     {
         rad_Y = (rad_Y == null) ? rad_X : rad_Y;
         local area = AITileList();
@@ -236,7 +213,7 @@ class Tiles
     * @param yes a Value to keep
     * @return the road tiles of 'tiles'
     */
-    static function Roads(tiles, yes = 1)
+    static function Roads(tiles, yes)
     {
         local tile = tiles;
         tile.Valuate(AIRoad.IsRoadTile);
@@ -250,7 +227,7 @@ class Tiles
     * @param yes a Value to keep
     * @return the buildable tiles of 'tiles'
     */
-    static function Buildable(tiles, yes = 1)
+    static function Buildable(tiles, yes)
     {
         local tilest = tiles;
         tilest.Valuate(AITile.IsBuildable);
@@ -277,8 +254,8 @@ class Tiles
     static function Flat(tiles)
     {
         local tile = tiles;
-        tile.Valuate(AITile.GetSlope);
-        tile.KeepValue(AITile.SLOPE_FLAT);
+        tile.Valuate(Tiles.IsFlat);
+        tile.KeepValue(1);
         return tile;
     }
 
@@ -327,32 +304,17 @@ class Tiles
      * Find any depot around base
      * @return tiles of depot
      */
-    static function DepotOn(base, rad = 10)
+    static function DepotOn(base, rad)
     {
-        local area = Tiles.Radius(base, rad);
+        local area = Tiles.Radius(base, rad, rad);
         area.Valuate(Tiles.IsMine);
         area.KeepValue(1);
         area.Valuate(Tiles.IsDepotTile);
         area.KeepValue(1);
-        area.Valuate(AITile.GetDistanceManhattanToTile, base);
+        area.Valuate(AIMap.DistanceManhattan, base);
         area.Sort(AIAbstractList.SORT_BY_VALUE, true);
         return area;
     }
-
-    /**
-    * Get Ignorance tile while path finding
-    * @return AITilelist of ignored tiles
-    */
-    static function ToIgnore()
-	{
-		local w = TransAI.WholeMapTiles;
-		Assist.Valuate(w, function(tile) {
-			if (AITile.GetMaxHeight(tile) == 0) return 0;
-			return Tiles.IsRoadBuildable(tile);
-		});
-		w.KeepValue(0);		
-		return w;
-	}
 
     /**
     * Get water tiles of  area
@@ -360,7 +322,7 @@ class Tiles
     * @param yes a Value to keep
     * @return  Water tiles of an area
     */
-    static function Waters(area, yes = 1)
+    static function Waters(area, yes)
     {
         local tiles = area;
         tiles.Valuate(AITile.IsWaterTile);
@@ -395,30 +357,29 @@ class Tiles
      */
     static function MakeLevel(tilestart, tileend)
     {
-    	if (Debug.ResultOf("Level tiles[1]", AITile.LevelTiles(tilestart, tileend))) return true;
-		if (AIError.GetLastError() == AITile.ERR_AREA_ALREADY_FLAT) return true;
 		local tiles = AITileList();
 		tiles.AddRectangle(tilestart, tileend);
-		tiles = Assist.ListToArray(tiles);
-		if (tiles.len() == 0) return;
-		if (!Tiles.SetFlatHeight(tilestart, Tiles.AverageHeight(tiles))) return false;
-		if (Debug.ResultOf("Level tiles[2]", AITile.LevelTiles(tilestart, tileend))) return true;
-		if (AIError.GetLastError() == AITile.ERR_AREA_ALREADY_FLAT) return true;
-		Assist.Valuate(Assist.ArrayToList(tiles), Tiles.SetFlatHeight, Tiles.AverageHeight(tiles));
-		if (Debug.ResultOf("Level tiles[3]", AITile.LevelTiles(tilestart, tileend))) return true;
-		if (AIError.GetLastError() == AITile.ERR_AREA_ALREADY_FLAT) return true;
+		tiles = Tiles.Validated(tiles);
+		if (tiles.IsEmpty()) return;
+		local target_h = Tiles.ModusHeight(tiles);
+		foreach (tile , val in tiles) if (!Tiles.SetFlatHeight(tile, target_h)) return;
+		AILog.Info("Level tiles[1] passed");
+		if (Tiles.IsLevel(tilestart, tileend)) return true;
+		Debug.ResultOf("Level tiles[2]", AITile.LevelTiles(tilestart, tileend));
+		foreach (tile , val in tiles) if (!Tiles.SetFlatHeight(tile, target_h)) return;
+		AILog.Info("Level tiles[2] passed");
+		return true;
     }
 
 	/**
 	 * Check if tiles is can leveled 
-	 * @return true if AREA_ALREADY_FLAT
+	 * @return true if have no slope
 	*/
 	static function IsLevel(tilestart, tileend)
 	{
-		if (AITile.GetSlope(tilestart)) return false;
 		local tiles = AITileList();
 		tiles.AddRectangle(tilestart, tileend);
-		foreach (idx, val in tiles) if (AITile.GetSlope(idx)) return false;
+		foreach (idx, val in tiles) if (!Tiles.IsFlat(idx)) return false;
 		return true;
 	}
 
@@ -429,7 +390,7 @@ class Tiles
      * @param yes Wether to inverse this function
      * @return Tiles that have influence rating by this townID
      */
-    static function OfTown(townID, areas, yes = 1)
+    static function OfTown(townID, areas, yes)
     {
 		local area = areas;
         area.Valuate(AITile.IsWithinTownInfluence, townID);
@@ -450,17 +411,23 @@ class Tiles
     /**
     * Get tile list of my station arround base
     * @param base the center of area
-    * @return AITileList of my station arround base
+    * @return AIList of my station ID arround base
     */
     static function StationOn(base)
     {
-        local area = Tiles.Radius(base, 10);
+        local area = Tiles.Radius(base, 12, 12);
         area.Valuate(Tiles.IsMine);
         area.KeepValue(1);
         area.Valuate(AITile.IsStationTile);
         area.RemoveValue(0);
-        area.Valuate(AIMap.DistanceMax, base);
+        area.Valuate(AIMap.DistanceManhattan, base);
         area.Sort(AIAbstractList.SORT_BY_VALUE, true);
+        local list = AIList();
+        foreach (idx, val in area) {
+        	local id = AIStation.GetStationID(idx);
+        	if (!AIStation.IsValidStation(id)) continue;
+        	list.AddItem(id, list.GetValue(id) + 1);
+        }
         return area;
     }
 
@@ -471,84 +438,86 @@ class Tiles
      */
     static function SetFlatHeight(tile, height)
     {
-		local max_h = 0;
-		local slope = 0;
-		local do_cmd = null;
-		local info = "";
-		/*
-		API would never return these :
-
-		local SLOPE_HALFTILE = 32;
-        local SLOPE_HALFTILE_MASK = 244;
-        local SLOPE_HALFTILE_W = SLOPE_HALFTILE || (0 << 6);
-        local SLOPE_HALFTILE_S = SLOPE_HALFTILE || (1 << 6);
-        local SLOPE_HALFTILE_E = SLOPE_HALFTILE || (2 << 6);
-        local SLOPE_HALFTILE_N = SLOPE_HALFTILE || (3 << 6);
-		*/
-        while (AIMap.IsValidTile(tile)) {
-			max_h = AITile.GetMaxHeight(tile);
-			slope = AITile.GetSlope(tile);
-			do_cmd = AITile.RaiseTile;
-			info = "Raising ";
-			if (slope == AITile.SLOPE_FLAT && max_h == height) return true;
-            local c = Debug.Sign(tile,"t");
-            local to_slope = 0;
-            AILog.Info("Height=" + max_h + "Target=" + height);
-            local lowering = max_h > height;
-			if (lowering) {
-				do_cmd =  AITile.LowerTile;
-				info = "Lowering ";
+    	if (!AIMap.IsValidTile(tile)) return 0;
+		local max_h = AITile.GetMaxHeight(tile);
+		//if (Tiles.IsFlat(tile) && max_h == height) return 1;
+		local slope = AITile.GetSlope(tile);
+		local c = Debug.Sign(tile,"t");
+		//AILog.Info("Max.H:" + max_h + " Target:" + height);
+		foreach (corn in Const.Corner) {
+			if (AITile.GetCornerHeight(tile, corn) == height) continue;
+			if (AITile.GetCornerHeight(tile, corn) < height) {
+				if (AITile.RaiseTile(tile, 1 << corn)) continue;
+				return 0;
 			}
-            if (AITile.IsSteepSlope(slope)) {
-                switch (slope) {
-                    case AITile.SLOPE_STEEP_W :
-                        to_slope = lowering ? AITile.SLOPE_E : AITile.SLOPE_W;
-                        break;
-                    case AITile.SLOPE_STEEP_S :
-                        to_slope = lowering ? AITile.SLOPE_N : AITile.SLOPE_S;
-                        break;
-                    case AITile.SLOPE_STEEP_E :
-                        to_slope = lowering ? AITile.SLOPE_W : AITile.SLOPE_E;
-                        break;
-                    case AITile.SLOPE_STEEP_N :
-                        to_slope = lowering ? AITile.SLOPE_S : AITile.SLOPE_N;
-                        break;
-                    default :
-                        Debug.Sign(tile, "Invalid steep");
-                        Debug.DontCallMe("Invalid steep slope", slope);
-                }
-            } else if (AITile.IsHalftileSlope(slope)) {
-				Debug.DontCallMe("API should not return Half Tile Slope", slope);
-                switch (slope) {
-                    case SLOPE_HALFTILE_W :
-                    case SLOPE_HALFTILE_S :
-                    case SLOPE_HALFTILE_E :
-                    case SLOPE_HALFTILE_N :
-                    default :
-                        Debug.DontCallMe("Invalid half slope", slope);
-                }
-
-            } else {
-                /* now, we have no Half nor Steep tile */
-                if (lowering) {
-                    if (slope && AITile.SLOPE_W == AITile.SLOPE_W) to_slope = to_slope || AITile.SLOPE_W;
-                    if (slope && AITile.SLOPE_S == AITile.SLOPE_S) to_slope = to_slope || AITile.SLOPE_S;
-                    if (slope && AITile.SLOPE_E == AITile.SLOPE_E) to_slope = to_slope || AITile.SLOPE_E;
-                    if (slope && AITile.SLOPE_N == AITile.SLOPE_N) to_slope = to_slope || AITile.SLOPE_N;
-                } else {
-                    to_slope = AITile.GetComplementSlope(slope);
-                }
-            }
-            if (!Debug.ResultOf("Try to " + info, do_cmd(tile, to_slope) == 1)) break;
-        }
-        return false;
+			if (AITile.GetCornerHeight(tile, corn) > height) {
+				if (AITile.LowerTile(tile, 1 << corn)) continue;
+				return 0;
+			}
+			Debug.DontCallMe("should not reached", tile);
+		}
+		Debug.UnSign(c);
+		return 1;
     }
     
-    static function FrontMore(body, head, num =1)
+    static function FrontMore(body, head, num)
 	{
-		if (Tiles.NE_Of(body) == head) return Tiles.NE_Of(head, num);
-		if (Tiles.NW_Of(body) == head) return Tiles.NW_Of(head, num);
-		if (Tiles.SE_Of(body) == head) return Tiles.SE_Of(head, num);
-		if (Tiles.SW_Of(body) == head) return Tiles.SW_Of(head, num);
+		if (Tiles.NE_Of(body, 1) == head) return Tiles.NE_Of(head, num);
+		if (Tiles.NW_Of(body, 1) == head) return Tiles.NW_Of(head, num);
+		if (Tiles.SE_Of(body, 1) == head) return Tiles.SE_Of(head, num);
+		if (Tiles.SW_Of(body, 1) == head) return Tiles.SW_Of(head, num);
+	}
+	
+	static function IsBuildableRange(start_t, end_t)
+	{
+		local tiles = AITileList();
+		if (!AIMap.IsValidTile(start_t)) return false;
+		if (!AIMap.IsValidTile(end_t)) return false;
+		tiles.AddRectangle(start_t, end_t);
+		foreach (idx, val in tiles) {
+			if (!AITile.IsBuildable(idx)) return false;
+			if (Tiles.IsMine(idx)) return false;
+		}
+		return true;
+	}
+	
+	static function IsFlat(idx)
+	{
+		local slope = AITile.GetSlope(idx);
+		if (slope == 0) return true;
+		if (TransAI.Setting.Get(Const.Settings.build_on_slopes) && (slope == AITile.SLOPE_NWS || 
+			slope == AITile.SLOPE_WSE || slope == AITile.SLOPE_SEN || 
+			slope == AITile.SLOPE_ENW)) return true;
+		return false;
+	}
+	
+	static function IsAutoFlat(current, next)
+	{
+		local slope = AITile.GetSlope(current);
+		if (slope == 0) return true;
+		if (!TransAI.Settings.Get(Const.Settings.autoslope)) return;
+		//Set to true if we want to go to the north-west
+		local NW = Tiles.NW_Of(current, 1) == next;
+		//Set to true if we want to go to the north-east
+		local NE = Tiles.NE_Of(current, 1) == next;
+		//Set to true if we want to go to the south-west 
+		local SW = Tiles.SW_Of(current, 1) == next;
+		//Set to true if we want to go to the south-east
+		local SE = Tiles.SE_Of(current, 1) == next;
+		
+		if ((NW || SE) && (slope == AITile.SLOPE_NE || slope == AITile.SLOPE_SW)) return true;
+		if ((NE || SW) && (slope == AITile.SLOPE_NW || slope == AITile.SLOPE_SE)) return true;
+	}
+	
+	static function MostHeight(idx)
+	{
+		local tmp = [];
+		foreach (corn in Const.Corner) tmp.push(AITile.GetCornerHeight(idx, corn));
+		return Assist.Modus(tmp);
+	}
+	
+	static function ModusHeight(tilelist)
+	{
+		return Assist.Modus(Assist.ValuateToArray(tilelist, Tiles.MostHeight));
 	}
 }

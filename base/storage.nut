@@ -77,10 +77,9 @@ class Memory extends Storage
 	{
 		if (idx in this) return this[idx];
 		if (idx in this._storage) return this._storage[idx];
-		::print("not found in class storage");
+		::print("not found index:" + idx + " in " + this.GetClassName());
 		if (idx in ::TransAI.Root) return ::TransAI.Root[idx];
-		::print("not found in TransAI Root");
-		::print(idx);
+		::print("not found index:" + idx + " in TransAI Root");
 	}
 
 	/**
@@ -91,13 +90,14 @@ class Memory extends Storage
 	 */
 	function _set(idx, val)
 	{
-		if((typeof val == "class") || (typeof val == "instance")) throw "using " + typeof val;
+		if((typeof val == "class") ||
+			(typeof val == "instance") || (typeof val == "function")) throw "using " + typeof val;
 		this._storage.rawset(idx, val);
 	}
 	
 	function _cmp(other)
 	{
-		assert(typeof(other) == "table");
+		assert(typeof other == "table");
 		foreach (idx, val in this._storage) if (other[idx] != val) return 1;
 		return 0;
 	}
