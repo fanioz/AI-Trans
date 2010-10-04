@@ -513,9 +513,9 @@ class Settings
 		local build = (v & 0x00F00000) >> 20;
 		local rel = (v & 0x00080000) != 0;
 		local rev = v & 0x0007FFFF;
-		if (maj < 1) maj = 0;
-		AILog.Info("Run On OpenTTD Ver:" + maj + "." + minor + " Build:" + build + " (" + (rel ?  "Release" : "Rev." + rev) + ")");
-		if ((maj == 0 && minor < 2) || rev < 17010) throw "Not supported version";
+		AILog.Warning("You run On OpenTTD Ver:" + maj + "." + minor + " Build:" + build + " (" + (rel ?  "Release" : "Rev." + rev) + ")");
+		if ((minor > 6 && build > 1) || rev > 17009) return true;
+		throw "Not supported version please use version 0.7.2 instead";
 	}
 }
 
