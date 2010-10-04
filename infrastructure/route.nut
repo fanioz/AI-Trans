@@ -168,16 +168,6 @@ class Route.Finder
 			cost += self._cost_crossing;
 		}
 	
-		/* Check if the tile need demolition. */
-		if (self._cost_demolition && !AITile.IsBuildable(new_tile)) {
-			cost += self._cost_demolition;
-		}
-		
-		/* Check the congestion. */
-		if (!AITile.DemolishTile(new_tile) && AIError.GetLastError() == AIError.ERR_VEHICLE_IN_THE_WAY) {
-            cost +=  self._cost_bridge_per_tile * 5;
-    	}
-    	
     	/* dont call path.getcost */
 		return cost;
 	}
@@ -346,14 +336,6 @@ class Route.RoadFinder extends RoadPF_3
 		/* self._max_cost is the maximum path cost, if we go over it, the path isn't valid. */
 		if (path.GetCost() >= self._max_cost) return [];
 		local tiles = ::RoadPF_3._Neighbours(path, cur_node, self);
-		if (self._cost_demolition) {
-			 foreach (idx, val in Tiles.Adjacent(cur_node)) {
-				if (Tiles.IsRoadBuildable(idx)) continue;
-				if (Tiles.IsMine(idx)) continue;
-				if (!AITile.DemolishTile(idx)) continue;
-				tiles.push([idx, self._GetDirection(cur_node, idx, false)]);
-			 }
-		}
 		
 		return tiles;
 	}
@@ -444,7 +426,10 @@ class Route.RoadTracker extends Route.RoadFinder
 	 */
 	function _Cost(self, path, new_tile, new_direction)
 	{
+		if (path != null && !AIRoad.AreRoadTilesConnected(path.GetTile(), new_tile)) { 
 		return ::Route.Tracker.GetCost(self, path, new_tile, new_direction, AITile.TRANSPORT_ROAD);
+		}
+		return self._max_cost;
 	}
 }
 

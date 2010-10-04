@@ -82,3 +82,8 @@ Fix: Crash on un-managed TestMode
 Fix: Wrong "last_transport" setting
 Fix: Error type while Save/Loading Station manager
 
+* 090823
+Fix: Set to be compatible with 0.7.2
+Fix: Use random name from AI ID
+CodeChange: Optimize pathfinder
+

@@ -36,14 +36,14 @@ class CompanyManager
 		TransAI.Info.Factor = 0;	///< factor of fluctuation
 		TransAI.Info.Drop_off_point = {}; ///< Drop off table
 		TransAI.Info.Dont_Drop_off = {}; ///< Don't Drop off table
-		TransAI.Info.Industry_Close = []; ///< Store will closing industry		
+		TransAI.Info.Industry_Close = []; ///< Store will closing industry
 		TransAI.Info.New_Engines = []; ///< Store new available engines
 		TransAI.Info.Lost_Vehicle = []; ///< Store Lost_Vehicle marked
 		TransAI.Info.InTrouble = false; ///< Reminder if we are in trouble
 		TransAI.Info.Current_Service = null;
 	    TransAI.Info.Serviced_Route = {};
 	    TransAI.Info.Expired_Route = {};
-	    TransAI.Info.Vehicle_Sent = [];	    
+	    TransAI.Info.Vehicle_Sent = [];
 	}
 
 	/**
@@ -58,17 +58,18 @@ class CompanyManager
 		AIGroup.EnableWagonRemoval(true);
 
 		/* Detect saved session */
-		if (TransAI.Info.Start_date == 0) TransAI.Info.Start_date = AIDate.GetCurrentDate();		
+		if (TransAI.Info.Start_date == 0) TransAI.Info.Start_date = AIDate.GetCurrentDate();
 		if (TransAI.Info.Live == null) TransAI.Info.Live = 1;
 		if (TransAI.Info.ID == null) TransAI.Info.ID = AICompany.ResolveCompanyID(AICompany.COMPANY_SELF);
 		if (AICompany.GetPresidentName(TransAI.Info.ID) != TransAI.Info.Name) {
-			/* Set my name */
+			/* Set my name
 			local i = 1;
 			if (!AICompany.SetPresidentName(TransAI.Info.Name)) {
 				while (!AICompany.SetPresidentName(TransAI.Info.Name + " " + i + " (jr.)")) {
 					i++;
 				}
 			}
+			*/
 			TransAI.Info.Name = AICompany.GetPresidentName(TransAI.Info.ID);
 			AICompany.SetName(TransAI.Info.Name + " Trans Corp.");
 		}
@@ -121,11 +122,11 @@ class Task.Events extends DailyTask
                 case AIEvent.AI_ET_SUBSIDY_OFFER_EXPIRED:
                     local esoe = AIEventSubsidyOfferExpired.Convert(e);
                     si = esoe.GetSubsidyID();
-                    AILog.Info("SubsidyID " + si + " offer expired" );                    
+                    AILog.Info("SubsidyID " + si + " offer expired" );
                     local src = AISubsidy.GetSource(si);
                     local dst = AISubsidy.GetDestination(si);
-                    si = Services.CreateID(src, dst, AISubsidy.GetCargoType(si));                    
-                    if (!TransAI.Info.Serviced_Route.rawin([si])) TransAI.Info.Expired_Route[si] <- {};                    
+                    si = Services.CreateID(src, dst, AISubsidy.GetCargoType(si));
+                    if (!TransAI.Info.Serviced_Route.rawin([si])) TransAI.Info.Expired_Route[si] <- {};
                 break ;
 
                 case AIEvent.AI_ET_SUBSIDY_AWARDED:
@@ -348,34 +349,34 @@ class Task.Monitor extends DailyTask
     constructor()
     {
         ::DailyTask.constructor("Monitor Task");
-        ::DailyTask.SetKey(2);        
+        ::DailyTask.SetKey(2);
     }
 
     function Execute()
     {
     	::DailyTask.Execute();
-    	
+
     	/// see we are in trouble ?
     	if (TransAI.Info.InTrouble) Bank.Get(2 * AICompany.GetLoanInterval());
-    	
+
     	/// see are we have pending backbone
     	while (TransAI.RailBackBones.len()) {
-    		local key = TransAI.RailBackBones.pop(); 
+    		local key = TransAI.RailBackBones.pop();
     		if (TransAI.Builder.BackBoner(key) == "no_money") TransAI.RailBackBones.push(key);
     		TransAI.Builder.ClearSigns();
-    		break; 
+    		break;
     	}
-    	
+
     	/* check to see a will close industry */
     	if (TransAI.Info.Industry_Close.len()) Assist.HandleClosingIndustry(TransAI.Info.Industry_Close.pop());
-    	
+
     	if (TransAI.Info.Lost_Vehicle.len()) {
     	}
-    	
+
     	foreach (id, val in TransAI.Info.Dont_Drop_off) {
     		if (TransAI.ServableMan.Item(val) == null) TransAI.Info.Dont_Drop_off.rawdelete(id);
     	}
-    	
+
     	/* check to see any new engine */
     	if (TransAI.Info.New_Engines.len() > 0) Vehicles.UpgradeEngine(TransAI.Info.New_Engines.pop());
     }
@@ -397,7 +398,7 @@ class Task.AcceptPreview extends TaskItem
     {
         ::TaskItem.constructor("Accept Preview Task");
         ::TaskItem.SetRemovable(true);
-        ::TaskItem.SetKey(10); 
+        ::TaskItem.SetKey(10);
         par_class = pc;
     }
 
@@ -406,6 +407,6 @@ class Task.AcceptPreview extends TaskItem
     	::TaskItem.Execute();
     	par_class.AcceptPreview();
     	AILog.Info("Preview Vehicle:" + par_class.GetName());
-    	par_class = null;    	
+    	par_class = null;
     }
 }
