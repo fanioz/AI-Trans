@@ -24,7 +24,7 @@ class Trans extends AIInfo
 {
     version = null;
     constructor() {
-    	this.version = 90713;
+    	this.version = 90819;
         ::AIInfo.constructor();
     }
 
@@ -37,7 +37,7 @@ class Trans extends AIInfo
     function MinVersionToLoad() { return 90619; }
     function GetDate(){ return "2009-02-1"; }
     function CreateInstance(){ return "Trans"; }
-	function GetURL() {	return "https://bugs.launchpad.net/transai"; }
+	function GetURL() {	return "http://noai.openttd.org/projects/show/ai-trans"; }
     function GetSettings(){
 		AddSetting({
 			name = "allow_bus", 
@@ -72,9 +72,9 @@ class Trans extends AIInfo
 			min_value = 0, 
 			max_value = 100, 
 			easy_value = 60, 
-			medium_value = 30, 
-			hard_value = 0, 
-			custom_value = 0, 
+			medium_value = 80, 
+			hard_value = 100, 
+			custom_value = 100, 
 			step_size = 10, 
 			flags = 0
 		});

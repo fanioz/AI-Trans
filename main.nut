@@ -149,8 +149,7 @@ class Trans extends AIController
 		try {
 			local save_table = {};
 			EventChecker.Execute();
-			save_table.rawset(TransAI.Info.GetClassName(), TransAI.Info.GetStorage());
-			save_table.rawset(TransAI.StationMan.GetClassName(), TransAI.StationMan.GetStorage());    
+			save_table.rawset(TransAI.Info.GetClassName(), TransAI.Info.GetStorage());    
 			AILog.Info("--- (partial) Save supported ---");
 			return save_table;
 		} catch (msg) {
@@ -167,7 +166,6 @@ class Trans extends AIController
 		AILog.Warning("--- (experimental) Load supported ---");
 		try {
 			TransAI.Info.SetStorage(data.rawget(TransAI.Info.GetClassName()));
-			TransAI.StationMan.SetStorage(data.rawget(TransAI.StationMan.GetClassName()));
 		}
 		catch (x) AILog.Warning("Failed load: Memory "+ x);    
 		Debug.ResultOf("Loading (partial) from version", version);

@@ -77,3 +77,8 @@ Feature: Using Path Based Signal
 Feature: Adjustable AI run parameter
 Fix: Make a more robust vehicle management
 
+* 090819
+Fix: Crash on un-managed TestMode
+Fix: Wrong "last_transport" setting
+Fix: Error type while Save/Loading Station manager
+

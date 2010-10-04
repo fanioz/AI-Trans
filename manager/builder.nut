@@ -55,14 +55,18 @@ class Task.HeadQuarter extends YieldTask
 			tiles.Valuate(AITile.IsBuildableRectangle, 2, 2);
 			tiles.RemoveValue(0);
 			foreach (location, val in tiles) {
-				local mode = AITestMode();
- 				if (AICompany.BuildCompanyHQ (location)) {
-					this._execRail(location);
-					this._execRoad(location);
-					local xmode = AIExecMode();
-					AICompany.BuildCompanyHQ (location)
-					AILog.Info("I've just build a Headquarter");					
- 					return location;
+				{
+					local mode = AITestMode();
+					if (AICompany.BuildCompanyHQ (location)) {
+						this._execRail(location);
+						this._execRoad(location);
+						{
+							local xmode = AIExecMode();
+							AICompany.BuildCompanyHQ (location)
+							AILog.Info("I've just build a Headquarter");					
+		 					return location;
+						}
+					}
  				}
  				yield true;
 			}
