@@ -1,4 +1,4 @@
-/*  10.02.27 - connector.nut
+/*  10.03.01 - connector.nut
  *
  *  This file is part of Trans AI
  *
@@ -83,10 +83,10 @@ class Connector extends DailyTask
 
 		_Max_Distance = 0;
 		_Min_Distance = 0;
-		
+
 		_Mgr_A = null;
 		_Mgr_B = null;
-		
+
 		_Possible_Sources = {};
 	}
 	/**
@@ -151,6 +151,7 @@ class Connector extends DailyTask
     	self._S_Type = XStation.GetTipe(self._V_Type, self._Cargo_ID);
     	self._Blocked_Cargo.AddItem(self._Cargo_ID, 0);
     	self._Possible_Sources[self._Cargo_ID] <- CLList();
+    	self._Engine_A = -1
     }
 	/**
 	 * selecting current engine id for further process
@@ -211,9 +212,9 @@ class Connector extends DailyTask
     	self.Info("total cost", cost);
     	return  cost;
     }
-    
+
     function IsWaitingPath(self) {
-    	if (self._Mgr_A == null) return false; 
+    	if (self._Mgr_A == null) return false;
     	if (self._PF.IsRunning()) {
     		self.Info ("still finding", self._Mgr_A.GetName(), "=>", self._Mgr_B.GetName());
 			self._Line = _PF.FindPath(200);
@@ -239,7 +240,7 @@ class Connector extends DailyTask
 		self._Possible_Sources[self._Cargo_ID].AddList(Service.FindSource(self));
 		self._Possible_Sources[self._Cargo_ID].RemoveItem(self._Mgr_B.GetLocation());
 	}
-	
+
 	function SelectDest(self) {
 		self._Mgr_B = Assist.GetManager(Service.FindDest(self._Cargo_ID, self._V_Type ,self._Skip_Dst));
 		if (self._Mgr_B == null) {
