@@ -192,6 +192,7 @@ class Connector extends DailyTask
 			self.Warn ("failed on build vehicle");
 		}
 		Money.Pay();
+		Assist.RemoveAllSigns();
 		return self._VhcManager.IsBuilt();
 	}
 	/**
@@ -228,6 +229,7 @@ class Connector extends DailyTask
 	    	self._Route_Found = false;
 	    	self._Mgr_A = null;
     	}
+    	Assist.RemoveAllSigns();
     	Info ("route found", self._Route_Found);
     	return false;
     }
