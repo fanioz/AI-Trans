@@ -254,6 +254,7 @@ class Connector extends DailyTask
 	}
 	function SelectSource(self) {
 		if (self._Mgr_B == null) return;
+		Info ("finding source from selected destination:", _Mgr_B.GetName());
 		if (!self._Possible_Sources[self._Cargo_ID].IsEmpty()) {
 			self._Mgr_A = Assist.GetManager(self._Possible_Sources[self._Cargo_ID].Pop());
 		}
