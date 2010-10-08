@@ -16,10 +16,10 @@ class Trans10 extends AIInfo
 	function GetAPIVersion() { return "1.0"; }
     /* only change the version if the structure is changed */
 	function MinVersionToLoad() { return 1; }
-    function GetDate(){ return "2009-02-1"; }
-    function CreateInstance(){ return "Trans"; }
-	function GetURL() {	return "http://noai.openttd.org/projects/show/ai-trans"; }
-    function GetSettings(){
+	function GetDate(){ return "2009-02-1"; }
+	function CreateInstance(){ return "Trans"; }
+	function GetURL() { return "http://dev.openttdcoop.org/projects/ai-trans/issues"; }
+	function GetSettings(){
 		foreach (v in ["Rail", "Road", "Water", "Air"]) {
 		AddSetting({
 				name = v,
