@@ -97,8 +97,7 @@ class XMarine {
 						st_id = XStation.FindIDNear (tile, 0);
 						break;
 					default:
-						Debug.Say(["un-handled:" , AIError.GetLastErrorString()], 2);
-						//Debug.Halt (tile);
+						Debug.Pause(tile, AIError.GetLastErrorString());
 						AIController.Sleep (5);
 						retry = 0;
 				}

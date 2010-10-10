@@ -9,8 +9,8 @@
 
 /**
  * Debug is now have own class
-  *
-  */
+ *
+ */
  class Debug
  {
 	/**
@@ -120,14 +120,8 @@
 		if (AISign.IsValidSign (id)) AISign.RemoveSign (id);
 	}
 
-	function Halt (tile) {
-		local mode = AIExecMode();
-		local id = AISign.BuildSign (tile, "Debugger");
-		local day = AIDate.GetCurrentDate();
-		AILog.Error ("Please, goto \"Debugger\" sign");
-		AILog.Error ("Attach your saved game at:" + Assist.DateStr (day));
-		AILog.Error ("And report to Trans AI forum");
-		while (AISign.IsValidSign (id)) AIController.Sleep (1);
-		AILog.Warning ("Error has been reset");
+	static function Pause(tile, text) {
+		Debug.Sign(tile, (text.len() > 30) ? text.slice(0, 30) : text);
+		Error("break on :", CLString.Tile(tile), "due to:", text);
 	}
  }

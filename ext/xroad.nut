@@ -137,8 +137,7 @@ class XRoad
 					retry = 0;
 					break;
 				default:
-					Warn ("un-handled:", AIError.GetLastErrorString());
-					Debug.Halt (tile);
+					Debug.Pause (tile, AIError.GetLastErrorString());
 					retry = 0;
 			}
 		}
@@ -181,8 +180,7 @@ class XRoad
 				case AIError.ERR_OWNED_BY_ANOTHER_COMPANY:
 					return false;
 				default:
-					::Debug.Say(["un-handled:", AIError.GetLastErrorString()], 2);
-					Debug.Halt (from);
+					Debug.Pause (from, AIError.GetLastErrorString());
 					retry_num = 0;
 					break;
 			}
@@ -254,9 +252,8 @@ class XRoad
 						Info("Build a tunnel");
 						if (!AITunnel.BuildTunnel (AIVehicle.VT_ROAD, last_node)) {
 							/* An error occured while building a tunnel. TODO: handle it. */
-							Warn ("Build tunnel error: ", AIError.GetLastErrorString());
 							ignore.push(next_node);
-							//Debug.Halt(last_node);
+							Debug.Pause(last_node, "Tunnel:" + AIError.GetLastErrorString());
 							return XRoad.BuildRoute (null, start, finish, ignore, num);
 						}
 					} else {
@@ -265,11 +262,10 @@ class XRoad
 						bridge_list.Valuate (AIBridge.GetMaxSpeed);
 						if (!AIBridge.BuildBridge (AIVehicle.VT_ROAD, bridge_list.Begin(), last_node, next_node)) {
 							/* An error occured while building a bridge. TODO: handle it. */
-							Warn ("Build bridge error: ", AIError.GetLastErrorString());
 							if (AIError.GetLastError() == AIBridge.ERR_BRIDGE_HEADS_NOT_ON_SAME_HEIGHT) {
 								ignore.push(next_node);
 							}
-							//Debug.Halt(last_node);
+							Debug.Pause(last_node, "Bridge:" + AIError.GetLastErrorString());
 							return XRoad.BuildRoute (null, start, finish, ignore, num);
 						}
 					}
@@ -290,7 +286,7 @@ class XRoad
 				if (!XRoad.BuildStraight (last_node, next_node)) {
 					/* An error occured while building a piece of road. TODO: handle it.
 					 * Note that is can also be the case that the road was already build. */
-					 //Debug.Halt(last_node);
+					 Debug.Pause(last_node, "Road:" + AIError.GetLastErrorString());
 					 //ignore.push(next_node);
 					return XRoad.BuildRoute (null, start, finish, ignore, num);
 				}
