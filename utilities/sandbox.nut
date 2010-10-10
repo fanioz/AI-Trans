@@ -101,50 +101,6 @@ class Assist
 		return (n1 < n) && (n < n2);
 	}
 
-	function Split (str, separator) {
-		assert (separator.len() == 1);
-		assert (typeof str = "string");
-		local s = "";
-		local result = [];
-		foreach (idx, val in str) {
-			if (val == separator) {
-				if (s.len()) result.push (s);
-				s = "";
-			} else {
-				s += val;
-			}
-		}
-		return result;
-	}
-
-	function Join (arr, separator) {
-		local s = "";
-		local a = clone arr;
-		a.reverse();
-		while (a.len()) {
-			local i = a.pop();
-			s += i;
-			if (a.len())  s += separator;
-		}
-		return s;
-	}
-
-	function RepeatStr (s, count) {
-		return Assist.Join (array (count, s), "");
-	}
-
-	function PTName (pt) {
-		switch (pt) {
-			case AIAirport.PT_BIG_PLANE :
-				return "PT_BIG_PLANE";
-			case AIAirport.PT_SMALL_PLANE :
-				return "PT_SMALL_PLANE";
-			case AIAirport.PT_HELICOPTER :
-				return "PT_HELICOPTER";
-		}
-		return "Invalid plane type";
-	}
-
 	function PT_to_AT (pt) {
 		local at = [];
 		switch (pt) {
@@ -163,30 +119,6 @@ class Assist
 				return at;
 		}
 		return [AIAirport.AT_INVALID];
-	}
-
-	function ATName (at) {
-		switch (at) {
-			case AIAirport.AT_HELIPORT:
-				return "AT_HELIPORT";
-			case AIAirport.AT_HELIDEPOT:
-				return "AT_HELIDEPOT";
-			case AIAirport.AT_HELISTATION:
-				return "AT_HELISTATION";
-			case AIAirport.AT_SMALL:
-				return "AT_SMALL";
-			case AIAirport.AT_COMMUTER:
-				return "AT_COMMUTER";
-			case AIAirport.AT_LARGE:
-				return "AT_LARGE";
-			case AIAirport.AT_METROPOLITAN:
-				return "AT_METROPOLITAN";
-			case AIAirport.AT_INTERNATIONAL:
-				return "AT_INTERNATIONAL";
-			case AIAirport.AT_INTERCON:
-				return "AT_INTERCON";
-		}
-		return "invalid airport type";
 	}
 
 	/**
@@ -237,14 +169,14 @@ class Assist
 	 	return t.Begin();
 	 }
 	 
-	 /**
-     * Convert date to it string representation in DD-MM-YYYY
-     * @param date to convert
-     * @return string representation in DD-MM-YYYY
-     */
+	/**
+	* Convert date to it string representation in DD::MM::YYYY
+	* @param date to convert
+	* @return string representation in DD::MM::YYYY
+	*/
 	function DateStr (date) {
-		return Assist.Join ([AIDate.GetDayOfMonth (date), AIDate.GetMonth (date), AIDate.GetYear (date) ], "-");
-    }
+		return CLString.Date(date, CLString.DateDMY, "::");
+	}
 }
 
 function min (x, y) { 

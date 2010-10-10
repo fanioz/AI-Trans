@@ -94,9 +94,9 @@ class Connector extends DailyTask
 	 */
 	function IsNotAllowed(self) {
 		local cur_vt = self._V_Type;
-		local v = Const.VType_Str[cur_vt];
+		local v = CLString.VehicleType(cur_vt);
 		if (AIGameSettings.IsDisabledVehicleType (cur_vt) || AIController.GetSetting (v) == 0) {
-			Warn(v, "vehicle was disabled in game");
+			Warn(v, "was disabled in game");
 			return true;
 		}
 		Info ("building", v, "is allowed");

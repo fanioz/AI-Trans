@@ -22,7 +22,7 @@ class Service
 
 	function CreateKey (id1, id2, cargo, vt) {
 
-		return Assist.Join ([vt, id1, id2, XCargo.Label[cargo]], ":");
+		return CLString.Join ([vt, id1, id2, XCargo.Label[cargo]], ":");
 	}
 
 	function IsServed (id1, cargo) {

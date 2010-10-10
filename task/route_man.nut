@@ -48,7 +48,7 @@ class Task.RouteManager extends DailyTask {
 			local src_name = (tbl.SourceIsTown() ? AITown : AIIndustry)["GetName"](tbl.GetSourceID());
 			local dst_name = (tbl.DestinationIsTown() ? AITown : AIIndustry)["GetName"](tbl.GetDestinationID());
 			local cargo = tbl.GetCargo();
-			Info(grp_name, "has", num, "of", Const.VType_Str[tbl.GetVType()], "vehicle");
+			Info(grp_name, "has", num, "of", CLString.VehicleType(tbl.GetVType()), "vehicle");
 			Info(grp_name, "is travelling from", src_name, "to", dst_name);
 			Info(src_name, "is producing", tbl.GetProduction(), "of", XCargo.Label[cargo], "/ month");
 			vhclst.Valuate(AIVehicle.GetReliability);

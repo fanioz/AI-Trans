@@ -46,9 +46,6 @@ Const <- {
 	
 	/** Vehicle type - order is important */
 	VType = [AIVehicle.VT_RAIL, AIVehicle.VT_ROAD, AIVehicle.VT_WATER, AIVehicle.VT_AIR],
-
-	/** Vehicle type in string - order is important */
-	VType_Str = ["Rail", "Road", "Water", "Air"],
 	
 	/** Corner tile */
 	Corner = [AITile.CORNER_W, AITile.CORNER_S, AITile.CORNER_E, AITile.CORNER_N],
@@ -64,13 +61,9 @@ Const <- {
 	
 	/** AIRoad type list */
 	 RoadTypeList = [AIRoad.ROADTYPE_ROAD, AIRoad.ROADTYPE_TRAM],
-	 RoadTypeStr = ["RoadType_Road", "RoadType_Tram"],
 
 	/** Plane Type **/
 	PlaneType = [AIAirport.PT_BIG_PLANE, AIAirport.PT_SMALL_PLANE, AIAirport.PT_HELICOPTER],
-
-	/** Rail type string */
-	RailType_Str = ["Rail", "Electric",  "Monorail", "Magnetic Levi"],
 
 	/** Airport available */
 	AirportType = [

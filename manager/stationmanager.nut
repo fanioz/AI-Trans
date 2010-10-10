@@ -169,7 +169,7 @@ class StationManager extends Infrastructure
 	function Rename () {
 		local text = _is_drop_station ? "Dest" : "Source";
 		if (GetName().find(text) == null) {
-			AIStation.SetName (GetID(), Assist.Join(["Trans", text, GetID()],"."));
+			AIStation.SetName (GetID(), CLString.Join(["Trans", text, GetID()],"."));
 			SetName(AIStation.GetName (GetID()));
 		}
 	}

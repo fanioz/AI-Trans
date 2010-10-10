@@ -22,7 +22,7 @@ class Trans10 extends AIInfo
 	function GetSettings(){
 		foreach (v in ["Rail", "Road", "Water", "Air"]) {
 		AddSetting({
-				name = v,
+				name = v + " Vehicle",
 				description = "Allow build " + v + " vehicle",
 				easy_value = 1,
 				medium_value = 1,

@@ -35,7 +35,7 @@ class RoadConnector extends Connector
 			}
 			_Track = AIRoad.GetCurrentRoadType();
 		}
-		Info ("using", Const.RoadTypeStr[_Track]);
+		Info ("using", CLString.RoadTrackType(_Track));
 		if (!AICargo.IsValidCargo (_Cargo_ID)) {
 			MatchCargo(this);
 			_Rvs_Type = AIRoad.GetRoadVehicleTypeForCargo(_Cargo_ID);

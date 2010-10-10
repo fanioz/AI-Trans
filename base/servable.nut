@@ -30,7 +30,7 @@ class Servable extends CIDLocation
 	function GetArea() {
 		ValidateArea();
 		return CLList(_Area[0]);
-	}    
+	}	
 
 	function GetStations(s_type) {
 		local ret = CLList();
@@ -42,7 +42,7 @@ class Servable extends CIDLocation
 		Info (ret.Count(), "station id's found");
 		return ret;
 	}
-    
+	
 	function GetStationTiles(s_type) {
 		local tiles = GetArea();
 		tiles.Valuate(AITile.IsStationTile);
@@ -66,13 +66,16 @@ class Servable extends CIDLocation
 			_Has_Coast[1] = AIDate.GetCurrentDate() + 360;
 		}
 	}
+
 	function GetCoast() {
 		ValidateCoast();
 		return _Has_Coast[0];
 	}
+
 	function HasCoast () {
 		return GetCoast().Count();
 	}
+
 	function GetWaterPoint() {
 		local list = GetArea();
 		list.Valuate(AITile.HasTransportType, AITile.TRANSPORT_WATER);
@@ -155,7 +158,7 @@ class Servable extends CIDLocation
 	function AllowTryAirport (type) {
 		if (!Money.Get (AIAirport.GetPrice (type) * 1.1)) return false;
 		if (_Tried_Airport.HasItem (type)) {
-			Info ("ever try to build ", Assist.ATName (type));
+			Info ("ever try to build ", CLString.AirportType (type));
 			if (_Tried_Airport.GetValue (type) > AIDate.GetCurrentDate()) return false;
 			Info ("but that was a year ago :D");
 		}
@@ -180,7 +183,8 @@ class Servable extends CIDLocation
 		list.Valuate (fn, cargo, 1, 1, AIStation.GetCoverageRadius (AIStation.STATION_DOCK));
 		//list.KeepAboveValue (8);
 		return list;
-    
+	}
+	
 	function GetRoadDepot() {
 		return Assist.FindDepot(GetLocation(), AIVehicle.VT_ROAD, AIRoad.GetCurrentRoadType());
 	}

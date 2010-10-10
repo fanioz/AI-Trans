@@ -16,6 +16,7 @@ try {
 	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
 	import("AILib.Common", "CLCommon", 1);
 	import("AILib.List", "CLList", 1);
+	import("AILib.String", "CLString", 2);
 } catch (idx) {
 	AILog.Warning ("you would need to download the libraries which is needed to run this AI.");
 	AILog.Warning ("Please goto http://www.tt-forums.net/viewtopic.php?p=771764#p771764");

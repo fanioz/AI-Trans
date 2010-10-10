@@ -34,8 +34,8 @@ class AirConnector extends Connector
 			MatchAirport();
 			return;
 		}
-		Info ("airport selected:", Assist.ATName (_Airport));
-		Info ("plane type selected:", Assist.PTName (_Track));
+		Info ("airport selected:", CLString.AirportType (_Airport));
+		Info ("plane type selected:", CLString.PlaneType (_Track));
 		if (!AICargo.IsValidCargo (_Cargo_ID)) {
 			_Cargo_ID = Setting.AllowPax ? XCargo.Pax_ID : XCargo.Mail_ID;
 		}

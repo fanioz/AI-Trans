@@ -38,7 +38,7 @@ class Trans extends Base {
 	  */
     function Start() {
         AIController.Sleep(5);
-        local line = Assist.RepeatStr("~", 50);
+		local line = CLString.Repeat("~", 50);
 		try {
             /* Wake up .. */
             Info("Init AI's module");

@@ -174,7 +174,7 @@ class XVehicle
 	function GetReplacement (tbl) {
 		local engine = tbl.GetEngine();
 		local vt = tbl.GetVType();
-		local vtname = Const.VType_Str[vt];
+		local vtname = CLString.VehicleType(vt);
 		local engine_new = AIGroup.GetEngineReplacement (AIGroup.GROUP_ALL, engine);
 		if (AIEngine.IsValidEngine(engine_new)) {
 			Info("AutoReplacement for", vtname, "was set to", AIEngine.GetName(engine_new));

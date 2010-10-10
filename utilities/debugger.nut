@@ -35,7 +35,7 @@
 				default :
 					return;
 			}
-			AILog[type] (Assist.Join (ar, " "));
+			AILog[type] (CLString.Join (ar, " "));
  		}
  	}
 
@@ -61,10 +61,10 @@
 		txt.push ("-> ");
 		if (AIError.GetLastError() == AIError.ERR_NONE) {
 			txt.push ("Good Job ^_^");
-			Info (Assist.Join (txt, " "));
+			Info (CLString.Join (txt, " "));
 		} else {
 			txt.push (AIError.GetLastErrorString().slice (4));
-			Warn (Assist.Join (txt, " "));
+			Warn (CLString.Join (txt, " "));
 		}
 		Debug.ClearErr();
 		return exp;
@@ -84,10 +84,10 @@
 		txt.push ("-> ");
 		if (exp) {
 			txt.push ("Good Job ^_^");
-			Info (Assist.Join (txt, " "));
+			Info (CLString.Join (txt, " "));
 		} else {
 			txt.push ("@#$%^&*()?><:; Bad Job!");
-			Warn (Assist.Join (txt, " "));
+			Warn (CLString.Join (txt, " "));
 		}
 		return exp;
 	}

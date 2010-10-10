@@ -13,7 +13,7 @@
 class XAirport
 {
 	function AllowPlaneToLand (pt, at) {
-		//Debug.Say(["Plane:" + Assist.PTName (pt) + ":want to land on:" + Assist.ATName (at));
+		//Debug.Say(["Plane:" + CLString.PlaneType (pt) + ":want to land on:" + CLString.AirportType (at));
 		switch (at) {
 			case AIAirport.AT_INTERCON:  //"AT_INTERCON";
 			case AIAirport.AT_INTERNATIONAL:  //"AT_INTERNATIONAL";
@@ -30,6 +30,7 @@ class XAirport
 				return false;
 		}
 	}
+	
 	function HasPlaneType(tile, pt) {
 		//please change behaviour if crashed
 		//however a hangar would look like AITile.IsStationTile
@@ -60,6 +61,7 @@ class XAirport
 		}
 		return AIStation.GetStationID(tile);
 	}
+	
 	function GetHangar(location) {
 		local airport_tipe = AIAirport.GetAirportType (location);
 		if (airport_tipe != AIAirport.AT_HELIPORT) return AIAirport.GetHangarOfAirport (location);
