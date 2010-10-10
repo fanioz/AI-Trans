@@ -56,7 +56,7 @@ class XRoad
 				if (path == null) continue;
 				if (!Money.Get(est_cost + path.GetCost())) continue;
 				Info ("route len", path.GetLength());
-				local pf = AyPath.GetEndTiles(path);
+				local pf = Service.GetEndTiles(path);
 				assert(body == pf[0]);
 				head = pf[1];
 			} 
@@ -201,7 +201,7 @@ class XRoad
 		local est_cost = path.GetCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), AIRoad.BT_DEPOT);
 		Info ("Est. Cost", est_cost);
 		if (!Money.Get(est_cost)) return -1;
-		local tiles = AyPath.GetStartTiles(path);
+		local tiles = Service.GetStartTiles(path);
 		XRoad.BuildRoute(path, [tiles[1]], [tile], [], 4);
 		AITile.DemolishTile(tiles[0]);
 		if (AIRoad.BuildRoadDepot(tiles[0], tiles[1])) {

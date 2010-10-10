@@ -107,7 +107,7 @@ class RoadConnector extends Connector
 		local dests = CLList();
 		local to_ign = CLList();
 		local dtrs = _VhcManager.NeedDTRS();
-		local path = AyPath.ToArray(_Line);
+		local path = Service.PathToArray(_Line);
 		
 		Info ("build station in", _Mgr_B.GetName());
 		_D_Station = _Mgr_B.GetExistingRoadStop (dtrs, _Cargo_ID, _S_Type, false);

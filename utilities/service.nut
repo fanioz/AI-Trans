@@ -149,4 +149,38 @@ class Service
 		Debug.Echo(ret.Count(), "source found");
 		return ret;
 	}
+
+	/**
+	 * Return the two nodes at a start of a path.
+	 */
+	static function GetStartTiles(path) {
+		assert(path instanceof AyPath);
+		assert(path.Count() > 1);
+		local p = Service.PathToArray(path);
+		return [p.pop(), p.pop()];
+	}
+
+	/**
+	 * Return the two nodes at a end of a path.
+	 */
+	static function GetEndTiles(path) {
+		assert(path instanceof AyPath);
+		assert(path.Count() > 1);
+		return [path.GetTile(), path.GetParent().GetTile()];
+	}
+
+	/**
+	 * Convert path class to array
+	 * this would also make the end tile on index 0
+	 */
+	static function PathToArray(path) {
+		assert(path instanceof AyPath);
+		local ar = [path.GetTile()];
+		local prev = path.GetParent();
+		while (prev) {
+			ar.push(prev.GetTile());
+			prev = prev.GetParent();
+		}
+		return ar;
+	}
 }
