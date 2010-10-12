@@ -1,8 +1,7 @@
-/*  10.02.27 - service.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -11,47 +10,50 @@ class Service
 {
 	function Init(self) {
 		self._Subsidies.AddList(AISubsidyList());
-	self._Subsidies.Valuate (AISubsidy.IsAwarded);
-		self._Subsidies.KeepValue (0);
-		self._Subsidies.Valuate (AISubsidy.GetExpireDate);
-		self._Subsidies.KeepAboveValue (AIDate.GetCurrentDate() + 60);
+		self._Subsidies.Valuate(AISubsidy.IsAwarded);
+		self._Subsidies.KeepValue(0);
+		self._Subsidies.Valuate(AISubsidy.GetExpireDate);
+		self._Subsidies.KeepAboveValue(AIDate.GetCurrentDate() + 60);
 		TaskManager.New(RoadConnector());
 		TaskManager.New(AirConnector());
 		TaskManager.New(WaterConnector());
 	}
 
-	function CreateKey (id1, id2, cargo, vt) {
+	function CreateKey(id1, id2, cargo, vt) {
 
-		return CLString.Join ([vt, id1, id2, XCargo.Label[cargo]], ":");
+		return CLString.Join([vt, id1, id2, XCargo.Label[cargo]], ":");
 	}
 
-	function IsServed (id1, cargo) {
-		foreach (idx, tbl in My._Service_Table) {
+	function IsServed(id1, cargo) {
+		foreach(idx, tbl in My._Service_Table) {
 			if (tbl.GetSourceID() != id1) continue;
 			if (tbl.GetCargo() != cargo) continue;
 			return true;
 		}
-	return false;
+		return false;
 	}
-	function Register (tbl) {
+
+	function Register(tbl) {
 		local key = tbl.GetKey();
-		if (My._Service_Table.rawin (key)) {
+		if (My._Service_Table.rawin(key)) {
 			My._Service_Table[key].Merge(tbl);
 			return;
 		}
-		My._Service_Table.rawset (key, tbl);
+		My._Service_Table.rawset(key, tbl);
 	}
+
 	function IsSubsidyLocationWas(id, loc, is_source) {
 		local fn = XIndustry;
-		if (AISubsidy[(is_source ? "GetSourceType" : "GetDestinationType")] (id) == AISubsidy.SPT_TOWN) fn = XTown;
+		if (AISubsidy[(is_source ? "GetSourceType" : "GetDestinationType")](id) == AISubsidy.SPT_TOWN) fn = XTown;
 		return fn.IsOnLocation(AISubsidy[(is_source ? "GetSourceIndex" : "GetDestinationIndex")](id), loc);
 	}
-    function GetSubsidyPrice(loc1, loc2, cargo) {
-		foreach (s_id, v in My._Subsidies) {
+
+	function GetSubsidyPrice(loc1, loc2, cargo) {
+		foreach(s_id, v in My._Subsidies) {
 			if (!AISubsidy.GetCargoType(s_id) == cargo) continue;
 			if (!Service.IsSubsidyLocationWas(s_id, loc1, true)) continue;
 			if (!Service.IsSubsidyLocationWas(s_id, loc2, false)) continue;
-			Info ("found a subsidy service for", XCargo.Label[cargo]);
+			Info("found a subsidy service for", XCargo.Label[cargo]);
 			return min(1.5, Setting.Get(Const.Settings.subsidy_multiply) + 1);
 		}
 		return 1;
@@ -62,7 +64,7 @@ class Service
 		local manager = null;
 		if (XCargo.TownStd.HasItem(cargo) || XCargo.TownEffect.HasItem(cargo)) {
 			destiny.AddList(AITownList());
-			destiny.Valuate (AITown.GetPopulation);
+			destiny.Valuate(AITown.GetPopulation);
 			destiny.KeepAboveValue(Setting.Min_Town_Population);
 			destiny.Valuate(AITown.GetLocation);
 			manager = XTown.GetManager;
@@ -77,7 +79,7 @@ class Service
 		}
 		local number = destiny.Count();
 		local counter = 0;
-		foreach (dst_id, dloc in destiny) {
+		foreach(dst_id, dloc in destiny) {
 			if (skip_loc.HasItem(dloc)) continue;
 			if (vt == AIVehicle.VT_WATER) {
 				if (!manager(dst_id).HasCoast()) {
@@ -92,7 +94,7 @@ class Service
 			counter ++;
 		}
 		//commit : Warn instead of Info
-		Warn ("destination not found");
+		Warn("destination not found");
 		return -1;
 	}
 
@@ -108,7 +110,7 @@ class Service
 		local manager = null;
 		if (XCargo.TownStd.HasItem(cargoid)) {
 			destiny.AddList(AITownList());
-			destiny.Valuate (AITown.GetPopulation);
+			destiny.Valuate(AITown.GetPopulation);
 			destiny.KeepAboveValue(Setting.Min_Town_Population);
 			fn_src = [AITown, XTown];
 			manager = XTown.GetManager;
@@ -127,7 +129,7 @@ class Service
 		destiny.KeepBelowValue(Setting.Max_Transported);
 		destiny.Valuate(fn_src[0].GetLocation);
 		local ret = CLList();
-		foreach (idx, loc in destiny) {
+		foreach(idx, loc in destiny) {
 			if (ignored.HasItem(loc)) continue;
 			if (dst_loc == loc) continue;
 			if (conn._V_Type == AIVehicle.VT_WATER) {
@@ -136,12 +138,12 @@ class Service
 					continue;
 				}
 			}
-			local product = fn_src[1].ProdValue (idx, cargoid);
+			local product = fn_src[1].ProdValue(idx, cargoid);
 			if (product < AIEngine.GetCapacity(engineid)) continue;
-			local distance = AIMap.DistanceManhattan (loc, dst_loc);
+			local distance = AIMap.DistanceManhattan(loc, dst_loc);
 			if (!Assist.IsBetween(distance, 49, max_dist)) continue;
 			local mult = Service.GetSubsidyPrice(loc, dst_loc, cargoid);
-			local rr = Assist.Estimate (product, distance, cargoid, engineid, mult).tointeger();
+			local rr = Assist.Estimate(product, distance, cargoid, engineid, mult).tointeger();
 			if (rr < Money.Inflated(1000)) continue;
 			ret.AddItem(loc, rr);
 		}

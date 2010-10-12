@@ -1,27 +1,29 @@
-/*  09.11.23 - xvehicle.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
+
 /**
  * XVehicle class
  * an AIVehicle eXtension
  */
 class XVehicle
 {
-	function MaxSpeed (vhc_ID) {
-		local eng = AIVehicle.GetEngineType (vhc_ID);
-		return AIEngine.GetMaxSpeed (eng);
+	function MaxSpeed(vhc_ID) {
+		local eng = AIVehicle.GetEngineType(vhc_ID);
+		return AIEngine.GetMaxSpeed(eng);
 	}
-	function IsLowSpeed (vhc_ID) {
-		return XVehicle.MaxSpeed (vhc_ID) > AIVehicle.GetCurrentSpeed (vhc_ID) * 2;
+
+	function IsLowSpeed(vhc_ID) {
+		return XVehicle.MaxSpeed(vhc_ID) > AIVehicle.GetCurrentSpeed(vhc_ID) * 2;
 	}
-	function Ungroup (vhc_ID) {
+
+	function Ungroup(vhc_ID) {
 		if (XVehicle.IsRegistered(vhc_ID)) My._Vehicles.rawdelete(vhc_ID);
-		return AIGroup.MoveVehicle (0xFFFE, vhc_ID);
+		return AIGroup.MoveVehicle(0xFFFE, vhc_ID);
 	}
 	/**
 	 * Thumb rule to calculate how many vehicle need yearly
@@ -29,81 +31,89 @@ class XVehicle
 	 * @param dt days to round-trip
 	 * @return number (mult by 2 if not pax)
 	 */
-	function Needed (ppm, capacity, dt) {
+	function Needed(ppm, capacity, dt) {
 		return (ppm * dt / capacity / 30.4375).tointeger();
 	}
+
 	/**
 	 * Valuator for number of vehicle belong to group
 	 * @param grp_id Group ID of vehicle
 	 */
-	function GroupCount (grp_id) {
-		return AIVehicleList_Group (grp_id).Count();
+	function GroupCount(grp_id) {
+		return AIVehicleList_Group(grp_id).Count();
 	}
+
 	/**
 	 * Valuator for distance of vehicle is below radius ?
 	 */
-	function DistanceMax (vhc_ID, tile, radius) {
-		return AIMap.DistanceMax (AIVehicle.GetLocation (vhc_ID), tile) < radius;
+	function DistanceMax(vhc_ID, tile, radius) {
+		return AIMap.DistanceMax(AIVehicle.GetLocation(vhc_ID), tile) < radius;
 	}
+
 	/**
 	 * Try to restart a vehicle in depot
 	 * @param vhc_ID The ID of vehicle to handle
 	 * @return true only if can restart vehicle
 	 */
-	function Restart (vhc_ID) {
-		return Debug.Echo (
-		           (AIOrder.GetOrderCount (vhc_ID) == 4) &&
-		           (AIVehicle.GetReliability (vhc_ID) > 40) &&
-		           (!Assist.HasBit (AIOrder.GetOrderFlags (vhc_ID, 2), AIOrder.AIOF_STOP_IN_DEPOT)) &&
-		           (AIVehicle.GetState (vhc_ID) == AIVehicle.VS_IN_DEPOT) &&
-		           AIVehicle.StartStopVehicle (vhc_ID), "(re)Starting vehicle");
+	function Restart(vhc_ID) {
+		return Debug.Echo(
+				   (AIOrder.GetOrderCount(vhc_ID) == 4) &&
+				   (AIVehicle.GetReliability(vhc_ID) > 40) &&
+				   (!Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, 2), AIOrder.AIOF_STOP_IN_DEPOT)) &&
+				   (AIVehicle.GetState(vhc_ID) == AIVehicle.VS_IN_DEPOT) &&
+				   AIVehicle.StartStopVehicle(vhc_ID), "(re)Starting vehicle");
 	}
+
 	/**
 	 * Try to send vehicle to depot
 	 * @param vhc_ID The ID of vehicle to handle
 	 * @return false if can't sell right now, true if can send to depot or already there
 	 */
-	function TryToSend (vhc_ID) {
-		Info ("Try To Send");
-		if (!::XVehicle.IsRegistered (vhc_ID)) return XVehicle.IsSendToDepot (vhc_ID);
+	function TryToSend(vhc_ID) {
+		Info("Try To Send");
+		if (!::XVehicle.IsRegistered(vhc_ID)) return XVehicle.IsSendToDepot(vhc_ID);
 		AIController.Sleep(1);
-		local cur_order = AIOrder.ResolveOrderPosition (vhc_ID, AIOrder.ORDER_CURRENT);
+		local cur_order = AIOrder.ResolveOrderPosition(vhc_ID, AIOrder.ORDER_CURRENT);
 		if (cur_order == 0) {
-			if (AIVehicle.GetState (vhc_ID) == AIVehicle.VS_AT_STATION)  AIOrder.SkipToOrder (vhc_ID, 1);
+			if (AIVehicle.GetState(vhc_ID) == AIVehicle.VS_AT_STATION)  AIOrder.SkipToOrder(vhc_ID, 1);
 		}
 		local flags = AIOrder.AIOF_STOP_IN_DEPOT;
-		if (!Assist.HasBit (AIOrder.GetOrderFlags (vhc_ID, 2), flags)) {
-			if (AIOrder.SetOrderFlags (vhc_ID, 1, AIOrder.AIOF_NO_LOAD)) Info ("loading flag set");
+		if (!Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, 2), flags)) {
+			if (AIOrder.SetOrderFlags(vhc_ID, 1, AIOrder.AIOF_NO_LOAD)) Info("loading flag set");
 			//code changed due to bug reported FS#
 			if (!AIMap.IsValidTile(AIOrder.GetOrderDestination(vhc_ID, 2))) flags = flags | AIOrder.AIOF_GOTO_NEAREST_DEPOT;
-			if (AIOrder.SetOrderFlags (vhc_ID, 2, flags)) Info ("depot flag set");
+			if (AIOrder.SetOrderFlags(vhc_ID, 2, flags)) Info("depot flag set");
 		}
-		Info ("Waiting until arrive at destination");
+		Info("Waiting until arrive at destination");
 		return true;
 	}
+
 	/**
 	 * simplified is type of vehicle
 	 */
-	function IsTrain (vhc_ID) {
-		return AIVehicle.GetVehicleType (vhc_ID) == AIVehicle.VT_RAIL;
+	function IsTrain(vhc_ID) {
+		return AIVehicle.GetVehicleType(vhc_ID) == AIVehicle.VT_RAIL;
 	}
-	function IsRoad (vhc_ID) {
-		return AIVehicle.GetVehicleType (vhc_ID) == AIVehicle.VT_ROAD;
+
+	function IsRoad(vhc_ID) {
+		return AIVehicle.GetVehicleType(vhc_ID) == AIVehicle.VT_ROAD;
 	}
-	function IsAircraft (vhc_ID) {
-		return AIVehicle.GetVehicleType (vhc_ID) == AIVehicle.VT_AIR;
+
+	function IsAircraft(vhc_ID) {
+		return AIVehicle.GetVehicleType(vhc_ID) == AIVehicle.VT_AIR;
 	}
-	function IsShip (vhc_ID) {
-		return AIVehicle.GetVehicleType (vhc_ID) == AIVehicle.VT_WATER;
+
+	function IsShip(vhc_ID) {
+		return AIVehicle.GetVehicleType(vhc_ID) == AIVehicle.VT_WATER;
 	}
 
 	/**
 	 * Sell completely
 	 */
-	function Sell (vhc_ID) {
-		if (!AIVehicle.IsStoppedInDepot (vhc_ID)) return false;
-		if (XVehicle.IsTrain (vhc_ID)) AIVehicle.SellWagonChain (vhc_ID, 0);
-		return AIVehicle.SellVehicle (vhc_ID);
+	function Sell(vhc_ID) {
+		if (!AIVehicle.IsStoppedInDepot(vhc_ID)) return false;
+		if (XVehicle.IsTrain(vhc_ID)) AIVehicle.SellWagonChain(vhc_ID, 0);
+		return AIVehicle.SellVehicle(vhc_ID);
 	}
 
 	/**
@@ -112,58 +122,59 @@ class XVehicle
 	 * @param vhc_ID The ID of vehicle to handle
 	 * @return true if vehicle has been sent to depot
 	 */
-	function IsSendToDepot (vhc_ID) {
-		if (AIVehicle.IsStoppedInDepot (vhc_ID)) {
-			Info ("Already stopped in");
+	function IsSendToDepot(vhc_ID) {
+		if (AIVehicle.IsStoppedInDepot(vhc_ID)) {
+			Info("Already stopped in");
 			return true;
 		}
-		if (AIOrder.IsGotoDepotOrder (vhc_ID, AIOrder.ORDER_CURRENT) &&
-		        Assist.HasBit (AIOrder.GetOrderFlags (vhc_ID, AIOrder.ORDER_CURRENT), AIOrder.AIOF_STOP_IN_DEPOT)) {
-			Info ("Already sent to depot");
+		if (AIOrder.IsGotoDepotOrder(vhc_ID, AIOrder.ORDER_CURRENT) &&
+				Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, AIOrder.ORDER_CURRENT), AIOrder.AIOF_STOP_IN_DEPOT)) {
+			Info("Already sent to depot");
 			return true;
 		}
-		if (::XVehicle.IsRoad (vhc_ID) && XVehicle.IsLowSpeed (vhc_ID)) {
-			Info ("Try to reverse");
-			AIVehicle.ReverseVehicle (vhc_ID);
+		if (::XVehicle.IsRoad(vhc_ID) && XVehicle.IsLowSpeed(vhc_ID)) {
+			Info("Try to reverse");
+			AIVehicle.ReverseVehicle(vhc_ID);
 		}
-		return Debug.Echo ("Try to give command", AIVehicle.SendVehicleToDepot (vhc_ID));
+		return Debug.Echo("Try to give command", AIVehicle.SendVehicleToDepot(vhc_ID));
 	}
+
 	/**
 	 * Try to duplicate a vehicle in depot
 	 * @param vhc_ID_new The vehicle ID to clone
 	 * @return true if vehicle is duplicated
 	 */
-	function TryDuplicate (vhc_ID) {
-		Info ("try to duplicate");
-		if (!XVehicle.IsRegistered (vhc_ID)) return false;
+	function TryDuplicate(vhc_ID) {
+		Info("try to duplicate");
+		if (!XVehicle.IsRegistered(vhc_ID)) return false;
 		local tbl = My._Vehicles[vhc_ID];
 		if (AIEngine.IsBuildable(tbl.GetEngine())) {
-			local vhc = AIVehicle.CloneVehicle (tbl.GetSDepot(), vhc_ID, false);
+			local vhc = AIVehicle.CloneVehicle(tbl.GetSDepot(), vhc_ID, false);
 			if (AIVehicle.IsValidVehicle(vhc)) {
-				Info ("cloning succeed");
-				XVehicle.ResetFlag (vhc);
-				if (XVehicle.Restart (vhc)) return true;
+				Info("cloning succeed");
+				XVehicle.ResetFlag(vhc);
+				if (XVehicle.Restart(vhc)) return true;
 			}
-			Warn ("starting clone failed", AIError.GetLastErrorString());
+			Warn("starting clone failed", AIError.GetLastErrorString());
 			if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) {
 				if (!AIVehicle.IsStoppedInDepot(vhc_ID)) return false;
-				if (tbl.SourceIsProducing()) XVehicle.ResetFlag (vhc_ID);
-				XVehicle.Restart (vhc_ID);
+				if (tbl.SourceIsProducing()) XVehicle.ResetFlag(vhc_ID);
+				XVehicle.Restart(vhc_ID);
 			}
-			XVehicle.Sell (vhc);
+			XVehicle.Sell(vhc);
 		}
-		XVehicle.Sell (vhc_ID);
-		return XVehicle.GetReplacement (tbl);
+		XVehicle.Sell(vhc_ID);
+		return XVehicle.GetReplacement(tbl);
 	}
 
 	/**
 	 * Reset flag orders
 	*/
-	function ResetFlag (vhc) {
+	function ResetFlag(vhc) {
 		local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 1), AIOrder.AIOF_NO_LOAD);
-		Debug.ResultOf (AIOrder.SetOrderFlags (vhc, 1, flags), "loading flag re-set");
+		Debug.ResultOf(AIOrder.SetOrderFlags(vhc, 1, flags), "loading flag re-set");
 		flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 2), AIOrder.AIOF_STOP_IN_DEPOT) | AIOrder.AIOF_SERVICE_IF_NEEDED;
-		Debug.ResultOf (AIOrder.SetOrderFlags (vhc, 2, flags), "depot flag re-set");
+		Debug.ResultOf(AIOrder.SetOrderFlags(vhc, 2, flags), "depot flag re-set");
 	}
 
 	/**
@@ -266,58 +277,58 @@ class XVehicle
 		if (!AIMap.IsValidTile(depot2)) {
 			depot1 = Assist.FindDepot(dest2, vt, XVehicle.GetTrack(vhc_id));
 		}
-		local vhcman = VehicleMaker (vt);
+		local vhcman = VehicleMaker(vt);
 		vhcman.SetVehicle(vhc_id);
-		vhcman.SetStationA (dest1);
-		vhcman.SetStationB (dest2);
+		vhcman.SetStationA(dest1);
+		vhcman.SetStationB(dest2);
 		vhcman.SetMainOrder();
-		vhcman.SetCargo (XCargo.OfVehicle (vhc_id));
-		vhcman.SetDepotA (depot1);
-		vhcman.SetDepotB (depot2);
+		vhcman.SetCargo(XCargo.OfVehicle(vhc_id));
+		vhcman.SetDepotA(depot1);
+		vhcman.SetDepotB(depot2);
 		vhcman.SetNextOrder();
-		route.Validate (vhc_id);
+		route.Validate(vhc_id);
 		if (route.IsValidRoute()) {
-			Info ("route is valid(3)");
+			Info("route is valid(3)");
 			return true;
 		}
-		AIOrder.RemoveOrder (vhc_id, 0);
+		AIOrder.RemoveOrder(vhc_id, 0);
 		return false;
 	}
 
-	function IsRegistered (vhc_id) { return My._Vehicles.rawin (vhc_id); }
+	function IsRegistered(vhc_id) { return My._Vehicles.rawin(vhc_id); }
 
 	/**
 	 * Grouping vehicle
 	 * @param serv Service tabel
 	 */
-	function MakeGroup (vhc_id, tabel) {
+	function MakeGroup(vhc_id, tabel) {
 		local name = tabel.GetKey();
 		local vt = tabel.GetVType();
 		local grp = -1;
 		local grp_list = AIGroupList();
-		grp_list.Valuate (AIGroup.GetVehicleType);
-		grp_list.KeepValue (vt);
-		foreach (idx, val in grp_list) {
-			if (AIGroup.GetName (idx) == name) {
-				if (AIVehicle.GetGroupID (vhc_id) == idx) return true;
+		grp_list.Valuate(AIGroup.GetVehicleType);
+		grp_list.KeepValue(vt);
+		foreach(idx, val in grp_list) {
+			if (AIGroup.GetName(idx) == name) {
+				if (AIVehicle.GetGroupID(vhc_id) == idx) return true;
 				grp = idx;
 				break;
 			}
 		}
-		if (!AIGroup.IsValidGroup (grp)) {
-			grp = AIGroup.CreateGroup (vt);
-			AIGroup.SetName (grp, name)
+		if (!AIGroup.IsValidGroup(grp)) {
+			grp = AIGroup.CreateGroup(vt);
+			AIGroup.SetName(grp, name)
 		}
 		tabel._grp_id = grp;
-		return AIGroup.MoveVehicle (grp, vhc_id);
+		return AIGroup.MoveVehicle(grp, vhc_id);
 	}
 
-	/** 
+	/**
 	 * Get current track type of vehicle
 	*/
 	function GetTrack(vhc_id) {
-		if (XVehicle.IsRoad(vhc_id)) return AIVehicle.GetRoadType (vhc_id);
+		if (XVehicle.IsRoad(vhc_id)) return AIVehicle.GetRoadType(vhc_id);
 		if (XVehicle.IsShip(vhc_id)) return 1;
-		return XEngine.GetTrack(AIVehicle.GetEngineType (vhc_id));
+		return XEngine.GetTrack(AIVehicle.GetEngineType(vhc_id));
 	}
 }

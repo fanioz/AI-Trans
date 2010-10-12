@@ -1,8 +1,7 @@
-/*  09.05.22 - task.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -19,8 +18,7 @@ class TaskManager
 	 * Insert new task into scheduler
 	 * @param task Class of TaskItem to insert
 	 */
-	function New(task)
-	{
+	function New(task) {
 		if (task instanceof TaskItem) {
 			local id = task.GetID();
 			if (!TaskManager.ids.HasItem(id)) {
@@ -39,8 +37,7 @@ class TaskManager
 	 * Run the scheduler
 	 * execute scheduled task by tick
 	 */
-	function Run ()
-	{
+	function Run() {
 		if (TaskManager.queue.len()) {
 			local task = TaskManager.queue.pop();
 			TaskManager.ids.RemoveItem(task.GetID());

@@ -1,8 +1,7 @@
-/*  10.02.27 - Base.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -19,50 +18,52 @@ class Base
 	 * class constructor
 	 * @param name Set name of the storage
 	 */
-	constructor(name)
-	{
+	constructor(name) {
 		_name = name;
 		_silent = false;
 	}
+
 	/**
 	 * Get the name of class
 	 */
 	function GetName()  { return _name; }
+
 	/**
 	 * Set the name of class. Which is used on log.
 	 * @param val string of class name to set
 	 */
 	function SetName(val)  { _name = val; }
+
 	/**
 	 * Standard Debug.Info feature
 	 */
-	function Info(...)
-	{
+	function Info(...) {
 		if (_silent) return;
 		local txt = ["[" + _name + "] "];
-		for(local c = 0; c < vargc; c++) txt.push(vargv[c]);
+		for (local c = 0; c < vargc; c++) txt.push(vargv[c]);
 		Debug.Say(txt, 1);
 	}
+
 	/**
 	 * Standard Debug.Warning feature
 	 */
-	function Warn(...)
-	{
+	function Warn(...) {
 		if (_silent) return;
 		local txt = ["[" + _name + "] "];
-		for(local c = 0; c < vargc; c++) txt.push(vargv[c]);
+		for (local c = 0; c < vargc; c++) txt.push(vargv[c]);
 		Debug.Say(txt, 2);
 	}
+
 	/**
 	 * Standard Debug.Warning feature
 	 */
-	function Error(...)
-	{
+	function Error(...) {
 		if (_silent) return;
 		local txt = ["[" + _name + "] "];
-		for(local c = 0; c < vargc; c++) txt.push(vargv[c]);
+		for (local c = 0; c < vargc; c++) txt.push(vargv[c]);
 		Debug.Say(txt, 3);
 	}
+
 	function tostring() { return _name; }
 }
 

@@ -1,11 +1,11 @@
-/*  10.03.01 - connector.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
+
 class Connector extends DailyTask
 {
 	_SkipList = null;
@@ -15,7 +15,7 @@ class Connector extends DailyTask
 	_Source_ID = null;
 	_Dest_ID = null;
 	_S_Station = null;
-	_D_Station= null;
+	_D_Station = null;
 	_S_Depot = null;
 	_D_Depot = null;
 	_Serv_Cost = null;
@@ -44,8 +44,9 @@ class Connector extends DailyTask
 	_Mgr_B = null;
 	_S_Type = null;
 	_Possible_Sources = null;
-	constructor (name, key) {
-		::DailyTask.constructor (name, key);
+
+	constructor(name, key) {
+		::DailyTask.constructor(name, key);
 		_VhcManager = VehicleMaker(_V_Type);
 		_Last_Year = AIDate.GetCurrentDate();
 		_LastSuccess = 0;
@@ -58,7 +59,7 @@ class Connector extends DailyTask
 		_Source_ID = -1;
 		_Dest_ID = -1;
 		_S_Station = -1;
-		_D_Station= -1;
+		_D_Station = -1;
 		_S_Depot = -1;
 		_D_Depot = -1;
 		_Cargo_ID = -1;
@@ -118,42 +119,44 @@ class Connector extends DailyTask
 		Info("We've may build a route now");
 		return false;
 	}
+
 	/**
 	 * update maximum and minimum distance yearly
 	 */
 	function UpdateDistance(self) {
 		local date = AIDate.GetCurrentDate() - 365;
-		if(date < self._Last_Year) {
+		if (date < self._Last_Year) {
 			self._Max_Distance += 3;
 			self._Last_Year += 365;
 		}
 	}
+
 	/**
 	 * selecting current cargo id for further process
 	 */
-	function MatchCargo(self)
-    {
-    	local cargoes = AICargoList();
-    	cargoes.RemoveList(self._Blocked_Cargo);
-    	if (cargoes.IsEmpty()) {
-    		self._Blocked_Cargo.Clear();
-    		self.Warn("cargo selection empty");
-    		self._Track = -1;
-    		return;
-    	}
-    	cargoes.Valuate(XCargo.MatchSetting);
-    	cargoes.KeepValue(1);
-    	if (cargoes.IsEmpty()) {
-    		self.Warn("could not select any cargo");
-    		return;
-    	}
-    	cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
-    	self._Cargo_ID = cargoes.Begin();
-    	self._S_Type = XStation.GetTipe(self._V_Type, self._Cargo_ID);
-    	self._Blocked_Cargo.AddItem(self._Cargo_ID, 0);
-    	self._Possible_Sources[self._Cargo_ID] <- CLList();
+	function MatchCargo(self) {
+		local cargoes = AICargoList();
+		cargoes.RemoveList(self._Blocked_Cargo);
+		if (cargoes.IsEmpty()) {
+			self._Blocked_Cargo.Clear();
+			self.Warn("cargo selection empty");
+			self._Track = -1;
+			return;
+		}
+		cargoes.Valuate(XCargo.MatchSetting);
+		cargoes.KeepValue(1);
+		if (cargoes.IsEmpty()) {
+			self.Warn("could not select any cargo");
+			return;
+		}
+		cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
+		self._Cargo_ID = cargoes.Begin();
+		self._S_Type = XStation.GetTipe(self._V_Type, self._Cargo_ID);
+		self._Blocked_Cargo.AddItem(self._Cargo_ID, 0);
+		self._Possible_Sources[self._Cargo_ID] <- CLList();
 		self._Engine_A = -1;
-    }
+	}
+
 	/**
 	 * selecting current engine id for further process
 	 */
@@ -175,78 +178,80 @@ class Connector extends DailyTask
 			self._Track = -1;
 		}
 		return;
-    }
+	}
+
 	/**
 	 * common vehicle managers action on building vehicles
 	 */
 	function MakeVehicle(self) {
 		self._VhcManager.SetCargo(self._Cargo_ID);
-		self._VhcManager.SetStationA (self._S_Station);
-		self._VhcManager.SetStationB (self._D_Station);
-		self._VhcManager.SetDepotA (self._S_Depot);
-		self._VhcManager.SetDepotB (self._D_Depot);
-		self._VhcManager.TryBuild ();
+		self._VhcManager.SetStationA(self._S_Station);
+		self._VhcManager.SetStationB(self._D_Station);
+		self._VhcManager.SetDepotA(self._S_Depot);
+		self._VhcManager.SetDepotB(self._D_Depot);
+		self._VhcManager.TryBuild();
 		if (self._VhcManager.IsBuilt()) {
 			self._VhcManager.SetNextOrder();
-			self._VhcManager.StartCloned ();
+			self._VhcManager.StartCloned();
 		} else {
-			self.Warn ("failed on build vehicle");
+			self.Warn("failed on build vehicle");
 		}
 		Money.Pay();
 		return self._VhcManager.IsBuilt();
 	}
+
 	/**
 	 * estimating cost for service
 	 */
-	function GetTotalCost(self)
-    {
-    	local cost = AIEngine.GetPrice(self._Engine_A);
-    	if (self._V_Type == AIVehicle.VT_RAIL) {
-    		/* TODO : number '4' should be changeable */
-    		cost *= 4;
-    		cost += AIEngine.GetPrice(self._Engine_B);
-    	}
-    	self.Info("engine cost", cost);
-    	self.Info("infrastructure cost", self._Serv_Cost);
-    	self.Info("route cost", self._RouteCost);
-    	cost += self._Serv_Cost + self._RouteCost;
-    	self.Info("total cost", cost);
-    	return  cost;
-    }
+	function GetTotalCost(self) {
+		local cost = AIEngine.GetPrice(self._Engine_A);
+		if (self._V_Type == AIVehicle.VT_RAIL) {
+			/* TODO : number '4' should be changeable */
+			cost *= 4;
+			cost += AIEngine.GetPrice(self._Engine_B);
+		}
+		self.Info("engine cost", cost);
+		self.Info("infrastructure cost", self._Serv_Cost);
+		self.Info("route cost", self._RouteCost);
+		cost += self._Serv_Cost + self._RouteCost;
+		self.Info("total cost", cost);
+		return  cost;
+	}
 
-    function IsWaitingPath(self) {
-    	if (self._Mgr_A == null) return false;
-    	if (self._PF.IsRunning()) {
-    		self.Info ("still finding", self._Mgr_A.GetName(), "=>", self._Mgr_B.GetName());
+	function IsWaitingPath(self) {
+		if (self._Mgr_A == null) return false;
+		if (self._PF.IsRunning()) {
+			self.Info("still finding", self._Mgr_A.GetName(), "=>", self._Mgr_B.GetName());
 			self._Line = _PF.FindPath(200);
 			return true;
-    	}
-    	if (typeof self._Line == "instance") {
-	    	self._RouteCost = _Line.GetCost();
-	    	self._Route_Found = true;
-	    	Assist.RemoveAllSigns();
-    	} else if (self._Line == null) {
-    		self._RouteCost = 0;
-	    	self._Route_Found = false;
-	    	self._Mgr_A = null;
-    	Assist.RemoveAllSigns();
-    	}
-    	//not removing sign if line = false
-    	Info ("route found", self._Route_Found);
-    	return false;
-    }
-    function UpdateSource(self) {
-    	if (self._Possible_Sources.rawin(self._Cargo_ID)) {
-    		self._Possible_Sources[self._Cargo_ID].Clear();
-    	} else {
+		}
+		if (typeof self._Line == "instance") {
+			self._RouteCost = _Line.GetCost();
+			self._Route_Found = true;
+			Assist.RemoveAllSigns();
+		} else if (self._Line == null) {
+			self._RouteCost = 0;
+			self._Route_Found = false;
+			self._Mgr_A = null;
+			Assist.RemoveAllSigns();
+		}
+		//not removing sign if line = false
+		Info("route found", self._Route_Found);
+		return false;
+	}
+
+	function UpdateSource(self) {
+		if (self._Possible_Sources.rawin(self._Cargo_ID)) {
+			self._Possible_Sources[self._Cargo_ID].Clear();
+		} else {
 			self._Possible_Sources[self._Cargo_ID] <- CLList();
-    	}
+		}
 		self._Possible_Sources[self._Cargo_ID].AddList(Service.FindSource(self));
 		self._Possible_Sources[self._Cargo_ID].RemoveItem(self._Mgr_B.GetLocation());
 	}
 
 	function SelectDest(self) {
-		self._Mgr_B = Assist.GetManager(Service.FindDest(self._Cargo_ID, self._V_Type ,self._Skip_Dst));
+		self._Mgr_B = Assist.GetManager(Service.FindDest(self._Cargo_ID, self._V_Type , self._Skip_Dst));
 		if (self._Mgr_B == null) {
 			self._Cargo_ID = -1;
 			self._Skip_Dst.Clear();
@@ -256,18 +261,19 @@ class Connector extends DailyTask
 			self._Skip_Dst.AddItem(_Mgr_B.GetLocation(), 0);
 		}
 	}
+
 	function SelectSource(self) {
 		if (self._Mgr_B == null) return;
-		Info ("finding source from selected destination:", _Mgr_B.GetName());
+		Info("finding source from selected destination:", _Mgr_B.GetName());
 		if (!self._Possible_Sources[self._Cargo_ID].IsEmpty()) {
-			Info ("pair left", self._Possible_Sources[self._Cargo_ID].Count());
+			Info("pair left", self._Possible_Sources[self._Cargo_ID].Count());
 			self._Mgr_A = Assist.GetManager(self._Possible_Sources[self._Cargo_ID].Pop());
 		}
 		if (self._Mgr_A == null) {
 			self._Mgr_B = null;
-			Warn ("Couldn't find it pair");
+			Warn("Couldn't find it pair");
 		} else {
-			Info ("selecting source:", _Mgr_A.GetName());
+			Info("selecting source:", _Mgr_A.GetName());
 			self._Skip_Src.AddItem(self._Mgr_A.GetLocation(), 0);
 		}
 	}

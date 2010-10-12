@@ -1,8 +1,7 @@
-/*  10.02.27 - XRoad.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -13,39 +12,39 @@
  */
 class XRoad
 {
-	function GetRoadType (tile) {
+	function GetRoadType(tile) {
 		local ret = 0;
-		foreach (rt in Const.RoadTypeList) {
-			if (AIRoad.HasRoadType (tile, rt)) ret = ret | 1 << rt;
+		foreach(rt in Const.RoadTypeList) {
+			if (AIRoad.HasRoadType(tile, rt)) ret = ret | 1 << rt;
 		}
 		return ret - 1;
 	}
 
 	function GetBackOrFrontStation(tile) {
-		local ret = AIRoad[(AIRoad.IsDriveThroughRoadStationTile (tile) ? "GetDriveThroughBackTile" : "GetRoadStationFrontTile")] (tile);
+		local ret = AIRoad[(AIRoad.IsDriveThroughRoadStationTile(tile) ? "GetDriveThroughBackTile" : "GetRoadStationFrontTile")](tile);
 		while (!XTile.IsFlat(ret)) {
 			ret = XTile.NextTile(tile, ret);
 		}
 		return ret;
 	}
 
-	function IsRoadTile (tile) {
-		return AIRoad.HasRoadType (tile, AIRoad.ROADTYPE_ROAD);
+	function IsRoadTile(tile) {
+		return AIRoad.HasRoadType(tile, AIRoad.ROADTYPE_ROAD);
 	}
-	
+
 	function GetNeighbourRoadCount(tile) {
 		local count = 0;
-		foreach (h in XTile.Adjacent(tile)) if (XRoad.IsRoadTile(tile)) count++;
+		foreach(h in XTile.Adjacent(tile)) if (XRoad.IsRoadTile(tile)) count++;
 		return count;
 	}
 
-	function BuilderStation (tile, dtrs, type, area) {
-		Info ("Building new RoadStation");
+	function BuilderStation(tile, dtrs, type, area) {
+		Info("Building new RoadStation");
 		local restriction = CLList();
 		local bt = AIRoad[(type == AIRoad.ROADVEHTYPE_BUS ? "BT_BUS_STOP" : "BT_TRUCK_STOP")];
 		local est_cost = AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), bt);
 		if (area.IsEmpty()) return -1;
-		foreach (body, v in area) {
+		foreach(body, v in area) {
 			local head = -1;
 			if (body == tile) continue;
 			local path = null;
@@ -55,77 +54,77 @@ class XRoad
 				path = XRoad.FindPath([tile], [body], restriction.GetItemArray());
 				if (path == null) continue;
 				if (!Money.Get(est_cost + path.GetCost())) continue;
-				Info ("route len", path.GetLength());
+				Info("route len", path.GetLength());
 				local pf = Service.GetEndTiles(path);
 				assert(body == pf[0]);
 				head = pf[1];
-			} 
+			}
 			assert(head != body);
-			if (XRoad.BuildStation (body, head, true, type)) {
-				Info ("we've just build a road station" );
+			if (XRoad.BuildStation(body, head, true, type)) {
+				Info("we've just build a road station");
 				restriction.AddTile(body);
-				if (head == tile || XRoad.BuildRoute (path, [head], [tile], restriction.GetItemArray(), 4)) return body;
+				if (head == tile || XRoad.BuildRoute(path, [head], [tile], restriction.GetItemArray(), 4)) return body;
 				AIRoad.RemoveRoadStation(body);
 				restriction.RemoveItem(body);
 			}
 		}
-		Warn ("building dtrs failed");
+		Warn("building dtrs failed");
 		if (dtrs) return -1;
-		foreach (head, v in area) {
-			foreach (body in XTile.Adjacent(head)) {
+		foreach(head, v in area) {
+			foreach(body in XTile.Adjacent(head)) {
 				if (XRoad.IsRoadTile(body)) continue;
 				if (XTile.IsMyTile(body)) continue;
 				AITile.DemolishTile(body);
-				if (XRoad.BuildStation (body, head, false, type)) {
+				if (XRoad.BuildStation(body, head, false, type)) {
 					local path = XRoad.FindPath([head], [tile], restriction.GetItemArray());
-					if (XRoad.IsConnectedTo([head], [tile]) || XRoad.BuildRoute (path, [head], [tile], restriction.GetItemArray(), 4)) return body;
+					if (XRoad.IsConnectedTo([head], [tile]) || XRoad.BuildRoute(path, [head], [tile], restriction.GetItemArray(), 4)) return body;
 					AIRoad.RemoveRoadStation(body);
-				}				
+				}
 			}
 		}
 		Money.Pay();
 		return -1;
 	}
 
-	function BuildStation (tile, head, is_dtrs, type) {
-		assert (tile != head);
+	function BuildStation(tile, head, is_dtrs, type) {
+		assert(tile != head);
 		local retry = 20;
-		local st_id = XStation.FindIDNear (tile, retry);
-		local back = XTile.NextTile (head, tile);
+		local st_id = XStation.FindIDNear(tile, retry);
+		local back = XTile.NextTile(head, tile);
 		local is_built = false;
 		while (retry > 0) {
 			retry--;
 			if (is_dtrs) {
-				is_built = AIRoad.BuildDriveThroughRoadStation (tile, head, type, st_id);
+				is_built = AIRoad.BuildDriveThroughRoadStation(tile, head, type, st_id);
 			} else {
-				is_built = AIRoad.BuildRoadStation (tile, head, type, st_id);
+				is_built = AIRoad.BuildRoadStation(tile, head, type, st_id);
 				back = tile;
 			}
 			if (is_built) {
-				XRoad.BuildStraight (back, head) ;
+				XRoad.BuildStraight(back, head) ;
 				break;
 			}
-			Warn ("build road station failed:", AIError.GetLastErrorString());
+			Warn("build road station failed:", AIError.GetLastErrorString());
 			switch (AIError.GetLastError()) {
 				case AIRoad.ERR_ROAD_CANNOT_BUILD_ON_TOWN_ROAD:
 				case AIError.ERR_AREA_NOT_CLEAR:
-					AITile.DemolishTile (tile);
-					XRoad.BuildStraight (back, head) ;
+					AITile.DemolishTile(tile);
+					XRoad.BuildStraight(back, head) ;
 					retry -= 8;
 					break;
 				case AIError.ERR_NOT_ENOUGH_CASH:
 				case AIError.ERR_VEHICLE_IN_THE_WAY:
 					retry++;
-					AIController.Sleep (5 * retry);
+					AIController.Sleep(5 * retry);
 					break;
 				case AIError.ERR_FLAT_LAND_REQUIRED:
 					retry -= 8;
-					XTile.MakeLevel (tile, 1, 1);
+					XTile.MakeLevel(tile, 1, 1);
 					break;
 				case AIError.ERR_STATION_TOO_SPREAD_OUT:
 				case AIStation.ERR_STATION_TOO_CLOSE_TO_ANOTHER_STATION:
 					retry -= 5;
-					st_id = XStation.FindIDNear (tile, -1);
+					st_id = XStation.FindIDNear(tile, -1);
 					break;
 				case AIStation.ERR_STATION_TOO_MANY_STATIONS:
 				case AIStation.ERR_STATION_TOO_MANY_STATIONS_IN_TOWN:
@@ -137,7 +136,7 @@ class XRoad
 					retry = 0;
 					break;
 				default:
-					Debug.Pause (tile, AIError.GetLastErrorString());
+					Debug.Pause(tile, AIError.GetLastErrorString());
 					retry = 0;
 			}
 		}
@@ -145,13 +144,13 @@ class XRoad
 	}
 
 	// @note exec mode only
-	function BuildStraight (from, to) {
+	function BuildStraight(from, to) {
 		local retry_num = 50;
 		while (retry_num > 0) {
-			if (AIRoad.AreRoadTilesConnected (from, to)) return true;
-			if (AIRoad.BuildRoad (from, to)) return true;
+			if (AIRoad.AreRoadTilesConnected(from, to)) return true;
+			if (AIRoad.BuildRoad(from, to)) return true;
 			retry_num --;
-			Warn ("build road piece", AIError.GetLastErrorString());
+			Warn("build road piece", AIError.GetLastErrorString());
 			switch (AIError.GetLastError()) {
 					/* ignore these errors */
 				case AIError.ERR_NONE:
@@ -161,17 +160,17 @@ class XRoad
 					if (AIVehicleList().IsEmpty()) return false;
 				case AIError.ERR_VEHICLE_IN_THE_WAY:
 				case AIRoad.ERR_ROAD_WORKS_IN_PROGRESS:
-					AIController.Sleep (max(retry_num * 3, 1));
+					AIController.Sleep(max(retry_num * 3, 1));
 					break;
 				case AIError.ERR_AREA_NOT_CLEAR:
-					if (!AIRoad.IsRoadTile (to)) {
-						if (XTile.IsMyTile (to) || !AITile.DemolishTile (to)) retry_num -= 25;
-						Warn ("demolishing", AIError.GetLastErrorString());
+					if (!AIRoad.IsRoadTile(to)) {
+						if (XTile.IsMyTile(to) || !AITile.DemolishTile(to)) retry_num -= 25;
+						Warn("demolishing", AIError.GetLastErrorString());
 					}
 					break;
 				case AIError.ERR_FLAT_LAND_REQUIRED:
 				case AIError.ERR_LAND_SLOPED_WRONG:
-					AITile.LevelTiles (from, to);
+					AITile.LevelTiles(from, to);
 					retry_num -= 10;
 					break;
 				case AIError.ERR_PRECONDITION_FAILED:
@@ -180,7 +179,7 @@ class XRoad
 				case AIError.ERR_OWNED_BY_ANOTHER_COMPANY:
 					return false;
 				default:
-					Debug.Pause (from, AIError.GetLastErrorString());
+					Debug.Pause(from, AIError.GetLastErrorString());
 					retry_num = 0;
 					break;
 			}
@@ -191,15 +190,15 @@ class XRoad
 		return false;
 	}
 
-	function BuildDepot (tile, area) {
-		Info ("Building new RoadDepot");
+	function BuildDepot(tile, area) {
+		Info("Building new RoadDepot");
 		area.Valuate(AIMap.DistanceManhattan, tile);
 		area.KeepBetweenValue(3, 20);
 		if (area.IsEmpty()) return -1;
 		local path = XRoad.FindPath(area.GetItemArray(), [tile], []);
 		if (path == null) return -1;
 		local est_cost = path.GetCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), AIRoad.BT_DEPOT);
-		Info ("Est. Cost", est_cost);
+		Info("Est. Cost", est_cost);
 		if (!Money.Get(est_cost)) return -1;
 		local tiles = Service.GetStartTiles(path);
 		XRoad.BuildRoute(path, [tiles[1]], [tile], [], 4);
@@ -211,23 +210,23 @@ class XRoad
 	}
 
 	function IsConnectedTo(tile1, tile2) {
-		foreach (idx, tilea in tile1) {
-			foreach (idx, tileb in tile2) {
+		foreach(idx, tilea in tile1) {
+			foreach(idx, tileb in tile2) {
 				if (AIRoad.AreRoadTilesConnected(tilea, tileb)) return true;
 			}
 		}
 		local pf =  Road_PT();
-		pf.InitializePath (tile1, tile2, []);
-		return (typeof pf.FindPath (-1)) == "instance";
+		pf.InitializePath(tile1, tile2, []);
+		return (typeof pf.FindPath(-1)) == "instance";
 	}
 
 	function FindPath(start, finish, ignored) {
 		local pf = Road_PF();
-		pf.InitializePath (start, finish, ignored);
+		pf.InitializePath(start, finish, ignored);
 		return pf.FindPath(-1);
 	}
 
-	function BuildRoute (path, start, finish, ignore, num) {
+	function BuildRoute(path, start, finish, ignore, num) {
 		if (num < 1) return false;
 		num--;
 		if (path == null) {
@@ -235,60 +234,60 @@ class XRoad
 			if (path == null) return false;
 		}
 
-		Info ("Start building", path.GetLength(), "tiles on", num, "try");
+		Info("Start building", path.GetLength(), "tiles on", num, "try");
 		if (!Money.Get(path.GetCost())) {
-			Warn ("However the money isn't enough now");
+			Warn("However the money isn't enough now");
 			return false;
 		}
 		local last_node = path.GetTile();
 		local next = path.GetParent();
-		while (next) {			
+		while (next) {
 			local next_node = next.GetTile();
-			if (AIMap.DistanceManhattan (last_node, next_node) > 1) {
-				if (!XTile.IsBridgeTunnel (last_node)) {
+			if (AIMap.DistanceManhattan(last_node, next_node) > 1) {
+				if (!XTile.IsBridgeTunnel(last_node)) {
 					/* If it was a road tile, demolish it first. Do this to work around expended roadbits. */
-					if (AIRoad.IsRoadTile (last_node)) AITile.DemolishTile (last_node);
-					if (AITunnel.GetOtherTunnelEnd (last_node) == next_node) {
+					if (AIRoad.IsRoadTile(last_node)) AITile.DemolishTile(last_node);
+					if (AITunnel.GetOtherTunnelEnd(last_node) == next_node) {
 						Info("Build a tunnel");
-						if (!AITunnel.BuildTunnel (AIVehicle.VT_ROAD, last_node)) {
+						if (!AITunnel.BuildTunnel(AIVehicle.VT_ROAD, last_node)) {
 							/* An error occured while building a tunnel. TODO: handle it. */
 							ignore.push(next_node);
 							Debug.Pause(last_node, "Tunnel:" + AIError.GetLastErrorString());
-							return XRoad.BuildRoute (null, start, finish, ignore, num);
+							return XRoad.BuildRoute(null, start, finish, ignore, num);
 						}
 					} else {
 						Info("Build a bridge");
-						local bridge_list = AIBridgeList_Length (AIMap.DistanceManhattan (last_node, next_node) +1);
-						bridge_list.Valuate (AIBridge.GetMaxSpeed);
-						if (!AIBridge.BuildBridge (AIVehicle.VT_ROAD, bridge_list.Begin(), last_node, next_node)) {
+						local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(last_node, next_node) + 1);
+						bridge_list.Valuate(AIBridge.GetMaxSpeed);
+						if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), last_node, next_node)) {
 							/* An error occured while building a bridge. TODO: handle it. */
 							if (AIError.GetLastError() == AIBridge.ERR_BRIDGE_HEADS_NOT_ON_SAME_HEIGHT) {
 								ignore.push(next_node);
 							}
 							Debug.Pause(last_node, "Bridge:" + AIError.GetLastErrorString());
-							return XRoad.BuildRoute (null, start, finish, ignore, num);
+							return XRoad.BuildRoute(null, start, finish, ignore, num);
 						}
 					}
 				}
-				Info ("bridge/tunnel should have been built");
+				Info("bridge/tunnel should have been built");
 			} else {
 				Debug.Sign(last_node, next.GetCost());
 				//build a long straight tile
 				// credit to : zuu (CluelessPlus)
-				Info ("build a road piece");
-				while(next.GetParent()) {
-					 local future_node = next.GetParent().GetTile();
-					 if (AIMap.DistanceManhattan(next_node, future_node) > 1) break;
-					 if (!XTile.IsStraight (last_node, future_node)) break;
-					 next_node = future_node;
-					 next = next.GetParent();
+				Info("build a road piece");
+				while (next.GetParent()) {
+					local future_node = next.GetParent().GetTile();
+					if (AIMap.DistanceManhattan(next_node, future_node) > 1) break;
+					if (!XTile.IsStraight(last_node, future_node)) break;
+					next_node = future_node;
+					next = next.GetParent();
 				}
-				if (!XRoad.BuildStraight (last_node, next_node)) {
+				if (!XRoad.BuildStraight(last_node, next_node)) {
 					/* An error occured while building a piece of road. TODO: handle it.
 					 * Note that is can also be the case that the road was already build. */
-					 Debug.Pause(last_node, "Road:" + AIError.GetLastErrorString());
-					 //ignore.push(next_node);
-					return XRoad.BuildRoute (null, start, finish, ignore, num);
+					Debug.Pause(last_node, "Road:" + AIError.GetLastErrorString());
+					//ignore.push(next_node);
+					return XRoad.BuildRoute(null, start, finish, ignore, num);
 				}
 			}
 			last_node = next_node;

@@ -1,8 +1,7 @@
-/*  09.12.21 - xairport.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -12,7 +11,7 @@
  */
 class XAirport
 {
-	function AllowPlaneToLand (pt, at) {
+	function AllowPlaneToLand(pt, at) {
 		//Debug.Say(["Plane:" + CLString.PlaneType (pt) + ":want to land on:" + CLString.AirportType (at));
 		switch (at) {
 			case AIAirport.AT_INTERCON:  //"AT_INTERCON";
@@ -30,22 +29,22 @@ class XAirport
 				return false;
 		}
 	}
-	
+
 	function HasPlaneType(tile, pt) {
 		//please change behaviour if crashed
 		//however a hangar would look like AITile.IsStationTile
 		assert(AIAirport.IsAirportTile(tile));
 		return XAirport.AllowPlaneToLand(pt, AIAirport.GetAirportType(tile));
 	}
-	function RealBuild (tile, type, x, y, self)
-	{
+
+	function RealBuild(tile, type, x, y, self) {
 		local id = XStation.FindIDNear(tile, 15);
 		local timeout = 20;
 		while (timeout > 0) {
 			timeout--;
-			local built = AIAirport.BuildAirport (tile, type, id);
+			local built = AIAirport.BuildAirport(tile, type, id);
 			if (built) break;
-			Warn ("Airport building failed: ", AIError.GetLastErrorString());
+			Warn("Airport building failed: ", AIError.GetLastErrorString());
 			switch (AIError.GetLastError()) {
 				case AIError.ERR_AREA_NOT_CLEAR :
 				case AIError.ERR_FLAT_LAND_REQUIRED:
@@ -61,19 +60,19 @@ class XAirport
 		}
 		return AIStation.GetStationID(tile);
 	}
-	
+
 	function GetHangar(location) {
-		local airport_tipe = AIAirport.GetAirportType (location);
-		if (airport_tipe != AIAirport.AT_HELIPORT) return AIAirport.GetHangarOfAirport (location);
-		local area = CLList (AIDepotList (AITile.TRANSPORT_AIR));
-		area.Valuate (AIMap.DistanceMax, location);
-		area.KeepBelowValue (15);
+		local airport_tipe = AIAirport.GetAirportType(location);
+		if (airport_tipe != AIAirport.AT_HELIPORT) return AIAirport.GetHangarOfAirport(location);
+		local area = CLList(AIDepotList(AITile.TRANSPORT_AIR));
+		area.Valuate(AIMap.DistanceMax, location);
+		area.KeepBelowValue(15);
 		area.SortValueAscending();
 		if (area.Count()) return area.Pop();
 		return -1;
 	}
 
-	function MaxPlane (at) {
+	function MaxPlane(at) {
 		local num = 0;
 		switch (at) {
 			case AIAirport.AT_INTERCON: num ++; //7

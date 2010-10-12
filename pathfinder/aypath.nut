@@ -1,8 +1,7 @@
-/*  09.12.28 - Aypath.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -24,8 +23,7 @@ class AyPath
 	_count = null;
 	_last_cost = null;
 
-	constructor(old_path, new_tile, new_direction, cost)
-	{
+	constructor(old_path, new_tile, new_direction, cost) {
 		_prev = old_path;
 		_tile = new_tile;
 		_direction = new_direction;
@@ -36,12 +34,13 @@ class AyPath
 			_first = new_tile;
 			_count = 1;
 		} else {
-			_cost = old_path.GetCost() + cost; 
+			_cost = old_path.GetCost() + cost;
 			_length = old_path.GetLength() + AIMap.DistanceManhattan(old_path.GetTile(), new_tile);
 			_first =  old_path.GetFirstTile();
 			_count = old_path.Count() + 1;
 		}
 	};
+
 	/**
 	 * Return the tile where this (partial-)path ends.
 	 */
@@ -65,20 +64,19 @@ class AyPath
 	 * Return the length (in tiles) of this path.
 	 */
 	function GetLength() { return _length; }
-	
+
 	/**
 	 * Return the first tile of this path.
 	 */
 	function GetFirstTile() { return _first; }
-	
+
 	/**
 	 * return the last cost added
 	 */
-	 function GetLastCost() { return _last_cost; }
+	function GetLastCost() { return _last_cost; }
 	/**
 	 * Return the number of node in this path.
 	 * @note if path no longer has a parent, it would return 1
 	 */
 	function Count() { return _count;}
 };
-

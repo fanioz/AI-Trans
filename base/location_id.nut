@@ -1,8 +1,7 @@
-/*  10.02.27 - location_id.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -14,15 +13,15 @@ class CIDLocation extends Base
 {
 	_id = -1;
 	_location = -1;
-	constructor(id, loc)
-	{
+
+	constructor(id, loc) {
 		::Base.constructor("anonymous");
 		SetID(id);
 		SetLocation(loc);
 	}
+
 	function GetID() { return _id; }
 	function SetID(id) { _id = id; }
 	function GetLocation() { return _location; }
 	function SetLocation(loc) { _location = loc; }
 }
-

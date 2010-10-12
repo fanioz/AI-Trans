@@ -1,8 +1,7 @@
-/*  10.02.27 - item.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -20,9 +19,10 @@ class TaskItem extends CIDLocation
 	_removable = true;
 	_result = null;
 	_key = -1;
-	constructor (name, id) {
-		::CIDLocation.constructor (id, 0);
-		SetName (name);
+
+	constructor(name, id) {
+		::CIDLocation.constructor(id, 0);
+		SetName(name);
 	}
 
 	/**
@@ -35,7 +35,7 @@ class TaskItem extends CIDLocation
 	 * Set remove-ability of this task
 	 * @param val Set true if can remove after executing
 	 */
-	function SetRemovable (val) { _removable = val; }
+	function SetRemovable(val) { _removable = val; }
 
 	/**
 	 * Get result of this task
@@ -47,7 +47,7 @@ class TaskItem extends CIDLocation
 	 * Set result of this task
 	 * @param val set the result of task
 	 */
-	function SetResult (val) { _result = val; }
+	function SetResult(val) { _result = val; }
 
 	/**
 	 * Actually execute this task
@@ -59,17 +59,16 @@ class TaskItem extends CIDLocation
 	}
 
 	function GetKey() { return _key; }
-	function SetKey (key) { _key = key; }
+	function SetKey(key) { _key = key; }
 
 	/**
 	 * Try executing task.
 	 * If time is match will execute On_Start() methode.
 	 * @return true if time to execute task
 	 */
-	function TryToStart () {
-		Info (":..");
+	function TryToStart() {
+		Info(":..");
 		On_Start();
 		return true;
 	}
 }
-

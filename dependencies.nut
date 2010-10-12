@@ -1,8 +1,7 @@
-/*  10.03.07 - dependencies.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -12,15 +11,17 @@
  * 1 : use 'import' for files that is not included in distribution
  */
 
-try {
+try
+{
 	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
 	import("AILib.Common", "CLCommon", 1);
 	import("AILib.List", "CLList", 1);
 	import("AILib.String", "CLString", 2);
-} catch (idx) {
-	AILog.Warning ("you would need to download the libraries which is needed to run this AI.");
-	AILog.Warning ("Please goto http://www.tt-forums.net/viewtopic.php?p=771764#p771764");
-	AILog.Warning ("and check the libraries required to run");
+} catch (idx)
+{
+	AILog.Warning("you would need to download the libraries which is needed to run this AI.");
+	AILog.Warning("Please goto http://www.tt-forums.net/viewtopic.php?p=771764#p771764");
+	AILog.Warning("and check the libraries required to run");
 	throw "failed to import libraries";
 }
 

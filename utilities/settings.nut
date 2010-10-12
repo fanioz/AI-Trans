@@ -1,10 +1,9 @@
-/*  10.02.27 - settings.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
- * @see license.txt
+ *  @see license.txt
  */
 
 /**
@@ -21,39 +20,39 @@ class Setting
 	 * @note usage :
 	 * print(Const.Settings.long_train + " -> " +  Setting.Get(Const.Settings.long_train))
 	 */
-	function Get (setting_str) {
-		if (!AIGameSettings.IsValid (setting_str)) throw "Setting no longer valid :" + setting_str;
-		return AIGameSettings.GetValue (setting_str);
+	function Get(setting_str) {
+		if (!AIGameSettings.IsValid(setting_str)) throw "Setting no longer valid :" + setting_str;
+		return AIGameSettings.GetValue(setting_str);
 	}
 
 	function Init() {
 		local ver = CLCommon.GetVersion();
-		Info ("Run On OpenTTD Ver:", ver.Major, ".", ver.Minor, "Build:", ver.Build, "(", (ver.IsRelease ?  "Release" : "Rev." + ver.Revision), ")");
+		Info("Run On OpenTTD Ver:", ver.Major, ".", ver.Minor, "Build:", ver.Build, "(", (ver.IsRelease ?  "Release" : "Rev." + ver.Revision), ")");
 		local need = 18520;
 		if (ver.Revision < need) {
-			Warn ("need ", need, "and your is", ver.Revision);
+			Warn("need ", need, "and your is", ver.Revision);
 			throw "Not match version";
 		}
 		local txt = ["invalid!", "Normal", "Sligthly slow", "More slow", "Very slow", "Slowest"];
-		need = AIController.GetSetting ("loop_time");
-		AIController.SetCommandDelay (need);
-		Setting.AllowPax <- AIController.GetSetting ("allow_pax");
-		Setting.AllowFreight <- AIController.GetSetting ("allow_freight");
-		Setting.Max_Transported <- AIController.GetSetting ("last_transport");
-		Info ("Speed was", txt[need]);
+		need = AIController.GetSetting("loop_time");
+		AIController.SetCommandDelay(need);
+		Setting.AllowPax <- AIController.GetSetting("allow_pax");
+		Setting.AllowFreight <- AIController.GetSetting("allow_freight");
+		Setting.Max_Transported <- AIController.GetSetting("last_transport");
+		Info("Speed was", txt[need]);
 		txt = ["disabled", "enabled", "enabled"];
 		local ar = Setting.Get(Const.Settings.breakdowns);
 		if (ar) {
-			AICompany.SetAutoRenewMonths (-3);
-			AICompany.SetAutoRenewStatus (true);
+			AICompany.SetAutoRenewMonths(-3);
+			AICompany.SetAutoRenewStatus(true);
 		} else {
-			AICompany.SetAutoRenewStatus (false);
+			AICompany.SetAutoRenewStatus(false);
 		}
-		Info ("Vehicle Autorenewal was", txt[ar]);
-		Info ("Passenger cargo was", txt[Setting.AllowPax]);
-		Info ("Freight cargoes were", txt[Setting.AllowFreight]);
-		Info ("Max. last month transported was", Setting.Max_Transported, "%");
-		AIGroup.EnableWagonRemoval (true);
+		Info("Vehicle Autorenewal was", txt[ar]);
+		Info("Passenger cargo was", txt[Setting.AllowPax]);
+		Info("Freight cargoes were", txt[Setting.AllowFreight]);
+		Info("Max. last month transported was", Setting.Max_Transported, "%");
+		AIGroup.EnableWagonRemoval(true);
 	}
 
 	/**

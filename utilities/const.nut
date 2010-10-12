@@ -1,8 +1,7 @@
-/*  10.02.27 - const.nut
- *
+/*
  *  This file is part of Trans AI
  *
- *  Copyright 2009 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -72,16 +71,23 @@ Const <- {
 		AIAirport.AT_HELISTATION, AIAirport.AT_HELIDEPOT, AIAirport.AT_HELIPORT
 	],
 
-	 /** real station type */
-	 StationType = [AIStation.STATION_TRAIN, AIStation.STATION_TRUCK_STOP, AIStation.STATION_BUS_STOP,
-					AIStation.STATION_AIRPORT, AIStation.STATION_DOCK],
+	/** real station type */
+	StationType = [
+		AIStation.STATION_TRAIN, AIStation.STATION_TRUCK_STOP, AIStation.STATION_BUS_STOP,
+		AIStation.STATION_AIRPORT, AIStation.STATION_DOCK
+	],
+
 	/** possible name and gender */
-	Name = ["Sour", "Sweet", "Cool", "Hot", "Winter", "Summer", "Cute", "Chubby", "Continent", "Sea", "Sun", "Moon", "Angel", "Evil"]
+	Name = [
+		"Sour", "Sweet", "Cool", "Hot", "Winter", "Summer", "Cute",
+		"Chubby", "Continent", "Sea", "Sun", "Moon", "Angel", "Evil"
+	],
+
 	Gender = ["GENDER_MALE", "GENDER_FEMALE"]
 }
 
 /**
-* My global storage
-*/
+ * My global storage
+ */
 My <- null;
 _root_ <- this;
