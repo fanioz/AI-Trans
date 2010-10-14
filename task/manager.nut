@@ -39,5 +39,22 @@ class TaskManager
 			if (!task.IsRemovable()) TaskManager.New(task);
 		}
 	}
-}
+	
+	/**
+	 * Run the scheduler on Load
+	 */
+	function RunLoad() {
+		foreach(task in TaskManager.queue) {
+			task.On_Load()
+		}
+	}
 
+	/**
+	 * Run the scheduler on Save
+	 */
+	function RunSave() {
+		foreach(task in TaskManager.queue) {
+			task.On_Save()
+		}
+	}
+}

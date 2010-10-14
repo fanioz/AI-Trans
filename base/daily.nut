@@ -61,4 +61,16 @@ class DailyTask extends Base
 		}
 		return false;
 	}
+	
+	/**
+	 * Execute this task on load
+	 * @note to be overriden by class descendants
+	 */
+	function On_Load();
+
+	/**
+	 * Execute this task on save
+	 * @note to be overriden by class descendants
+	 */
+	function On_Save();
 }
