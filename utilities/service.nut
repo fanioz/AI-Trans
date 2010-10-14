@@ -8,6 +8,14 @@
 
 class Service
 {
+	/* for save/load */
+	static Data = {
+		RouteToClose = []
+		Station_2_Close = []
+		Events = []
+		Routes = {}
+	};
+
 	function Init(self) {
 		self._Subsidies.AddList(AISubsidyList());
 		self._Subsidies.Valuate(AISubsidy.IsAwarded);
