@@ -33,7 +33,6 @@ require("base/memory.nut");
 require("base/location_id.nut");
 require("base/servable.nut");
 require("base/infrastructure.nut");
-require("base/item.nut");
 require("base/daily.nut");
 require("base/connector.nut");
 

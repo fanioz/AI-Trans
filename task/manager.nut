@@ -11,7 +11,6 @@
  */
 class TaskManager
 {
-	static ids = AIList();
 	static queue = [];
 
 	/**
@@ -19,18 +18,11 @@ class TaskManager
 	 * @param task Class of TaskItem to insert
 	 */
 	function New(task) {
-		if (task instanceof TaskItem) {
-			local id = task.GetID();
-			if (!TaskManager.ids.HasItem(id)) {
-				TaskManager.ids.AddItem(id, task.GetKey());
-				TaskManager.queue.insert(0, task);
-				return;
-			}
-			local c = 100;
-			while (TaskManager.ids.HasItem(c)) c--;
-			throw "Task " + task.GetName() + " already exist for ID " + id + " use " + c;
+		if (task instanceof DailyTask) {
+			TaskManager.queue.insert(0, task);
+		} else {
+			throw "need an instance of DailyTask";
 		}
-		throw "need an instance of TaskItem";
 	}
 
 	/**
@@ -40,7 +32,6 @@ class TaskManager
 	function Run() {
 		if (TaskManager.queue.len()) {
 			local task = TaskManager.queue.pop();
-			TaskManager.ids.RemoveItem(task.GetID());
 			if (!task.TryToStart()) {
 				TaskManager.New(task);
 				return;

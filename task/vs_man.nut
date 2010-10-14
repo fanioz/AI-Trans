@@ -13,8 +13,7 @@ class Task.Vehicle_Mgr extends DailyTask
 {
 	_check_list = CLList();
 	constructor() {
-		DailyTask.constructor("Vehicle Manager", 10);
-		SetKey(3);
+		DailyTask.constructor("Vehicle Manager", 3);
 	}
 
 	function On_Start() {

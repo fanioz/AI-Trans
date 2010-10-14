@@ -14,8 +14,7 @@ class RoadConnector extends Connector
 	_Rvs_Type = null;
 	constructor() {
 		_V_Type = AIVehicle.VT_ROAD;
-		Connector.constructor("Road Connector", 100);
-		SetKey(10);
+		Connector.constructor("Road Connector", 10);
 		_Max_Distance = 100;
 		_Min_Distance = 50;
 		_PF = Road_PF();

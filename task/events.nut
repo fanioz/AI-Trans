@@ -13,8 +13,7 @@
 class Task.Events extends DailyTask
 {
 	constructor() {
-		::DailyTask.constructor("Events Check", 6);
-		SetKey(1);
+		::DailyTask.constructor("Events Check", 1);
 	}
 
 	function On_Start() {

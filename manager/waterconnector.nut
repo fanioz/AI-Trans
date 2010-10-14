@@ -13,8 +13,7 @@ class WaterConnector extends Connector
 {
 	constructor() {
 		_V_Type = AIVehicle.VT_WATER;
-		Connector.constructor("Water Connector", 99);
-		SetKey(5);
+		Connector.constructor("Water Connector", 10);
 		_Max_Distance = 100;
 		_Min_Distance = 30;
 		_PF = Water_PF();

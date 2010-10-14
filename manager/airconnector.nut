@@ -19,8 +19,7 @@ class AirConnector extends Connector
 	 */
 	constructor() {
 		_V_Type = AIVehicle.VT_AIR;
-		Connector.constructor("Air Connector", 90);
-		SetKey(10);
+		Connector.constructor("Air Connector", 10);
 		_Max_Distance = 300;
 		_Min_Distance = 150;
 		_Airport = -1;

@@ -11,12 +11,12 @@
  * Build my HQ on random suitable site if I haven't yet or
  * @return tile location
  */
-class Task.BuildHQ extends TaskItem
+class Task.BuildHQ extends DailyTask
 {
 	loc = CLList(AITownList());
 	skip = CLList();
 	constructor() {
-		::TaskItem.constructor("HQ Builder", 5);
+		::DailyTask.constructor("HQ Builder", 5);
 		loc.Valuate(AITown.GetPopulation);
 		loc.SortValueAscending();
 	}
@@ -26,7 +26,7 @@ class Task.BuildHQ extends TaskItem
 		if (AIMap.IsValidTile(hq)) {
 			Info("I've already");
 			SetRemovable(true);
-			Money .Pay();
+			Money.Pay();
 			return hq;
 		}
 		Money .Get(0);

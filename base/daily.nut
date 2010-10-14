@@ -7,30 +7,58 @@
  */
 
 /**
+ * Fake Task Namespace
+ */
+class Task {}
+
+/**
  * Daily task
  */
-class DailyTask extends TaskItem
+class DailyTask extends Base
 {
-	_next_date = 0;
-	constructor(name, id) {
-		::TaskItem.constructor(name, id);
+	_removable = true;
+	_result = null;
+	_key = null;
+	_next_date = null;
+	
+	constructor(name, key) {
+		::Base.constructor(name);
+		_key = key;
 		SetRemovable(false);
 	}
 
 	/**
-	 * Try executing task. (overriden)
+	 * Get remove-ability of this task
+	 * @return true if can remove after executing
+	 */
+	function IsRemovable() { return _removable; }
+
+	/**
+	 * Set remove-ability of this task
+	 * @param val Set true if can remove after executing
+	 */
+	function SetRemovable(val) { _removable = val; }
+
+	/**
+	 * Actually execute this task
+	 * @note to be overriden by class descendants
+	 * @return null if not execute anything
+	 */
+	function On_Start() { throw "not implemented"; }
+
+	/**
+	 * Try executing task.
 	 * If time is match will execute On_Start() methode.
-	 * @param tick at what tick now ?
 	 * @return true if time to execute task
 	 */
 	function TryToStart() {
 		local now = AIDate.GetCurrentDate();
 		if (_next_date < now) {
-			_next_date = now + GetKey();
-			return TaskItem.TryToStart();
+			_next_date = now + _key;
+			Warn(":..");
+			On_Start();
+			return true;
 		}
 		return false;
 	}
 }
-
-

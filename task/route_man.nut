@@ -13,8 +13,7 @@ class Task.RouteManager extends DailyTask
 {
 	_checked = CLList();
 	constructor() {
-		DailyTask.constructor("Route Manager", 4);
-		SetKey(10);
+		DailyTask.constructor("Route Manager", 10);
 		_silent = true;
 	}
 
