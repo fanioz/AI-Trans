@@ -13,6 +13,9 @@
  */
 class AyStar extends Base
 {
+	/** Every estimate is multiplied by this value.
+	  * Use 1 for a 'perfect' route, higher values for faster pathfinding. */
+	_estimate_multiplier = null;
 	_max_len = null;				///< The maximum len expected.
 	_open = null;					///< The list of open items sorted by cost.
 	_closed = null;					///< The list of closed items.
@@ -33,6 +36,7 @@ class AyStar extends Base
 		_max_bridge_length = 10;
 		_max_tunnel_length = 20;
 		_running = false;
+		_estimate_multiplier = 1;
 	}
 
 	/**

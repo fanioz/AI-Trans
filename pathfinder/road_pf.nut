@@ -14,10 +14,6 @@
 
 class Road_PF extends Road_PT
 {
-	/** Every estimate is multiplied by this value.
-	 * Use 1 for a 'perfect' route, higher values for faster pathfinding. */
-	_estimate_multiplier = null;
-
 	/** A Road route finder constructor */
 	constructor() {
 		Road_PT.constructor();

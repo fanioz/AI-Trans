@@ -62,13 +62,10 @@ class Water_PT extends Road_PT
 
 class Water_PF extends Water_PT
 {
-	/** Every estimate is multiplied by this value.
-	* Use 1 for a 'perfect' route, higher values for faster pathfinding. */
-	_estimate_multiplier = null;
 	constructor() {
 		Water_PT.constructor();
-		_estimate_multiplier = 1;
 	}
+
 	function _Estimate(path, cur_tile) {
 		return Water_PT._Estimate(path, cur_tile) * _estimate_multiplier;
 	}
