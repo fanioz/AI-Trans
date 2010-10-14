@@ -123,4 +123,28 @@ class Debug
 		Debug.Sign(tile, (text.len() > 30) ? text.slice(0, 30) : text);
 		Error("break on :", CLString.Tile(tile), "due to:", text);
 	}
+
+	/**
+	* Function to check if the current save table is correct
+	* @param table Table to save
+	* @param level start level (integer - any). To indicate on what level / depth we are
+	* @param id String of start ID, any string.
+	*/
+	static function CanSave(table, level, id) {
+		if ((typeof table == "table") || (typeof table == "array")) {
+			foreach(idx, val in table) {
+				if (!Debug.CanSave(val, level + 1, idx)) return false;
+			}
+			return true;
+		}
+
+		local alo = (typeof table == "string") || (typeof table == "integer") ||
+					(typeof table == "bool") || (typeof table == "null");
+
+		if (!alo) {
+			Warn("depth: " , level, " index: ", id, " value: ", table, "is", typeof table);
+			throw "detected unsupported type";
+		}
+		return true;
+	}
 }
