@@ -93,19 +93,6 @@ class Road_PF extends Road_PT
 		return n_tiles;
 	}
 
-	function _Estimate(path, cur_tile) {
-		local leng = path.Count();
-		local cost = path.GetCost() / leng;
-		if (path.GetLastCost() > 0) {
-			if (leng > 2) {
-				assert(path.GetTile() != cur_tile);
-				local prev = path.GetParent().GetTile();
-				if (!XTile.IsStraight(cur_tile, prev)) cost *= 2;
-			}
-		}
-		return (Road_PT._Estimate(path, cur_tile) * cost * _estimate_multiplier).tointeger();
-	}
-
 	/**
 	* Get a list of all bridges that can be build from the
 	* current tile. Bridges will only be build starting on non-flat tiles

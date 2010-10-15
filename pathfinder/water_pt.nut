@@ -65,8 +65,4 @@ class Water_PF extends Water_PT
 	constructor() {
 		Water_PT.constructor();
 	}
-
-	function _Estimate(path, cur_tile) {
-		return Water_PT._Estimate(path, cur_tile) * _estimate_multiplier;
-	}
 }

@@ -20,8 +20,9 @@ class AyStar extends Base
 	_open = null;					///< The list of open items sorted by cost.
 	_closed = null;					///< The list of closed items.
 	_goals = null;					///< The array of goals.
-	_running = null;     			///< The state of pathfinder.
-	_accountant = null;     		///< The AIAccounting instance.
+	_na_goals = null;				///< The array of non array goals.
+	_running = null;				///< The state of pathfinder.
+	_accountant = null;				///< The AIAccounting instance.
 	_max_bridge_length = null;		///< The maximum length of a bridge that will be build.
 	_max_tunnel_length = null;		///< The maximum length of a tunnel that will be build.
 
@@ -88,6 +89,7 @@ class AyStar extends Base
 		_closed = null;
 		_open = null;
 		_goals = null;
+		_na_goals = null;
 		_running = false;
 		_accountant.ResetCosts();
 	}
@@ -98,16 +100,12 @@ class AyStar extends Base
 	 * @return a minimum estimate distance left between node and any node out of goal_nodes.
 	 * @note this estimate is only return distance, they could be combined with tile cost, etc.
 	 */
-	function _Estimate(path, cur_tile) {
+	function _Estimate(cur_tile) {
 		local min_cost = _max_len;
-		foreach(tile in _goals) {
-			if (typeof tile == "array") {
-				min_cost = min(min_cost, AIMap.DistanceManhattan(tile[0], cur_tile));
-			} else {
-				min_cost = min(min_cost, AIMap.DistanceManhattan(tile, cur_tile));
-			}
+		foreach(tile in _na_goals) {
+			min_cost = min(min_cost, AIMap.DistanceManhattan(tile, cur_tile));
 		}
-		return min_cost;
+		return (min_cost * _estimate_multiplier).tointeger();
 	}
 
 	/** check if tunnel/bridge is in correct direction (must be exist)
@@ -133,7 +131,16 @@ class AyStar extends Base
 
 		_open = FibonacciHeap_2();
 		_closed = AIList();
-		_goals = goals;
+		_goals = [];
+		_na_goals = [];
+		foreach(tile in goals) {
+			_goals.push(tile);
+			if (typeof tile == "array") {
+				_na_goals.push(tile[1]);
+			} else {
+				_na_goals.push(tile);
+			}
+		}
 
 		foreach(node in sources) {
 			if (typeof(node) == "array") {
@@ -141,7 +148,7 @@ class AyStar extends Base
 				if (node[1] <= 0) throw("directional value should never be zero or negative.");
 
 				local new_path = AyPath(null, node[0], node[1], node[2]);
-				_open.Insert(new_path, new_path.GetCost() + _Estimate(new_path, node[0]));
+				_open.Insert(new_path, new_path.GetCost() + _Estimate(node[0]));
 			} else {
 				//for rail pf
 				_open.Insert(node, node.GetCost());
@@ -231,7 +238,7 @@ class AyStar extends Base
 				if ((_closed.GetValue(node[0]) & node[1]) != 0) continue;
 				/* Calculate the new paths and add them to the open list */
 				local new_path = AyPath(path, node[0], node[1], node[2]);
-				_open.Insert(new_path, new_path.GetCost() + _Estimate(path, node[0]));
+				_open.Insert(new_path, new_path.GetCost() + _Estimate(node[0]));
 			}
 		}
 
