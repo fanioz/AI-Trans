@@ -51,7 +51,7 @@ class Trans extends Base
 
 			/* greeting you */
 			local date = AIDate.GetCurrentDate();
-			SetRandName(date + ::My.ID);
+			SetRandName(date);
 			Info("(re)started as", AICompany.GetName(::My.ID), "at", Assist.DateStr(date));
 			Info("is powered by ", _version_);
 
@@ -114,10 +114,14 @@ class Trans extends Base
 	}
 
 	function SetRandName(number) {
-		local c = number % Const.Name.len();
-		local name = "Trans " + Const.Name[c];
-		AICompany.SetPresidentName(name);
-		AICompany.SetName(name);
-		AICompany.SetPresidentGender(AICompany[Const.Gender[c % 2]]);
+		while (AICompany.GetName(My.ID).find("Trans") == null) {
+			number++;
+			local c = number % Const.Name.len();
+			local name = "Trans " + Const.Name[c];
+
+			if (AICompany.SetPresidentGender(AICompany[Const.Gender[c % 2]])) {
+				if (AICompany.SetPresidentName(name)) AICompany.SetName(name);
+			}
+		}
 	}
 }
