@@ -7,95 +7,84 @@
  */
 
 /**
- * Clearing events routine before save occurs
+ * Saving events into queue before save occurs
  * @note is now allowed to use do command
  */
 class Task.Events extends DailyTask
 {
+	_allowed = null;		///< Determine if executing DoCommand is allowed
+
 	constructor() {
 		::DailyTask.constructor("Events Check", 1);
+		_allowed = false;
 	}
 
 	function On_Start() {
-		while (AIEventController.IsEventWaiting()) {
-			local e = AIEventController.GetNextEvent();
-			local si = null;
+		_allowed = true;
+		On_Save();
+		_allowed = false;
 
-			switch (e.GetEventType()) {
+		while (Service.Data.Events.len()) {
+			local item = Service.Data.Events.pop();
+
+			switch (item[0]) {
 				case AIEvent.AI_ET_SUBSIDY_OFFER:
-					si = AIEventSubsidyOffer.Convert(e);
 					Info("New Subsidy offered");
-					My._Subsidies.AddItem(si.GetSubsidyID(), 0);
+					My._Subsidies.AddItem(item[1], 0);
 					break;
 
 				case AIEvent.AI_ET_SUBSIDY_OFFER_EXPIRED:
-					si = AIEventSubsidyOfferExpired.Convert(e);
-					Info("SubsidyID", si.GetSubsidyID(),  "offer expired");
-					My._Subsidies.RemoveItem(si.GetSubsidyID());
+					Info("SubsidyID", item[1],  "offer expired");
+					My._Subsidies.RemoveItem(item[1]);
 					break ;
 
 				case AIEvent.AI_ET_SUBSIDY_EXPIRED:
-					si = AIEventSubsidyExpired.Convert(e);
-					Info("SubsidyID ", si.GetSubsidyID(), " expired");
-					My._Subsidies.RemoveItem(si.GetSubsidyID());
+					Info("SubsidyID ", item[1], " expired");
+					My._Subsidies.RemoveItem(item[1]);
 					break;
 
 				case AIEvent.AI_ET_SUBSIDY_AWARDED:
-					si = AIEventSubsidyAwarded.Convert(e);
-					local id = si.GetSubsidyID();
+					local id = item[1];
 					local comp_id = AISubsidy.GetAwardedTo(id);
 					Info("SubsidyID ", id, " awarded to", AICompany.GetName(comp_id));
-					if (comp_id != My.ID) My._Subsidies.RemoveItem(si.GetSubsidyID());
-					break;
-
-				case AIEvent.AI_ET_TEST:
-					Info("Undocumented event!");
+					if (comp_id != My.ID) My._Subsidies.RemoveItem(id);
 					break;
 
 				case AIEvent.AI_ET_ENGINE_PREVIEW:
-					local me = AIEventEnginePreview.Convert(e);
-					si = "accepted";
-					if (!me.AcceptPreview()) si = "not " + si;
-					Info("Preview offer for Vehicle ", me.GetName(), si);
+					Info("Preview offer for Vehicle ", item[1], "was", item[2]);
 					break;
 
-
 				case AIEvent.AI_ET_COMPANY_ASK_MERGER:
-					local me = AIEventCompanyAskMerger.Convert(e);
-					si = "realized";
-					if (!me.AcceptMerger()) si = "not " + si;
-					Info("Merger offer with ", AICompany.GetName(me.GetCompanyID()), "was", si);
+					Info("Merger offer with ", AICompany.GetName(item[1]), "worth", item[2], "was", item[3]);
 					break;
 
 				case AIEvent.AI_ET_COMPANY_NEW:
-					local me = AIEventCompanyNew.Convert(e);
-					si = me.GetCompanyID();
-					Warn("Welcome " + AICompany.GetName(si));
+					local name = AICompany.GetName(item[1]);
+					Warn("Welcome " + name);
 					break;
 
 				case AIEvent.AI_ET_COMPANY_MERGER:
-					local me = AIEventCompanyMerger.Convert(e);
-					Info("And now come, the merger between ", AICompany.GetName(me.GetOldCompanyID()), "<->", AICompany.GetName(me.GetNewCompanyID()));
+					Info("And now come, the merger between ", AICompany.GetName(item[1]), "<->", AICompany.GetName(item[2]));
 					break;
 
 				case AIEvent.AI_ET_COMPANY_IN_TROUBLE:
-					local me = AIEventCompanyInTrouble.Convert(e);
-					si = me.GetCompanyID();
-					if (My.ID == si) Warn("Going to sleep");
-					Info(AICompany.GetName(si), " is in trouble. Would you help him?");
+					if (My.ID == item[1]) {
+						Warn("Going to sleep");
+						foreach(vhcs, _ in AIVehicleList()) XVehicle.TryToSend(vhcs);
+					}
+					Warn(AICompany.GetName(item[1]), " is in trouble. Would you help him?");
 					break;
 
 				case AIEvent.AI_ET_COMPANY_BANKRUPT:
-					local me = AIEventCompanyBankrupt.Convert(e);
-					si = me.GetCompanyID();
-					if (My.ID == si) Warn("Going to die") else Info("Good bye ", AICompany.GetName(si));
+					if (My.ID == item[1]) Warn("Going to die") else Warn("Good bye ", AICompany.GetName(item[1]));
 					break;
 
 				case AIEvent.AI_ET_VEHICLE_CRASHED:
-					local me = AIEventVehicleCrashed.Convert(e);
-					local vhc = me.GetVehicleID();
-					local tile = me.GetCrashSite();
-					switch (me.GetCrashReason()) {
+					local vhc = item[1];
+					local tile = item[2];
+					local si = "";
+
+					switch (item[3]) {
 						case AIEventVehicleCrashed.CRASH_TRAIN :
 							si = "two trains collided";
 							break;
@@ -117,46 +106,37 @@ class Task.Events extends DailyTask
 						default :
 							si = "unknown reason";
 					}
-					Warn(AIVehicle.GetName(vhc), "was crashed due to", si, "at", XTile.ToString(tile), "God Damned :'(");
+					Warn(AIVehicle.GetName(vhc), "was crashed due to", si, "at", CLString.Tile(tile), "God Damned :'(");
 					break;
 
 				case AIEvent.AI_ET_VEHICLE_LOST:
-					local me = AIEventVehicleLost.Convert(e);
-					local vhc_ID = me.GetVehicleID();
-					Info("Vehicle lost ", AIVehicle.GetName(vhc_ID));
+					Info("Vehicle lost ", AIVehicle.GetName(item[1]));
 					break;
 
 				case AIEvent.AI_ET_VEHICLE_WAITING_IN_DEPOT:
-					local me = AIEventVehicleWaitingInDepot.Convert(e);
-					local vhc_ID = me.GetVehicleID();
-					Info(AIVehicle.GetName(vhc_ID), " is waiting");
+					Info(AIVehicle.GetName(item[1]), " is waiting");
 					break;
 
 				case AIEvent.AI_ET_VEHICLE_UNPROFITABLE:
-					local me = AIEventVehicleUnprofitable.Convert(e);
-					local vhc_ID = me.GetVehicleID();
-					Info(AIVehicle.GetName(vhc_ID), " is unprofitable");
-					My._No_Profit_Vhc.AddItem(vhc_ID, 0);
+					Info(AIVehicle.GetName(item[1]), " is unprofitable");
+					My._No_Profit_Vhc.AddItem(item[1], 0);
 					break;
 
 				case AIEvent.AI_ET_INDUSTRY_OPEN:
-					local me = AIEventIndustryOpen.Convert(e);
-					si = me.GetIndustryID();
-					Info("Congratulation on grand opening ", AIIndustry.GetName(si));
+					Info("Congratulation on grand opening ", AIIndustry.GetName(item[1]));
 					break;
 
 				case AIEvent.AI_ET_INDUSTRY_CLOSE:
-					local me = AIEventIndustryClose.Convert(e);
-					si = me.GetIndustryID();
-					Info("Sadly enough, Good bye ", AIIndustry.GetName(si));
-					if (AIIndustry.IsValidIndustry(si)) {
+					local name = AIIndustry.GetName(item[1]);
+					if (name) {
+						Info("Sadly enough, Good bye ", name);
+					} else {
+						Info("an industry was closed, but we are too late to catch it");
 					}
 					break;
 
 				case AIEvent.AI_ET_ENGINE_AVAILABLE:
-					local me = AIEventEngineAvailable.Convert(e);
-					si = me.GetEngineID();
-					Info(AIEngine.GetName(si), " Available");
+					Info(AIEngine.GetName(item[1]), " Available");
 					break;
 
 				case AIEvent.AI_ET_STATION_FIRST_VEHICLE:
@@ -182,15 +162,119 @@ class Task.Events extends DailyTask
 					* me.
 					*/
 					break;
-
-				case AIEvent.AI_ET_INVALID:
-					Info("Dunno why it is there");
-					break;
-
-				default :
-					Debug.DontCallMe("Events");
 			}
 		}
-		Info("No more events");
+		Info("No more event on queue");
+	}
+	
+	/**
+	 * Call Automatically on Save occur
+	 */
+	function On_Save() {
+		while (AIEventController.IsEventWaiting()) {
+			local e = AIEventController.GetNextEvent();
+			local item = [e.GetEventType()];
+
+			switch (item[0]) {
+				case AIEvent.AI_ET_COMPANY_ASK_MERGER:
+					local me = AIEventCompanyAskMerger.Convert(e);
+					item.push(me.GetCompanyID());
+					item.push(me.GetValue());
+					local si = false;
+
+					if (_allowed) {
+						if (Money.Get(item[2])) {
+							si = me.AcceptMerger();
+						}
+					}
+
+					item.push(si ? "accepted" : "rejected");
+					break;
+
+				case AIEvent.AI_ET_COMPANY_BANKRUPT:
+					item.push(AIEventCompanyBankrupt.Convert(e).GetCompanyID());
+					break;
+
+				case AIEvent.AI_ET_COMPANY_IN_TROUBLE:
+					item.push(AIEventCompanyInTrouble.Convert(e).GetCompanyID());
+					break;
+
+				case AIEvent.AI_ET_COMPANY_MERGER:
+					local me = AIEventCompanyMerger.Convert(e);
+					item.push(me.GetOldCompanyID());
+					item.push(me.GetNewCompanyID());
+					break;
+
+				case AIEvent.AI_ET_COMPANY_NEW:
+					item.push(AIEventCompanyNew.Convert(e).GetCompanyID());
+					break;
+
+				case AIEvent.AI_ET_DISASTER_ZEPPELINER_CLEARED:
+					item.push(AIEventDisasterZeppelinerCrashed.Convert(e).GetStationID());
+					break;
+
+				case AIEvent.AI_ET_DISASTER_ZEPPELINER_CRASHED:
+					item.push(AIEventDisasterZeppelinerCrashed.Convert(e).GetStationID());
+					break;
+
+				case AIEvent.AI_ET_ENGINE_AVAILABLE:
+					item.push(AIEventEngineAvailable.Convert(e).GetEngineID());
+					break
+
+				case AIEvent.AI_ET_ENGINE_PREVIEW:
+					local me = AIEventEnginePreview.Convert(e);
+					local si = false;
+					if (_allowed) si = me.AcceptPreview();
+					item.push(me.GetName());
+					item.push(si ? "accepted" : "rejected");
+					break;
+
+				case AIEvent.AI_ET_SUBSIDY_OFFER:
+					item.push(AIEventSubsidyOffer.Convert(e).GetSubsidyID());
+					break;
+
+				case AIEvent.AI_ET_INDUSTRY_CLOSE:
+					item.push(AIEventIndustryClose.Convert(e).GetIndustryID());
+					break;
+
+				case AIEvent.AI_ET_INDUSTRY_OPEN:
+					item.push(AIEventIndustryOpen.Convert(e).GetIndustryID());
+					break;
+
+				case AIEvent.AI_ET_SUBSIDY_AWARDED:
+					item.push(AIEventSubsidyAwarded.Convert(e).GetSubsidyID());
+					break;
+
+				case AIEvent.AI_ET_SUBSIDY_EXPIRED:
+					item.push(AIEventSubsidyExpired.Convert(e).GetSubsidyID());
+					break;
+
+				case AIEvent.AI_ET_SUBSIDY_OFFER_EXPIRED:
+					item.push(AIEventSubsidyOfferExpired.Convert(e).GetSubsidyID());
+					break ;
+
+				case AIEvent.AI_ET_VEHICLE_CRASHED:
+					local me = AIEventVehicleCrashed.Convert(e);
+					item.push(me.GetVehicleID());
+					item.push(me.GetCrashSite());
+					item.push(me.GetCrashReason());
+					break;
+
+				case AIEvent.AI_ET_VEHICLE_LOST:
+					item.push(AIEventVehicleLost.Convert(e).GetVehicleID());
+					break;
+
+				case AIEvent.AI_ET_VEHICLE_UNPROFITABLE:
+					item.push(AIEventVehicleUnprofitable.Convert(e).GetVehicleID());
+					break;
+
+				case AIEvent.AI_ET_VEHICLE_WAITING_IN_DEPOT:
+					item.push(AIEventVehicleWaitingInDepot.Convert(e).GetVehicleID());
+					break;
+			}
+
+			Service.Data.Events.insert(0, clone item);
+		}
+		Info("No more event to save");
 	}
 }
