@@ -22,6 +22,17 @@ class Service
 		self._Subsidies.KeepValue(0);
 		self._Subsidies.Valuate(AISubsidy.GetExpireDate);
 		self._Subsidies.KeepAboveValue(AIDate.GetCurrentDate() + 60);
+		if (self._Load) {
+			foreach(idx, val in self._Load) {
+				if (!Service.Data.rawin(idx)) {
+					Warn("index", idx, "not found. Have value:", val);
+					Service.Data[idx] < - val;
+				}
+
+				Service.Data[idx] = val;
+			}
+		}
+
 		TaskManager.New(RoadConnector());
 		TaskManager.New(AirConnector());
 		TaskManager.New(WaterConnector());

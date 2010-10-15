@@ -16,11 +16,11 @@ class Trans extends Base
 {
 	ID = -1;
 	_Yearly_Profit = 0;
+	_Load = null;
 	_Service_Table = {};
 	_Vehicles = {};
 	_No_Profit_Vhc = CLList();
 	_Subsidies = CLList();
-	_Station_2_Close = [];
 	_Inds_Manager = {};
 	_Town_Manager = {};
 	_Station_Tables = {};
@@ -97,9 +97,10 @@ class Trans extends Base
 	 * Handle save game of OpenTTD
 	 */
 	function Save() {
-		local save_table = {};
-		Info("--- No Save needed (experimental) ---");
-		return save_table;
+		TaskManager.RunSave();
+		if (Debug.CanSave(Service.Data, 1, "root")) return Service.Data;
+		AILog.Error("No data saved!");
+		return {};
 	}
 
 	/**
@@ -107,8 +108,9 @@ class Trans extends Base
 	 */
 	function Load(version, data) {
 		Warn(" Loading from ver:", version);
-		Warn("(experimental)", "no load needed");
 		Warn("type of data was", typeof data);
+		_Load = data;
+		TaskManager.RunLoad();
 	}
 
 	function SetRandName(number) {

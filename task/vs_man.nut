@@ -95,16 +95,16 @@ class Task.Vehicle_Mgr extends DailyTask
 		My._No_Profit_Vhc.KeepValue(1);
 
 		//clean station
-		local toclean = clone My._Station_2_Close;
+		local toclean = clone Service.Data.Station_2_Close;
 		foreach(idx, data in toclean) {
 			local id = data[0];
 			if (!AIStation.IsValidStation(id)) {
-				My._Station_2_Close.remove(idx);
+				Service.Data.Station_2_Close.remove(idx);
 				continue;
 			}
 			local stype = data[1];
 			if (!AIStation.HasStationType(stype)) {
-				My._Station_2_Close.remove(idx);
+				Service.Data.Station_2_Close.remove(idx);
 				continue;
 			}
 			XStation.RemovePart(id, stype);
