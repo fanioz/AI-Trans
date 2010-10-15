@@ -20,7 +20,7 @@ class WaterConnector extends Connector
 	}
 
 	function On_Start() {
-		if (IsNotAllowed(this)) return;
+		if (Service.IsNotAllowed(_V_Type)) return;
 		if (_Track == -1) {
 			_Track = 1;
 		}

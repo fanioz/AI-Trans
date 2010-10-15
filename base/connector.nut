@@ -90,24 +90,7 @@ class Connector extends DailyTask
 
 		_Possible_Sources = {};
 	}
-	/**
-	 * check if this connector allowed to do something
-	 */
-	function IsNotAllowed(self) {
-		local cur_vt = self._V_Type;
-		local v = CLString.VehicleType(cur_vt);
-		if (AIGameSettings.IsDisabledVehicleType (cur_vt) || AIController.GetSetting (v) == 0) {
-			Warn(v, "was disabled in game");
-			return true;
-		}
-		Info ("building", v, "is allowed");
-		local veh_list = AIVehicleList();
-		veh_list.Valuate (AIVehicle.GetVehicleType);
-		veh_list.KeepValue (cur_vt);
-		local vhcc = (veh_list.Count() * 1.1).tointeger();
-		if (vhcc == 0) return false;
-		return vhcc > Setting.GetMaxVehicle(cur_vt);
-	}
+	
 	/**
 	 * check if this connector just make a route several months ago
 	 */

@@ -24,7 +24,7 @@ class RoadConnector extends Connector
 	}
 
 	function On_Start() {
-		if (IsNotAllowed(this)) return;
+		if (Service.IsNotAllowed(_V_Type)) return;
 		if (_Track == -1) {
 			if (AIRoad.GetCurrentRoadType() == AIRoad.ROADTYPE_TRAM) {
 				AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);

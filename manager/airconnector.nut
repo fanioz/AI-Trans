@@ -26,7 +26,7 @@ class AirConnector extends Connector
 	}
 
 	function On_Start() {
-		if (IsNotAllowed(this)) return;
+		if (Service.IsNotAllowed(_V_Type)) return;
 		// _Track a.k.a Plane type
 		if (_Track == -1) _Airport = -1;
 		if (!AIAirport.IsValidAirportType(_Airport)) {

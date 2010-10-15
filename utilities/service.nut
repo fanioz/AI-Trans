@@ -204,4 +204,29 @@ class Service
 		}
 		return ar;
 	}
+	
+	/**
+	 * check if this vehicle type was allowed to do something
+	 */
+	static function IsNotAllowed(cur_vt) {
+		local v = CLString.VehicleType(cur_vt);
+
+		if (AIGameSettings.IsDisabledVehicleType(cur_vt) || AIController.GetSetting(v) == 0) {
+			Warn(v, "was disabled in game");
+			return true;
+		}
+
+		Info("building", v, "is allowed");
+		local veh_list = AIVehicleList();
+		veh_list.Valuate(AIVehicle.GetVehicleType);
+		veh_list.KeepValue(cur_vt);
+
+		if (veh_list.IsEmpty()) return false;
+
+		local vhcc = (veh_list.Count() * 1.1).tointeger();
+		local maxvhc = Setting.GetMaxVehicle(cur_vt);
+		Info("max.:", maxvhc);
+		Info("we have", maxvhc - vhcc, "left to build", v);
+		return vhcc > maxvhc;
+	}
 }
