@@ -88,4 +88,9 @@ class Road_PT extends AyStar
 		}
 		return tiles;
 	}
+	
+	function ShapeIt(path) {
+		if ((path == null)  || (path.Count() == 0)) return 1;
+		return _base_shape;
+	}
 }

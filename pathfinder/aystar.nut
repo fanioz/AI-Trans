@@ -23,6 +23,7 @@ class AyStar extends Base
 	_na_goals = null;				///< The array of non array goals.
 	_running = null;				///< The state of pathfinder.
 	_accountant = null;				///< The AIAccounting instance.
+	_base_shape = null;				///< The base of shape value
 	_max_bridge_length = null;		///< The maximum length of a bridge that will be build.
 	_max_tunnel_length = null;		///< The maximum length of a tunnel that will be build.
 
@@ -32,12 +33,13 @@ class AyStar extends Base
 	*/
 	constructor(name) {
 		Base.constructor(name);
-		_max_len = AIMap.GetMapSize();
 		_accountant = AIAccounting();
 		_max_bridge_length = 10;
 		_max_tunnel_length = 20;
 		_running = false;
 		_estimate_multiplier = 1;
+		_base_shape = 100;
+		_max_len = 0;
 	}
 
 	/**
@@ -146,18 +148,27 @@ class AyStar extends Base
 			if (typeof(node) == "array") {
 				//for road, water and ... air :D
 				if (node[1] <= 0) throw("directional value should never be zero or negative.");
-
-				local new_path = AyPath(null, node[0], node[1], node[2]);
-				_open.Insert(new_path, new_path.GetCost() + _Estimate(node[0]));
+				_max_len = max(AIMap.DistanceManhattan(node[0], _na_goals[0]), _max_len);
+				_Insert(_PathOfNode(null, node));
 			} else {
 				//for rail pf
-				_open.Insert(node, node.GetCost());
+				_max_len = max(AIMap.DistanceManhattan(node.GetTile(), _na_goals[0]), _max_len);
+				_Insert(node);
 			}
 		}
 
 		foreach(tile in ignored_tiles) {
 			_closed.AddItem(tile, ~0);
 		}
+		
+		Info("original max len:", _max_len);
+
+		if (_max_len > 100) _estimate_multiplier += 0.5;
+		if (_max_len > 150) _estimate_multiplier += 0.5;
+		if (_max_len > 200) _estimate_multiplier += 0.5;
+
+		Info("calculated multiplier:", _estimate_multiplier);
+		Info("Opening tile", _open.Count());
 		_running = true;
 	}
 
@@ -232,13 +243,9 @@ class AyStar extends Base
 			//Info("Scan all neighbours");
 			local neighbours = _Neighbours(path, cur_tile);
 			foreach(node in neighbours) {
-				//don't know where
-				//if (typeof node != "array") continue;
+				if (Assist.HasBit(_closed.GetValue(node[0]),  node[1])) continue;
 
-				if ((_closed.GetValue(node[0]) & node[1]) != 0) continue;
-				/* Calculate the new paths and add them to the open list */
-				local new_path = AyPath(path, node[0], node[1], node[2]);
-				_open.Insert(new_path, new_path.GetCost() + _Estimate(node[0]));
+				_Insert(_PathOfNode(path, node));
 			}
 		}
 
@@ -249,5 +256,16 @@ class AyStar extends Base
 		Warn("path finding failed");
 		Reset();
 		return null;
+	}
+	
+	function _PathOfNode(path, node) {
+		/* Calculate the new paths */
+		local new_path = AyPath(path, node[0], node[1], node[2]);
+		new_path._shape = (path ? path._shape : 0) + ShapeIt(new_path);
+		return new_path;
+	}
+
+	function _Insert(path) {
+		_open.Insert(path, _Estimate(path.GetTile()) + path._shape);
 	}
 };

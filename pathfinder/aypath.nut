@@ -22,12 +22,14 @@ class AyPath
 	_first = null;
 	_count = null;
 	_last_cost = null;
+	_shape = null;
 
 	constructor(old_path, new_tile, new_direction, cost) {
 		_prev = old_path;
 		_tile = new_tile;
 		_direction = new_direction;
 		_last_cost = cost;
+		_shape = 0;
 		if (old_path == null) {
 			_length = 0;
 			_cost = cost;

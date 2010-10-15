@@ -11,7 +11,6 @@
  *  This road pathfinder tries to find a buildable / existing route for
  *  road vehicles.
  */
-
 class Road_PF extends Road_PT
 {
 	/** A Road route finder constructor */
@@ -145,4 +144,62 @@ class Road_PF extends Road_PT
 		//Debug.Sign(next_tile, "n");
 	}
 
+	function ShapeIt(path) {
+		local shape = Road_PT.ShapeIt(path);
+		if ((path == null)  || (path.Count() == 0)) return shape;
+		local cur_tile = path.GetTile();
+		local parn = path.GetParent();
+		local prev_tile = parn ? parn.GetTile() : -1;
+		if (AIRoad.AreRoadTilesConnected(prev_tile, cur_tile)) {
+			if (AITile.IsStationTile(cur_tile)) shape += _base_shape * 2;
+			return shape;
+		} else {
+			shape += _base_shape;
+		}
+		if (parn == null) return shape;
+		/* Try to avoid road/rail crossing because our busses/trucks will crash. */
+		if (AITile.HasTransportType(cur_tile, AITile.TRANSPORT_RAIL)) return (shape + _base_shape * 5);
+		/* If the new tile is a bridge / tunnel tile, check whether we came from the other
+		 * end of the bridge / tunnel or if we just entered the bridge / tunnel. */
+		local distance = AIMap.DistanceManhattan(cur_tile, prev_tile);
+		if (XTile.IsBridgeTunnel(cur_tile)) {
+			local other_end = XTile.GetBridgeTunnelEnd(cur_tile);
+			if (_CheckTunnelBridge(prev_tile, cur_tile)) {
+				//in
+				if (AITunnel.IsTunnelTile(cur_tile)) return shape;
+				return shape + _base_shape;
+			} else {
+				if (AITunnel.IsTunnelTile(cur_tile)) {
+					local next = XTile.NextTile(other_end, cur_tile);
+				}
+			}
+			/* If the two tiles are more then 1 tile apart, the pathfinder wants a bridge or tunnel
+			* to be build. It isn't an existing bridge / tunnel, as that case is already handled. */
+		} else if (distance > 1) {
+			local ret = _base_shape;
+			/* Check if we should build a bridge or a tunnel. */
+			if (AITunnel.GetOtherTunnelEnd(cur_tile) == prev_tile) {
+				ret += _base_shape / 5;
+			} else {
+				ret += _base_shape * 1.5;
+			}
+			return shape + ret * distance;
+		} else {
+			/* Check if the new tile is a high cost tile.*/
+			if (AITile.IsCoastTile(cur_tile) /*||
+                    AITile.IsFarmTile(cur_tile) ||
+                    AITile.IsRockTile(cur_tile) ||
+                    AITile.IsRoughTile(cur_tile) ||
+                    AITile.IsDesertTile(cur_tile) ||
+                    AITile.IsSnowTile(cur_tile)*/
+			   ) {
+				shape += _base_shape;
+			}
+			local pprev_tile = parn.GetParent() ? parn.GetParent().GetTile() : null;
+			if (pprev_tile) {
+				if (!XTile.IsStraight(pprev_tile, cur_tile)) shape += _base_shape;
+			}
+		}
+		return shape;
+	}
 }

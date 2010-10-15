@@ -57,6 +57,13 @@ class Water_PT extends Road_PT
 		}
 		return tiles;
 	}
+	
+	function ShapeIt(path) {
+		local shape = Road_PT.ShapeIt(path);
+		if (path.Count() == 0) return shape;
+		shape += path.GetCost();
+		return shape;
+	}
 };
 
 
