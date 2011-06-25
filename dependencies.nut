@@ -14,9 +14,6 @@
 try
 {
 	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
-	import("AILib.Common", "CLCommon", 1);
-	import("AILib.List", "CLList", 1);
-	import("AILib.String", "CLString", 2);
 } catch (idx)
 {
 	AILog.Warning("you would need to download the libraries which is needed to run this AI.");
@@ -42,6 +39,9 @@ require("pathfinder/aypath.nut");
 require("pathfinder/road_pt.nut");
 require("pathfinder/road_pf.nut");
 require("pathfinder/water_pt.nut");
+require("ext/xcommon.nut");
+require("ext/xlist.nut");
+require("ext/xstring.nut");
 
 /* route */
 require("route/vhc_maker.nut");
