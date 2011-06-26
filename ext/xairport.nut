@@ -22,6 +22,7 @@ class XAirport
 			case AIAirport.AT_COMMUTER:  //"AT_COMMUTER";
 			case AIAirport.AT_SMALL:
 				if (pt == AIAirport.PT_SMALL_PLANE) return true;
+				break;
 			case AIAirport.AT_HELIDEPOT:
 			case AIAirport.AT_HELISTATION:
 				if (pt == AIAirport.PT_HELICOPTER) return true;
