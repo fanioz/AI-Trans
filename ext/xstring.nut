@@ -335,11 +335,11 @@ class CLString
 
 	/**
 	 * Shows item and value foreach record of AIList into string
-	 * @param list an instance of AIAbstractList
+	 * @param list an instance of AIList
 	 * @return string
 	 */
 	static function AIList(list) {
-		if(!(list instanceof AIAbstractList)) throw("String.AIList(): argument has to be an instance of AIAbstractList.");
+		if(!(list instanceof AIList)) throw("String.AIList(): argument has to be an instance of AIList.");
 		local ret = "[";
 		if(!list.IsEmpty()) {
 			local a = list.Begin();

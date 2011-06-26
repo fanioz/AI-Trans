@@ -168,7 +168,7 @@ class Assist
 	function Modus(anarray) {
 		local t = AIList();
 		foreach(num in anarray) t.AddItem(num, t.GetValue(num) + 1);
-		t.Sort(AIAbstractList.SORT_BY_VALUE, false);
+		t.Sort(AIList.SORT_BY_VALUE, false);
 		return t.Begin();
 	}
 

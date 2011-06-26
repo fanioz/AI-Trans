@@ -13,7 +13,7 @@ class Trans10 extends AIInfo
 	function GetShortName() { return "FTAI"; }
 	function GetDescription() { return "Trans is an effort to be a transporter ;-) "; }
 	function GetVersion() { return 150101; }
-	function GetAPIVersion() { return "1.0"; }
+	function GetAPIVersion() { return "1.1"; }
 	/* only change the version if the structure is changed */
 	function MinVersionToLoad() { return 1; }
 	function GetDate() { return "2009-02-1"; }

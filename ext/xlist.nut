@@ -26,13 +26,13 @@ class CLList extends AIList
 
 	/**
 	 * List constructor
-	 * @param list optional AIAbstractList to copy
+	 * @param list optional AIList to copy
 	 */
 	constructor(list = null)
 	{
 		::AIList.constructor();
 		if (list != null) {
-			assert(list instanceof AIAbstractList);
+			assert(list instanceof AIList);
 			this.AddList(list);
 		}
 	}
@@ -144,7 +144,7 @@ function CLList::AddItemValue(an_array)
  */
 function CLList::SortItemAscending()
 { 
-	this.Sort(AIAbstractList.SORT_BY_ITEM, AIAbstractList.SORT_ASCENDING); 
+	this.Sort(AIList.SORT_BY_ITEM, AIList.SORT_ASCENDING); 
 }
 
 /**
@@ -152,7 +152,7 @@ function CLList::SortItemAscending()
  */
 function CLList::SortItemDescending()
 {
-	this.Sort(AIAbstractList.SORT_BY_ITEM, AIAbstractList.SORT_DESCENDING);
+	this.Sort(AIList.SORT_BY_ITEM, AIList.SORT_DESCENDING);
 }
 
 /**
@@ -160,14 +160,14 @@ function CLList::SortItemDescending()
  */
 function CLList::SortValueAscending()
 {
-	this.Sort(AIAbstractList.SORT_BY_VALUE, AIAbstractList.SORT_ASCENDING);
+	this.Sort(AIList.SORT_BY_VALUE, AIList.SORT_ASCENDING);
 }
 
 /**
  * Sort by value, descending.
  */
 function CLList::SortValueDescending() {
-	this.Sort(AIAbstractList.SORT_BY_VALUE, AIAbstractList.SORT_DESCENDING);
+	this.Sort(AIList.SORT_BY_VALUE, AIList.SORT_DESCENDING);
 }
 
 /* From AITile List */

@@ -23,10 +23,6 @@ class XIndustry
 		return -1;
 	}
 
-	function CanAccept(id, cargo) {
-		return AIIndustry.IsCargoAccepted(id, cargo) && Assist.IsBetween(AIIndustry.GetStockpiledCargo(id, cargo), -1, 1000);
-	}
-
 	function ProdValue(industry, cargoID) {
 		return AIIndustry.GetLastMonthProduction(industry, cargoID) - AIIndustry.GetLastMonthTransported(industry, cargoID);
 	}
