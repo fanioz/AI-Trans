@@ -25,6 +25,8 @@ class StationManager extends Infrastructure
 		_s_type = s_type;
 		_tiles = CLList(AITileList_StationType(id, s_type));
 		assert(_tiles.Count());
+		_tiles.Valuate(AIAirport.IsHangarTile);
+		_tiles.RemoveValue(1);	
 		_tiles.SortItemAscending();
 		Infrastructure.constructor(id , _tiles.Begin());
 		SetName(AIStation.GetName(id));
