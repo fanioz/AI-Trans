@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -59,7 +59,7 @@ class XVehicle
 		return Debug.Echo(
 				   (AIOrder.GetOrderCount(vhc_ID) == 4) &&
 				   (AIVehicle.GetReliability(vhc_ID) > 40) &&
-				   (!Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, 2), AIOrder.AIOF_STOP_IN_DEPOT)) &&
+				   (!Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, 2), AIOrder.OF_STOP_IN_DEPOT)) &&
 				   (AIVehicle.GetState(vhc_ID) == AIVehicle.VS_IN_DEPOT) &&
 				   AIVehicle.StartStopVehicle(vhc_ID), "(re)Starting vehicle");
 	}
@@ -77,11 +77,11 @@ class XVehicle
 		if (cur_order == 0) {
 			if (AIVehicle.GetState(vhc_ID) == AIVehicle.VS_AT_STATION)  AIOrder.SkipToOrder(vhc_ID, 1);
 		}
-		local flags = AIOrder.AIOF_STOP_IN_DEPOT;
+		local flags = AIOrder.OF_STOP_IN_DEPOT;
 		if (!Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, 2), flags)) {
-			if (AIOrder.SetOrderFlags(vhc_ID, 1, AIOrder.AIOF_NO_LOAD)) Info("loading flag set");
+			if (AIOrder.SetOrderFlags(vhc_ID, 1, AIOrder.OF_NO_LOAD)) Info("loading flag set");
 			//code changed due to bug reported FS#
-			if (!AIMap.IsValidTile(AIOrder.GetOrderDestination(vhc_ID, 2))) flags = flags | AIOrder.AIOF_GOTO_NEAREST_DEPOT;
+			if (!AIMap.IsValidTile(AIOrder.GetOrderDestination(vhc_ID, 2))) flags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
 			if (AIOrder.SetOrderFlags(vhc_ID, 2, flags)) Info("depot flag set");
 		}
 		Info("Waiting until arrive at destination");
@@ -128,7 +128,7 @@ class XVehicle
 			return true;
 		}
 		if (AIOrder.IsGotoDepotOrder(vhc_ID, AIOrder.ORDER_CURRENT) &&
-				Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, AIOrder.ORDER_CURRENT), AIOrder.AIOF_STOP_IN_DEPOT)) {
+				Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, AIOrder.ORDER_CURRENT), AIOrder.OF_STOP_IN_DEPOT)) {
 			Info("Already sent to depot");
 			return true;
 		}
@@ -171,9 +171,9 @@ class XVehicle
 	 * Reset flag orders
 	*/
 	function ResetFlag(vhc) {
-		local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 1), AIOrder.AIOF_NO_LOAD);
+		local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 1), AIOrder.OF_NO_LOAD);
 		Debug.ResultOf(AIOrder.SetOrderFlags(vhc, 1, flags), "loading flag re-set");
-		flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 2), AIOrder.AIOF_STOP_IN_DEPOT) | AIOrder.AIOF_SERVICE_IF_NEEDED;
+		flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 2), AIOrder.OF_STOP_IN_DEPOT) | AIOrder.OF_SERVICE_IF_NEEDED;
 		Debug.ResultOf(AIOrder.SetOrderFlags(vhc, 2, flags), "depot flag re-set");
 	}
 

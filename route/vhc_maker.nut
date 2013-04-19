@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -84,9 +84,9 @@ class VehicleMaker extends Infrastructure
 	}
 
 	function SetMainOrder() {
-		local flags = ((GetVType() == AIVehicle.VT_ROAD) && GetCargo() == XCargo.Pax_ID) ? AIOrder.AIOF_NONE : AIOrder.AIOF_FULL_LOAD_ANY;
+		local flags = ((GetVType() == AIVehicle.VT_ROAD) && GetCargo() == XCargo.Pax_ID) ? AIOrder.OF_NONE : AIOrder.OF_FULL_LOAD_ANY;
 		return Debug.ResultOf(
-				   AIOrder.InsertOrder(GetVehicle(), 0, GetStationB(), AIOrder.AIOF_NONE) &&
+				   AIOrder.InsertOrder(GetVehicle(), 0, GetStationB(), AIOrder.OF_NONE) &&
 				   AIOrder.InsertOrder(GetVehicle(), 0, GetStationA(), flags),
 				   "set main order");
 	}
@@ -95,10 +95,10 @@ class VehicleMaker extends Infrastructure
 	 * Set common depot order
 	 */
 	function SetNextOrder() {
-		local flags = AIOrder.AIOF_SERVICE_IF_NEEDED;
-		if (!AIMap.IsValidTile(GetDepotA())) flags = flags | AIOrder.AIOF_GOTO_NEAREST_DEPOT;
+		local flags = AIOrder.OF_SERVICE_IF_NEEDED;
+		if (!AIMap.IsValidTile(GetDepotA())) flags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
 		AIOrder.InsertOrder(GetVehicle(), 2, GetDepotA(), flags);
-		if (!AIMap.IsValidTile(GetDepotB())) flags = flags | AIOrder.AIOF_GOTO_NEAREST_DEPOT;
+		if (!AIMap.IsValidTile(GetDepotB())) flags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
 		AIOrder.InsertOrder(GetVehicle(), 2, GetDepotB(), flags);
 		while (AIOrder.GetOrderCount(GetVehicle()) > 4) {
 			AIOrder.RemoveOrder(GetVehicle(), 4);

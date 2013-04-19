@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -16,7 +16,7 @@ class Task.CurrentValue extends DailyTask
 	}
 
 	function On_Start() {
-		local cv = AICompany.GetCompanyValue(My.ID);
+		local cv = AICompany.GetQuarterlyCompanyValue(My.ID, AICompany.CURRENT_QUARTER);
 		local date = AIDate.GetCurrentDate();
 		local upday = max(1, date - AIDate.GetDate(AIDate.GetYear(date), 1, 1));
 		Warn("===" + Assist.DateStr(date) + "===>" + cv);

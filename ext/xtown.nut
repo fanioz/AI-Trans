@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -36,7 +36,7 @@ class XTown
 	}
 
 	function ProdValue(town, cargoID) {
-		return AITown.GetLastMonthProduction(town, cargoID) - AITown.GetLastMonthTransported(town, cargoID);
+		return AITown.GetLastMonthProduction(town, cargoID) - AITown.GetLastMonthSupplied(town, cargoID);
 	}
 
 	// Build a station need rating -200 => AITown.TOWN_RATING_POOR

@@ -1,19 +1,19 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
 
-class Trans10 extends AIInfo
+class Trans13 extends AIInfo
 {
 	function GetAuthor() { return "fanioz"; }
 	function GetName() { return "Trans"; }
 	function GetShortName() { return "FTAI"; }
 	function GetDescription() { return "Trans is an effort to be a transporter ;-) "; }
 	function GetVersion() { return 150101; }
-	function GetAPIVersion() { return "1.1"; }
+	function GetAPIVersion() { return "1.3"; }
 	/* only change the version if the structure is changed */
 	function MinVersionToLoad() { return 1; }
 	function GetDate() { return "2009-02-1"; }
@@ -105,4 +105,4 @@ class Trans10 extends AIInfo
 /*
 *Tell the core, I'm an AI too ...
 */
-RegisterAI(Trans10());
+RegisterAI(Trans13());
