@@ -17,7 +17,7 @@ class XEngine
 	}
 
 	function SortLoco(engine_id) {
-		local fn = Setting.Get(Const.Settings.realistic_acceleration) ? AIEngine.GetMaxSpeed : AIEngine.GetMaxTractiveEffort;
+		local fn = Setting.Get(SetString.realistic_acceleration) ? AIEngine.GetMaxSpeed : AIEngine.GetMaxTractiveEffort;
 		return 10000000 * fn(engine_id) / AIEngine.GetPrice(engine_id);
 	}
 

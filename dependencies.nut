@@ -26,7 +26,7 @@ try
 }
 
 /* ---------------- Own --------------- */
-
+require("utilities/enum.nut");
 /* base */
 require("base/base.nut");
 require("base/memory.nut");

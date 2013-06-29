@@ -56,8 +56,8 @@ class XStation
 
 	/** @param range to ignore */
 	function FindIDNear(tile, range) {
-		if (range > 0 && Setting.Get(Const.Settings.distant_join_stations)) {
-			//local range = Setting.Get (Const.Settings.station_spread) ^ 2;
+		if (range > 0 && Setting.Get(SetString.distant_join_stations)) {
+			//local range = Setting.Get (SetString.station_spread) ^ 2;
 			local l = CLList(AIStationList(AIStation.STATION_ANY));
 			l.Valuate(AIStation.GetDistanceManhattanToTile, tile);
 			l.RemoveAboveValue(range);
@@ -67,7 +67,7 @@ class XStation
 				return id;
 			}
 		}
-		return Setting.Get(Const.Settings.adjacent_stations) ? AIStation.STATION_JOIN_ADJACENT : AIStation.STATION_NEW;
+		return Setting.Get(SetString.adjacent_stations) ? AIStation.STATION_JOIN_ADJACENT : AIStation.STATION_NEW;
 	}
 
 	function IsInUse(id) {
@@ -149,8 +149,8 @@ class XStation
 			case AIStation.STATION_DOCK:
 				return AIVehicle.VT_WATER;
 		}
-		return AIVehicle.VT_INVALID
-		   }
+		return AIVehicle.VT_INVALID;
+	}
 
 	function GetDivisorNum(s_type) {
 		switch (s_type) {

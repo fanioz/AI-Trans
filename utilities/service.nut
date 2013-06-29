@@ -73,7 +73,7 @@ class Service
 			if (!Service.IsSubsidyLocationWas(s_id, loc1, true)) continue;
 			if (!Service.IsSubsidyLocationWas(s_id, loc2, false)) continue;
 			Info("found a subsidy service for", XCargo.Label[cargo]);
-			return min(1.5, Setting.Get(Const.Settings.subsidy_multiply) + 1);
+			return min(1.5, Setting.Get(SetString.subsidy_multiply) + 1);
 		}
 		return 1;
 	}

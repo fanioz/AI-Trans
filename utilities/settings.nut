@@ -18,7 +18,7 @@ class Setting
 	 * @param setting_str String of settings. Get it from Cons.Settings
 	 * @return value from .cfg otherwise would crash if setting is no longer valid
 	 * @note usage :
-	 * print(Const.Settings.long_train + " -> " +  Setting.Get(Const.Settings.long_train))
+	 * print(SetString.long_train + " -> " +  Setting.Get(SetString.long_train))
 	 */
 	function Get(setting_str) {
 		if (!AIGameSettings.IsValid(setting_str)) throw "Setting no longer valid :" + setting_str;
@@ -41,7 +41,7 @@ class Setting
 		Setting.Max_Transported <- AIController.GetSetting("last_transport");
 		Info("Speed was", txt[need]);
 		txt = ["disabled", "enabled", "enabled"];
-		local ar = Setting.Get(Const.Settings.breakdowns);
+		local ar = Setting.Get(SetString.breakdowns);
 		if (ar) {
 			AICompany.SetAutoRenewMonths(-3);
 			AICompany.SetAutoRenewStatus(true);

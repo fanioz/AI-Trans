@@ -75,6 +75,6 @@ class Money
 	}
 	/** Inflating **/
 	function Inflated(x) {
-		return (AICompany.GetMaxLoanAmount() / Setting.Get(Const.Settings.max_loan) * x).tointeger();
+		return (AICompany.GetMaxLoanAmount() / Setting.Get(SetString.max_loan) * x).tointeger();
 	}
 };

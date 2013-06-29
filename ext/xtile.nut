@@ -306,7 +306,7 @@ class XTile
 	function IsFlat(idx) {
 		local slope = AITile.GetSlope(idx);
 		if (slope == AITile.SLOPE_FLAT || slope == AITile.SLOPE_ELEVATED) return true;
-		if (!Setting.Get(Const.Settings.build_on_slopes)) return false;
+		if (!Setting.Get(SetString.build_on_slopes)) return false;
 		switch (slope) {
 			case AITile.SLOPE_NWS :
 			case AITile.SLOPE_WSE :
@@ -321,7 +321,7 @@ class XTile
 		if (::XTile.IsFlat(current)) return true;
 		local slope = AITile.GetSlope(current);
 		if (AITile.IsSteepSlope(slope)) return false;
-		if (!Setting.Get(Const.Settings.build_on_slopes)) return false;
+		if (!Setting.Get(SetString.build_on_slopes)) return false;
 		local dist = AIMap.DistanceManhattan(current, next);
 		if ((::XTile.NW_Of(current, dist) == next) &&
 				(Assist.HasBit(slope, AITile.SLOPE_N) || Assist.HasBit(slope, AITile.SLOPE_W))) return false;
