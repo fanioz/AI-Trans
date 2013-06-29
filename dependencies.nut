@@ -70,6 +70,7 @@ require("ext/xengine.nut");
 require("ext/xindustry.nut");
 require("ext/xmarine.nut");
 require("ext/xroad.nut");
+require("ext/xrail.nut")
 require("ext/xstation.nut");
 require("ext/xtile.nut");
 require("ext/xtown.nut");
