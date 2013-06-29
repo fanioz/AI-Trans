@@ -96,7 +96,7 @@ class RoadConnector extends Connector
 			Warn("couldn't got a start point at source");
 			return 1;
 		}
-		_PF.InitializePath(dpoint.GetItemArray(), spoint.GetItemArray(), []);
+		_PF.InitializePath(dpoint.ItemsToArray(), spoint.ItemsToArray(), []);
 		return 0;
 	}
 

@@ -58,7 +58,7 @@ class XMarine
 		foreach(body, v in area) {
 			local head = XMarine.GetWaterSide(body);
 			if (head == tile) continue;
-			local path = XMarine.FindPath([head], [tile], restriction.GetItemArray());
+			local path = XMarine.FindPath([head], [tile], restriction.ItemsToArray());
 			if (path == null) continue;
 			local ecost = AIMarine.GetBuildCost(AIMarine.BT_DOCK) + path.GetCost();
 			Info("est. Cost", ecost);

@@ -82,7 +82,7 @@ class WaterConnector extends Connector
 			Warn("couldn't got a start point at source");
 			return 1;
 		}
-		_PF.InitializePath(spoint.GetItemArray(), dpoint.GetItemArray(), []);
+		_PF.InitializePath(spoint.ItemsToArray(), dpoint.ItemsToArray(), []);
 		return 0;
 	}
 

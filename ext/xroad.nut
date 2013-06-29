@@ -51,7 +51,7 @@ class XRoad
 			if (AIMap.DistanceManhattan(body, tile) == 1) {
 				head = tile;
 			} else {
-				path = XRoad.FindPath([tile], [body], restriction.GetItemArray());
+				path = XRoad.FindPath([tile], [body], restriction.ItemsToArray());
 				if (path == null) continue;
 				if (!Money.Get(est_cost + path.GetCost())) continue;
 				Info("route len", path.GetLength());
@@ -63,7 +63,7 @@ class XRoad
 			if (XRoad.BuildStation(body, head, true, type)) {
 				Info("we've just build a road station");
 				restriction.AddTile(body);
-				if (head == tile || XRoad.BuildRoute(path, [head], [tile], restriction.GetItemArray(), 4)) return body;
+				if (head == tile || XRoad.BuildRoute(path, [head], [tile], restriction.ItemsToArray(), 4)) return body;
 				AIRoad.RemoveRoadStation(body);
 				restriction.RemoveItem(body);
 			}
@@ -76,8 +76,8 @@ class XRoad
 				if (XTile.IsMyTile(body)) continue;
 				AITile.DemolishTile(body);
 				if (XRoad.BuildStation(body, head, false, type)) {
-					local path = XRoad.FindPath([head], [tile], restriction.GetItemArray());
-					if (XRoad.IsConnectedTo([head], [tile]) || XRoad.BuildRoute(path, [head], [tile], restriction.GetItemArray(), 4)) return body;
+					local path = XRoad.FindPath([head], [tile], restriction.ItemsToArray());
+					if (XRoad.IsConnectedTo([head], [tile]) || XRoad.BuildRoute(path, [head], [tile], restriction.ItemsToArray(), 4)) return body;
 					AIRoad.RemoveRoadStation(body);
 				}
 			}
@@ -195,7 +195,7 @@ class XRoad
 		area.Valuate(AIMap.DistanceManhattan, tile);
 		area.KeepBetweenValue(3, 20);
 		if (area.IsEmpty()) return -1;
-		local path = XRoad.FindPath(area.GetItemArray(), [tile], []);
+		local path = XRoad.FindPath(area.ItemsToArray(), [tile], []);
 		if (path == null) return -1;
 		local est_cost = path.GetCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), AIRoad.BT_DEPOT);
 		Info("Est. Cost", est_cost);

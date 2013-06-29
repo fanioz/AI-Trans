@@ -14,8 +14,8 @@
 try
 {
 	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
-	import("AILib.Common", "CLCommon", 1);
-	import("AILib.List", "CLList", 1);
+	import("AILib.Common", "CLCommon", 2);
+	import("AILib.List", "CLList", 3);
 	import("AILib.String", "CLString", 2);
 } catch (idx)
 {

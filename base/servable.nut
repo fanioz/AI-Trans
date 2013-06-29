@@ -99,7 +99,7 @@ class Servable extends CIDLocation
 			}
 			if (station.GetOccupancy() > 99) continue;
 			local front = AIRoad.GetRoadStationFrontTile(station.GetLocation());
-			if (!XRoad.IsConnectedTo([front], GetRoadPoint().GetItemArray())) {
+			if (!XRoad.IsConnectedTo([front], GetRoadPoint().ItemsToArray())) {
 				Debug.Sign(tile, "not connected?");
 				continue;
 			}
