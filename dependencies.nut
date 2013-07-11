@@ -13,7 +13,7 @@
 
 try
 {
-	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
+//	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
 	import("AILib.Common", "CLCommon", 2);
 	import("AILib.List", "CLList", 3);
 	import("AILib.String", "CLString", 2);
@@ -37,6 +37,7 @@ require("base/daily.nut");
 require("base/connector.nut");
 
 /* --linked library --*/
+require("pathfinder/heap.nut");
 require("pathfinder/aystar.nut");
 require("pathfinder/aypath.nut");
 require("pathfinder/road_pt.nut");

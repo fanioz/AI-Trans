@@ -131,7 +131,7 @@ class AyStar extends Base
 		if (typeof(sources) != "array" || sources.len() == 0) throw("sources has be a non-empty array.");
 		if (typeof(goals) != "array" || goals.len() == 0) throw("goals has be a non-empty array.");
 
-		_open = FibonacciHeap_2();
+		_open = TransHeap();
 		_closed = AIList();
 		_goals = [];
 		_na_goals = [];

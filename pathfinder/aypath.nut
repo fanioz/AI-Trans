@@ -81,4 +81,6 @@ class AyPath
 	 * @note if path no longer has a parent, it would return 1
 	 */
 	function Count() { return _count;}
+	
+	function GetID() { return _tile;}
 };
