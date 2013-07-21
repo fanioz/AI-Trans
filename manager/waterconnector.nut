@@ -55,7 +55,7 @@ class WaterConnector extends Connector
 		} else {
 			Info("Initialize service");
 			_Line = false;
-			if (_Mgr_B == null) SelectDest(this);
+			if (_Mgr_B == null) return SelectDest(this);
 			if (_Mgr_A == null) {
 				return SelectSource(this);
 			} else {
