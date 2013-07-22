@@ -122,3 +122,11 @@ Close #1643: Implement AI save/load
 Fix : Updated to API 1.3
 Fix: Don't crash on calling XRail class. It's there but not ready to handle rail vehicle yet
 Codechange : Uses AILibrary : Common V.2 & List V.3
+
+* 130711
+Codechange : uses own heap
+
+* 130722
+Fix: Don't crash if no destination found (thanks to  Steffl)
+Fix : move to next cargo upon successful built
+

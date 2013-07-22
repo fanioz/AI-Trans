@@ -52,6 +52,7 @@ class RoadConnector extends Connector
 			_Route_Built = false;
 			_Engine_A = -1;
 			_Mgr_A = null;
+			_Cargo_ID = -1;
 			_LastSuccess = AIDate.GetCurrentDate() + 90;
 		} else if (IsWaitingPath(this)) {
 			
