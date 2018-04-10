@@ -12,7 +12,7 @@
 class XAirport
 {
 	function AllowPlaneToLand(pt, at) {
-		//Debug.Say(["Plane:" + CLString.PlaneType (pt) + ":want to land on:" + CLString.AirportType (at));
+		//AILog.Info("Plane:" + CLString.PlaneType (pt) + ":want to land on:" + CLString.AirportType (at));
 		switch (at) {
 			case AIAirport.AT_INTERCON:  //"AT_INTERCON";
 			case AIAirport.AT_INTERNATIONAL:  //"AT_INTERNATIONAL";
@@ -29,6 +29,7 @@ class XAirport
 			default :
 				return false;
 		}
+		return false;
 	}
 
 	function HasPlaneType(tile, pt) {
