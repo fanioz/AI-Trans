@@ -6,13 +6,13 @@
  *  @see license.txt
  */
 
-class Trans13 extends AIInfo
+class Trans18 extends AIInfo
 {
 	function GetAuthor() { return "fanioz"; }
 	function GetName() { return "Trans"; }
 	function GetShortName() { return "FTAI"; }
 	function GetDescription() { return "Trans is an effort to be a transporter ;-) "; }
-	function GetVersion() { return 150101; }
+	function GetVersion() { return 200101; }
 	function GetAPIVersion() { return "1.3"; }
 	/* only change the version if the structure is changed */
 	function MinVersionToLoad() { return 1; }
@@ -105,4 +105,4 @@ class Trans13 extends AIInfo
 /*
 *Tell the core, I'm an AI too ...
 */
-RegisterAI(Trans13());
+RegisterAI(Trans18());
