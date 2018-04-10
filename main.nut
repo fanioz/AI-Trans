@@ -24,12 +24,14 @@ class Trans extends Base
 	_Inds_Manager = {};
 	_Town_Manager = {};
 	_Station_Tables = {};
+	dataIntegrity = null;
 
 	constructor() {
 		::Base.constructor("Trans");
 		::My = this;
 		::My.ID = AICompany.ResolveCompanyID(AICompany.COMPANY_SELF);
 		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+		dataIntegrity = false;
 	}
 
 	/**
@@ -98,7 +100,7 @@ class Trans extends Base
 	 */
 	function Save() {
 		TaskManager.RunSave();
-		if (Debug.CanSave(Service.Data, 1, "root")) return Service.Data;
+		if (this.dataIntegrity) return Service.Data;
 		AILog.Error("No data saved!");
 		return {};
 	}

@@ -24,6 +24,8 @@ class Task.Events extends DailyTask
 		On_Save();
 		_allowed = false;
 
+		::My.dataIntegrity = Debug.CanSave(Service.Data, 1, "root"); 
+
 		while (Service.Data.Events.len()) {
 			local item = Service.Data.Events.pop();
 
