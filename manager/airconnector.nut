@@ -27,6 +27,10 @@ class AirConnector extends Connector
 
 	function On_Start() {
 		if (Service.IsNotAllowed(_V_Type)) return;
+		if (Setting.Get(SetString.infrastructure_maintenance)) {
+			Info("Not connecting air route with infrastructure maintenance setting activated");
+			return;
+		}
 		// _Track a.k.a Plane type
 		if (_Track == -1) _Airport = -1;
 		if (!AIAirport.IsValidAirportType(_Airport)) {
