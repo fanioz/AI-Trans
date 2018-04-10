@@ -29,13 +29,14 @@ class Task.BuildHQ extends DailyTask
 			Money.Pay();
 			return hq;
 		}
+		assert(My.ID >= 0);
 		Money .Get(0);
 		SetRemovable(false);
 		local counter = 0;
 		local mode = AITestMode();
 		for (local town = loc.Begin(); loc.HasNext(); town = loc.Next()) {
 			Info("finding#", (counter++));
-			if (counter % My.ID != 0) continue;
+			if (counter % (My.ID + 1) != 0) continue;
 			if (skip.HasItem(town)) continue;
 			Info("found a spot at", AITown.GetName(town));
 			local tl = AITown.GetLocation(town);

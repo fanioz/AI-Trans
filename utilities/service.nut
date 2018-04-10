@@ -106,7 +106,7 @@ class Service
 					continue;
 				}
 			}
-			if ((number % My.ID) == counter) {
+			if (number % (My.ID + 1) == counter) {
 				Info("destination found");
 				return dloc;
 			}
