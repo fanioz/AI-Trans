@@ -130,3 +130,8 @@ Codechange : uses own heap
 Fix: Don't crash if no destination found (thanks to  Steffl)
 Fix : move to next cargo upon successful built
 
+* 180411
+Fixes: Not connecting air route with infrastructure maintenance setting activated. Thanks Steffl
+Fixes: crashes with Modulo by Zero error when trying to place an HQ while being Company #1 (0 in code). Thanks xarick
+Fixes: Crashed due to return value of a function is neither bool nor integer, when being used as Valuator. Thanks xarick
+Fixes: AI forced to be stopped due to it took too long to save. Thanks xarick
