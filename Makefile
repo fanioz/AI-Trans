@@ -32,7 +32,7 @@ all: bundle_tar
 bundle_tar: clean
 	$(_E) "[TAR]"
 	$(_V) $(shell $(HG) archive -X glob:.* $(BUNDLE_NAME))
-	$(_V) cat info.nut | sed -e "s/return 150101/return $(VERSION)/g" > $(BUNDLE_NAME)/info.nut
+	$(_V) cat info.nut | sed -e "s/return 200101/return $(VERSION)/g" > $(BUNDLE_NAME)/info.nut
 	$(_V) tar -cf $(TAR_FILENAME) $(BUNDLE_NAME)
 
 clean:
