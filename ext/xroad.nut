@@ -53,7 +53,7 @@ class XRoad
 			} else {
 				path = XRoad.FindPath([tile], [body], restriction.ItemsToArray());
 				if (path == null) continue;
-				if (!Money.Get(est_cost + path.GetCost())) continue;
+				if (!Money.Get(est_cost + path.GetBuildCost())) continue;
 				Info("route len", path.GetLength());
 				local pf = Service.GetEndTiles(path);
 				assert(body == pf[0]);
@@ -197,7 +197,7 @@ class XRoad
 		if (area.IsEmpty()) return -1;
 		local path = XRoad.FindPath(area.ItemsToArray(), [tile], []);
 		if (path == null) return -1;
-		local est_cost = path.GetCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), AIRoad.BT_DEPOT);
+		local est_cost = path.GetBuildCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), AIRoad.BT_DEPOT);
 		Info("Est. Cost", est_cost);
 		if (!Money.Get(est_cost)) return -1;
 		local tiles = Service.GetStartTiles(path);
@@ -235,7 +235,7 @@ class XRoad
 		}
 
 		Info("Start building", path.GetLength(), "tiles on", num, "try");
-		if (!Money.Get(path.GetCost())) {
+		if (!Money.Get(path.GetBuildCost())) {
 			Warn("However the money isn't enough now");
 			return false;
 		}
@@ -244,7 +244,7 @@ class XRoad
 		while (next) {
 			local next_node = next.GetTile();
 			if (AIMap.DistanceManhattan(last_node, next_node) > 1) {
-				if (!XTile.IsBridgeTunnel(last_node)) {
+				if (!XTile.IsBridgeOrTunnel(last_node)) {
 					/* If it was a road tile, demolish it first. Do this to work around expended roadbits. */
 					if (AIRoad.IsRoadTile(last_node)) AITile.DemolishTile(last_node);
 					if (AITunnel.GetOtherTunnelEnd(last_node) == next_node) {

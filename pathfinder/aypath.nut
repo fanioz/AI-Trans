@@ -21,25 +21,23 @@ class AyPath
 	_length = null;
 	_first = null;
 	_count = null;
-	_last_cost = null;
-	_shape = null;
+	_build_cost = null;
 
-	constructor(old_path, new_tile, new_direction, cost) {
+	constructor(old_path, new_tile, new_direction, buildCost, cost) {
 		_prev = old_path;
 		_tile = new_tile;
 		_direction = new_direction;
-		_last_cost = cost;
-		_shape = 0;
+		_cost = cost
 		if (old_path == null) {
 			_length = 0;
-			_cost = cost;
 			_first = new_tile;
 			_count = 1;
+			_build_cost = buildCost;
 		} else {
-			_cost = old_path.GetCost() + cost;
 			_length = old_path.GetLength() + AIMap.DistanceManhattan(old_path.GetTile(), new_tile);
 			_first =  old_path.GetFirstTile();
 			_count = old_path.Count() + 1;
+			_build_cost = old_path.GetBuildCost() + buildCost;
 		}
 	};
 
@@ -73,9 +71,9 @@ class AyPath
 	function GetFirstTile() { return _first; }
 
 	/**
-	 * return the last cost added
+	 * return the building cost 
 	 */
-	function GetLastCost() { return _last_cost; }
+	function GetBuildCost() { return _build_cost; }
 	/**
 	 * Return the number of node in this path.
 	 * @note if path no longer has a parent, it would return 1

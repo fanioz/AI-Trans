@@ -13,36 +13,37 @@
  */
 class Road_PF extends Road_PT
 {
+	_cost_road_station = null;             ///< The cost for a road station tile.
+	
 	/** A Road route finder constructor */
 	constructor() {
 		Road_PT.constructor();
 		SetName("Road Finder");
-		_estimate_multiplier = 1.2;
+		_estimate_multiplier = 1.4;
 		_max_bridge_length = 50;
+		this._cost_road_station = 500;
 	}
 
 	function _Neighbours(path, cur_node) {
 		local n_tiles = Road_PT._Neighbours(path, cur_node);
 		if (path.GetLength() > _max_len) return n_tiles;
+		/* _max_cost is the maximum path cost, if we go over it, the path isn't valid. */
+		if (path.GetCost() >= this._max_cost) return [];
 		//if (n_tiles.len()) Info("existing have:", n_tiles.len());
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
 		local pp_tile = prev_tile ? (parn.GetParent() ? parn.GetParent().GetTile() : null) : null;
 		Debug.Sign(cur_node, "R");
 		/* Check if the current tile is part of a bridge or tunnel. */
-		if (XTile.IsBridgeTunnel(cur_node) && AIRoad.HasRoadType(cur_node, AIRoad.GetCurrentRoadType())) {
-			if (prev_tile && _CheckTunnelBridge(prev_tile, cur_node)) {
-				//handled
-			} else {
-				local other_end = XTile.GetBridgeTunnelEnd(cur_node);
-				local next = XTile.NextTile(other_end, cur_node);
-				_accountant.ResetCosts();
-				if (AIRoad.AreRoadTilesConnected(next, other_end)) {
-					//handled;
-				} else if (AIRoad.BuildRoad(other_end, next)) {
-					n_tiles.push([tile, _GetDirection(other_end, next, false), _accountant.GetCosts()]);
-				}
+		if (XTile.IsBridgeOrTunnel(cur_node) && AIRoad.HasRoadType(cur_node, AIRoad.GetCurrentRoadType())) {
+			local other_end = XTile.GetBridgeTunnelEnd(cur_node);
+			local next = XTile.NextTile(other_end, cur_node);
+			_accountant.ResetCosts();
+			if (AIRoad.BuildRoad(cur_node, next)) {
+				n_tiles.push([next, this._GetDirection(cur_node, next, false), _accountant.GetCosts()]);
 			}
+			/* The other end of the bridge / tunnel is a neighbour. Exist thus 0 cost*/
+			n_tiles.push([other_end, this._GetDirection(next, cur_node, true) << 4, 0]);
 		} else if (prev_tile && AIMap.DistanceManhattan(cur_node, prev_tile) > 1) {
 			/* If the two tiles are more then 1 tile apart, the pathfinder wants a bridge or tunnel
 			 * to be build. It isn't an existing bridge / tunnel, as that case is already handled. */
@@ -64,6 +65,7 @@ class Road_PF extends Road_PT
 				}
 				local tile = XTile.NextTile(prev_tile, cur_node);
 				if (AITile.HasTransportType(tile, AITile.TRANSPORT_RAIL) ||
+					AITile.HasTransportType(tile, AITile.TRANSPORT_WATER) ||
 						((XTile.Height(tile) < XTile.Height(cur_node)) &&
 						 (!XTile.IsFlat(cur_node)))) {
 					n_tiles.extend(GetBridges(prev_tile, cur_node, bridge_dir));
@@ -144,47 +146,53 @@ class Road_PF extends Road_PT
 		//Debug.Sign(next_tile, "n");
 	}
 
-	function ShapeIt(path) {
-		local shape = Road_PT.ShapeIt(path);
-		if ((path == null)  || (path.Count() == 0)) return shape;
-		local cur_tile = path.GetTile();
-		local parn = path.GetParent();
-		local prev_tile = parn ? parn.GetTile() : -1;
+	function _Cost(path, cur_tile, new_direction) {
+		/* path == null means this is the first node of a path, so the cost is 0. */
+		if (path == null) return 0;
+
+		local prev_tile = path.GetTile();
+		local cost = 0;
+		
 		if (AIRoad.AreRoadTilesConnected(prev_tile, cur_tile)) {
-			if (AITile.IsStationTile(cur_tile)) shape += _base_shape * 2;
-			return shape;
+			if (AITile.IsStationTile(cur_tile)) cost += this._cost_road_station;
+			return path.GetCost() + cost;
 		} else {
-			shape += _base_shape;
+			cost += this._cost_no_existing_road
 		}
-		if (parn == null) return shape;
+		
 		/* Try to avoid road/rail crossing because our busses/trucks will crash. */
-		if (AITile.HasTransportType(cur_tile, AITile.TRANSPORT_RAIL)) return (shape + _base_shape * 5);
+		if (AITile.HasTransportType(cur_tile, AITile.TRANSPORT_RAIL) && !AITile.HasTransportType(cur_tile, AITile.TRANSPORT_ROAD)) 
+			return this._max_cost;
 		/* If the new tile is a bridge / tunnel tile, check whether we came from the other
 		 * end of the bridge / tunnel or if we just entered the bridge / tunnel. */
 		local distance = AIMap.DistanceManhattan(cur_tile, prev_tile);
-		if (XTile.IsBridgeTunnel(cur_tile)) {
+		if (XTile.IsBridgeOrTunnel(cur_tile)) {
 			local other_end = XTile.GetBridgeTunnelEnd(cur_tile);
 			if (_CheckTunnelBridge(prev_tile, cur_tile)) {
 				//in
-				if (AITunnel.IsTunnelTile(cur_tile)) return shape;
-				return shape + _base_shape;
-			} else {
-				if (AITunnel.IsTunnelTile(cur_tile)) {
-					local next = XTile.NextTile(other_end, cur_tile);
+				cost += distance * this._cost_tile;
+				if (AIBridge.IsBridgeTile(cur_tile)) {
+					cost += this._GetBridgeNumSlopes(cur_tile, prev_tile) * this._cost_slope;
 				}
+			} else {
+				//out
+				cost += this._cost_tile;
 			}
 			/* If the two tiles are more then 1 tile apart, the pathfinder wants a bridge or tunnel
 			* to be build. It isn't an existing bridge / tunnel, as that case is already handled. */
 		} else if (distance > 1) {
-			local ret = _base_shape;
 			/* Check if we should build a bridge or a tunnel. */
 			if (AITunnel.GetOtherTunnelEnd(cur_tile) == prev_tile) {
-				ret += _base_shape / 5;
+				cost += distance * (this._cost_tile + this._cost_tunnel_per_tile);
 			} else {
-				ret += _base_shape * 1.5;
+				cost += distance * (this._cost_tile + this._cost_bridge_per_tile);
+				cost += this._GetBridgeNumSlopes(cur_tile, prev_tile) * this._cost_slope;
 			}
-			return shape + ret * distance;
 		} else {
+			
+			/* Finally, it can be just a single tile. */
+			cost += this._cost_tile;
+			
 			/* Check if the new tile is a high cost tile.*/
 			if (AITile.IsCoastTile(cur_tile) /*||
                     AITile.IsFarmTile(cur_tile) ||
@@ -193,13 +201,28 @@ class Road_PF extends Road_PT
                     AITile.IsDesertTile(cur_tile) ||
                     AITile.IsSnowTile(cur_tile)*/
 			   ) {
-				shape += _base_shape;
+				cost += this._cost_coast;
 			}
-			local pprev_tile = parn.GetParent() ? parn.GetParent().GetTile() : null;
-			if (pprev_tile) {
-				if (!XTile.IsStraight(pprev_tile, cur_tile)) shape += _base_shape;
+		
+			if (path.GetParent() != null && (prev_tile - path.GetParent().GetTile()) != (cur_tile - prev_tile) &&
+			AIMap.DistanceManhattan(path.GetParent().GetTile(), prev_tile) == 1) {
+				cost += this._cost_turn;
 			}
 		}
-		return shape;
+		
+		/* Check if the last tile was sloped. */
+		if (path.GetParent() != null && !AIBridge.IsBridgeTile(prev_tile) && !AITunnel.IsTunnelTile(prev_tile) &&
+				this._IsSlopedRoad(path.GetParent().GetTile(), prev_tile, cur_tile)) {
+			cost += this._cost_slope;
+		}
+		return path.GetCost() + cost;
 	}
+		
+	function _Estimate(cur_tile) {
+		local min_cost = this._max_cost;
+		foreach(tile in this._na_goals) {
+			min_cost = min(min_cost, AIMap.DistanceManhattan(tile, cur_tile) * this._cost_tile);
+		}
+		return (min_cost * this._estimate_multiplier).tointeger();
+	}	
 }

@@ -23,10 +23,19 @@ class AyStar extends Base
 	_na_goals = null;				///< The array of non array goals.
 	_running = null;				///< The state of pathfinder.
 	_accountant = null;				///< The AIAccounting instance.
-	_base_shape = null;				///< The base of shape value
 	_max_bridge_length = null;		///< The maximum length of a bridge that will be build.
 	_max_tunnel_length = null;		///< The maximum length of a tunnel that will be build.
 
+	//Cost-ing
+	_max_cost = null;              ///< The maximum cost for a route.
+	_cost_tile = null;             ///< The cost for a single tile.
+	_cost_no_existing_road = null; ///< The cost that is added to _cost_tile if no road exists yet.
+	_cost_turn = null;             ///< The cost that is added to _cost_tile if the direction changes.
+	_cost_slope = null;            ///< The extra cost if a road tile is sloped.
+	_cost_bridge_per_tile = null;  ///< The cost per tile of a new bridge, this is added to _cost_tile.
+	_cost_tunnel_per_tile = null;  ///< The cost per tile of a new tunnel, this is added to _cost_tile.
+	_cost_coast = null;            ///< The extra cost for a coast tile.
+	_cost_crossing = null;         ///< The extra cost for crossing railway track.
 	/**
 	* Aystar Constructor
 	* @param name Name of inheritance
@@ -38,8 +47,17 @@ class AyStar extends Base
 		_max_tunnel_length = 20;
 		_running = false;
 		_estimate_multiplier = 1;
-		_base_shape = 100;
 		_max_len = 0;
+		
+		this._max_cost = 10000000;
+		this._cost_tile = 100;
+		this._cost_no_existing_road = 40;
+		this._cost_turn = 100;
+		this._cost_slope = 200;
+		this._cost_bridge_per_tile = 150;
+		this._cost_tunnel_per_tile = 120;
+		this._cost_coast = 20;
+		this._cost_crossing = 500;
 	}
 
 	/**
@@ -116,7 +134,7 @@ class AyStar extends Base
 	 * @return true if [current_tile => new_tile => other_end b/t] is straight forward.
 	 */
 	function _CheckTunnelBridge(current_tile, new_tile) {
-		if (!XTile.IsBridgeTunnel(new_tile)) return false;
+		if (!XTile.IsBridgeOrTunnel(new_tile)) return false;
 		local other_end = XTile.GetBridgeTunnelEnd(new_tile);
 		return current_tile == XTile.NextTile(other_end, new_tile);
 	}
@@ -162,11 +180,11 @@ class AyStar extends Base
 		}
 		
 		Info("original max len:", _max_len);
-
+		/*
 		if (_max_len > 100) _estimate_multiplier += 0.5;
 		if (_max_len > 150) _estimate_multiplier += 0.5;
 		if (_max_len > 200) _estimate_multiplier += 0.5;
-
+		*/
 		Info("calculated multiplier:", _estimate_multiplier);
 		Info("Opening tile", _open.Count());
 		_running = true;
@@ -227,7 +245,7 @@ class AyStar extends Base
 							if (node[0] == goal[1]) {
 								Info("path finding succeed");
 								Reset();
-								return path;
+								return this._PathOfNode(path, [goal[1], 0, 0]);
 							}
 						}
 						continue;
@@ -260,12 +278,62 @@ class AyStar extends Base
 	
 	function _PathOfNode(path, node) {
 		/* Calculate the new paths */
-		local new_path = AyPath(path, node[0], node[1], node[2]);
-		new_path._shape = (path ? path._shape : 0) + ShapeIt(new_path);
+		local new_path = AyPath(path, node[0], node[1], node[2], this._Cost(path, node[0], node[1]));
 		return new_path;
 	}
 
 	function _Insert(path) {
-		_open.Insert(path, _Estimate(path.GetTile()) + path._shape);
+		_open.Insert(path, _Estimate(path.GetTile()) + path.GetCost());
 	}
+	
+	function _IsSlopedRoad(start, middle, end)
+	{
+		local NW = 0; //Set to true if we want to build a road to / from the north-west
+		local NE = 0; //Set to true if we want to build a road to / from the north-east
+		local SW = 0; //Set to true if we want to build a road to / from the south-west
+		local SE = 0; //Set to true if we want to build a road to / from the south-east
+	
+		if (middle - AIMap.GetMapSizeX() == start || middle - AIMap.GetMapSizeX() == end) NW = 1;
+		if (middle - 1 == start || middle - 1 == end) NE = 1;
+		if (middle + AIMap.GetMapSizeX() == start || middle + AIMap.GetMapSizeX() == end) SE = 1;
+		if (middle + 1 == start || middle + 1 == end) SW = 1;
+	
+		/* If there is a turn in the current tile, it can't be sloped. */
+		if ((NW || SE) && (NE || SW)) return false;
+	
+		local slope = AITile.GetSlope(middle);
+		/* A road on a steep slope is always sloped. */
+		if (AITile.IsSteepSlope(slope)) return true;
+	
+		/* If only one corner is raised, the road is sloped. */
+		if (slope == AITile.SLOPE_N || slope == AITile.SLOPE_W) return true;
+		if (slope == AITile.SLOPE_S || slope == AITile.SLOPE_E) return true;
+	
+		if (NW && (slope == AITile.SLOPE_NW || slope == AITile.SLOPE_SE)) return true;
+		if (NE && (slope == AITile.SLOPE_NE || slope == AITile.SLOPE_SW)) return true;
+	
+		return false;
+	}
+	
+	function _GetBridgeNumSlopes(end_a, end_b)
+	{
+		local slopes = 0;
+		local direction = (end_b - end_a) / AIMap.DistanceManhattan(end_a, end_b);
+		local slope = AITile.GetSlope(end_a);
+		if (!((slope == AITile.SLOPE_NE && direction == 1) || (slope == AITile.SLOPE_SE && direction == -AIMap.GetMapSizeX()) ||
+			(slope == AITile.SLOPE_SW && direction == -1) || (slope == AITile.SLOPE_NW && direction == AIMap.GetMapSizeX()) ||
+			 slope == AITile.SLOPE_N || slope == AITile.SLOPE_E || slope == AITile.SLOPE_S || slope == AITile.SLOPE_W)) {
+			slopes++;
+		}
+	
+		local slope = AITile.GetSlope(end_b);
+		direction = -direction;
+		if (!((slope == AITile.SLOPE_NE && direction == 1) || (slope == AITile.SLOPE_SE && direction == -AIMap.GetMapSizeX()) ||
+			(slope == AITile.SLOPE_SW && direction == -1) || (slope == AITile.SLOPE_NW && direction == AIMap.GetMapSizeX()) ||
+			 slope == AITile.SLOPE_N || slope == AITile.SLOPE_E || slope == AITile.SLOPE_S || slope == AITile.SLOPE_W)) {
+			slopes++;
+		}
+		return slopes;
+	}
+	
 };

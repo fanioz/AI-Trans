@@ -540,7 +540,7 @@ class XTile
 		return -1;
 	}
 
-	function IsBridgeTunnel(tile) {
+	function IsBridgeOrTunnel(tile) {
 		return (AIBridge.IsBridgeTile(tile) || AITunnel.IsTunnelTile(tile));
 	}
 
@@ -561,7 +561,7 @@ class XTile
 		/* path == null means this is the first node of a path, so the cost is 0. */
 		if (path == null) return 0;
 		if (!AITile.HasTransportType(new_tile, trans_type)) return self._max_cost;
-		return path.GetCost() + 1;
+		return path.GetBuildCost() + 1;
 	}
 
 	/**

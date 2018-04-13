@@ -41,39 +41,38 @@ class Road_PT extends AyStar
 		assert(sources.len());
 		assert(goals.len());
 
-		local dist = 0;
 		local nsources = [];
 
 		foreach(node in sources) {
 			nsources.push([node, 0xFF, 0]);
-			dist = max(AIMap.DistanceManhattan(node, goals[0]), dist);
 		}
 
-		_max_len = (20 + 1.2 * dist).tointeger();
-		Info("max len:", _max_len);
-
 		Initialize(nsources, goals, ignored_tiles);
+		this._max_len = (20 + 1.2 * this._max_len).tointeger();
+		Info("Add.max len:", this._max_len);
 	}
 
 	function _Neighbours(path, cur_node) {
 		if (!AIRoad.HasRoadType(cur_node, AIRoad.GetCurrentRoadType())) return [];
-		if (path.GetLength() > (_max_len * 1.5)) return [];
+		if (path.GetLength() > this._max_len) return [];
 
 		local tiles = [];
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
-		if (XTile.IsBridgeTunnel(cur_node)) {
+		if (XTile.IsBridgeOrTunnel(cur_node)) {
 			local other_end = XTile.GetBridgeTunnelEnd(cur_node);
-			if (prev_tile && _CheckTunnelBridge(prev_tile, cur_node)) {
-				//in
-				local cost = 0; // XTile.BridgeCost(this, path, cur_node);
-				tiles.push([other_end, _GetDirection(prev_tile, cur_node, true) << 4, cost]);
-			} else {
-				//out
-				local next = XTile.NextTile(other_end, cur_node);
-				if (AIRoad.AreRoadTilesConnected(next, cur_node)) {
-					tiles.push([next, _GetDirection(cur_node, next, false), 0]);
-				}
+			local next = XTile.NextTile(other_end, cur_node);
+			if (AIRoad.AreRoadTilesConnected(cur_node, next)) {
+				tiles.push([next, this._GetDirection(cur_node, next, false), 0]);
+			}
+			/* The other end of the bridge / tunnel is a neighbour. Exist thus 0 cost*/
+			tiles.push([other_end, this._GetDirection(next, cur_node, true) << 4, 0]);
+		} else if (prev_tile && AIMap.DistanceManhattan(cur_node, prev_tile) > 1) {
+			/* If the two tiles are more then 1 tile apart, the pathfinder wants a bridge or tunnel
+			 * to be build. It isn't an existing bridge / tunnel, as that case is already handled. */
+			local next = XTile.NextTile(prev_tile, cur_node);
+			if (AIRoad.AreRoadTilesConnected(next, cur_node)) {
+				tiles.push([next, _GetDirection(cur_node, next, false), 0]);
 			}
 		} else {
 			foreach(tile in XTile.Adjacent(cur_node)) {
@@ -81,7 +80,7 @@ class Road_PT extends AyStar
 					tiles.push([tile, _GetDirection(cur_node, tile, false), 0]);
 				} else if (_CheckTunnelBridge(cur_node, tile)) {
 					if (AIRoad.AreRoadTilesConnected(cur_node, tile)) {
-						n_tiles.push([tile, _GetDirection(cur_node, tile, false), 0]);
+						tiles.push([tile, _GetDirection(cur_node, tile, false), 0]);
 					}
 				}
 			}
@@ -89,8 +88,8 @@ class Road_PT extends AyStar
 		return tiles;
 	}
 	
-	function ShapeIt(path) {
+	function _Cost(path, new_tile, new_direction) {
 		if ((path == null)  || (path.Count() == 0)) return 1;
-		return _base_shape;
+		return path.GetCost() + 1;
 	}
 }

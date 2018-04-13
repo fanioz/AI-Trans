@@ -60,7 +60,7 @@ class XMarine
 			if (head == tile) continue;
 			local path = XMarine.FindPath([head], [tile], restriction.ItemsToArray());
 			if (path == null) continue;
-			local ecost = AIMarine.GetBuildCost(AIMarine.BT_DOCK) + path.GetCost();
+			local ecost = AIMarine.GetBuildCost(AIMarine.BT_DOCK) + path.GetBuildCost();
 			Info("est. Cost", ecost);
 			if (!Money.Get(ecost)) continue;
 			if (AIStation.IsValidStation(XMarine.BuildDock(body))) {

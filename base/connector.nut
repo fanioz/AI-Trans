@@ -209,7 +209,7 @@ class Connector extends DailyTask
 			return true;
 		}
 		if (typeof self._Line == "instance") {
-			self._RouteCost = _Line.GetCost();
+			self._RouteCost = _Line.GetBuildCost();
 			self._Route_Found = true;
 			Assist.RemoveAllSigns();
 		} else if (self._Line == null) {
