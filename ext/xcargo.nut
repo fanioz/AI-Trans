@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -136,7 +136,7 @@ class XCargo
 
 	function GetCargoIncome(cargo_type, distance, days_in_transit) {
 		local ret = AICargo.GetCargoIncome(cargo_type, distance, days_in_transit);
-		if (cargo_type == XCargo.Pax_ID) ret *= 5;
+		if (cargo_type == XCargo.Pax_ID) ret *= 1.5;
 		//if (cargo_type == XCargo.Mail_ID) ret *= 1.2;
 		return ret.tointeger();
 	}
