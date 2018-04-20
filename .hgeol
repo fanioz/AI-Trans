@@ -1,7 +1,0 @@
-[repository]
-native = LF
-
-[patterns]
-**.nut = native
-Makefile* = LF
-**.sh  = LF
