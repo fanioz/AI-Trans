@@ -92,4 +92,16 @@ class IndustryManager extends Servable
 		list.Valuate(AIMap.DistanceManhattan, GetLocation());
 		return list;
 	}
+	
+	function GetAreaForRailStation(cargo, is_source) {
+		local rad = AIStation.GetCoverageRadius(AIStation.STATION_TRAIN);
+		local list = CLList((is_source ? AITileList_IndustryProducing : AITileList_IndustryAccepting)(GetID(), rad));
+		local fn = AITile[is_source ? "GetCargoProduction" : "GetCargoAcceptance"];
+		list.Valuate(AITile.GetMinHeight);
+		list.KeepAboveValue(0);
+		list.Valuate(AITile.IsBuildable);
+		list.KeepValue(1);
+		list.Valuate(fn, cargo, 1, 1, rad);
+		return list;
+	}
 }
