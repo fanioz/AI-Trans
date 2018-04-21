@@ -46,4 +46,35 @@ class XRail
 			return AIRail.RAILTRACK_SW_SE;
 		}
 	}
+	
+	function BuildRail(path) {
+		local prev = null;
+		local prevprev = null;
+		while (path != null) {
+		  if (prevprev != null) {
+		    if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
+		      if (AITunnel.GetOtherTunnelEnd(prev) == path.GetTile()) {
+		        AITunnel.BuildTunnel(AIVehicle.VT_RAIL, prev);
+		      } else {
+		        local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), prev) + 1);
+		        bridge_list.Valuate(AIBridge.GetMaxSpeed);
+		        bridge_list.Sort(CLList.SORT_BY_VALUE, false);
+		        AIBridge.BuildBridge(AIVehicle.VT_RAIL, bridge_list.Begin(), prev, path.GetTile());
+		      }
+		      prevprev = prev;
+		      prev = path.GetTile();
+		      path = path.GetParent();
+		    } else {
+		      AIRail.BuildRail(prevprev, prev, path.GetTile());
+		    }
+		  }
+		  if (path != null) {
+		    prevprev = prev;
+
+		    prev = path.GetTile();
+		    path = path.GetParent();
+		  }
+		}
+		return true;
+	}
 }
