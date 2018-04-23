@@ -134,6 +134,23 @@ class Servable extends CIDLocation
 		return -1;
 	}
 
+	function GetExistingRailStop(railtype, cargo, is_source) {
+		local stf = GetStations(AIStation.STATION_TRAIN);
+		Info("found existing", stf.Count());
+		foreach(id, tile in stf) {
+			local station = XStation.GetManager(id, AIStation.STATION_TRAIN);
+			if (!station.HasRailTrack(railtype)) continue;
+			if (is_source) {
+				if (station.GetProduction(cargo) < 10) continue;
+			} else {
+				if (station.GetAcceptance(cargo) < 10) continue;
+			}
+			if (station.GetOccupancy() > 99) continue;
+			return station.GetID();
+		}
+		return -1;
+	}
+	
 	function AllowTryStation(s_type) {
 		if (!Money.Get(Money.Inflated(10000))) {
 			Warn("we haven't enough money");
