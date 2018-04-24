@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -13,7 +13,6 @@
 
 try
 {
-//	import("queue.Fibonacci_Heap", "FibonacciHeap_2", 2);
 	import("AILib.Common", "CLCommon", 2);
 	import("AILib.List", "CLList", 3);
 	import("AILib.String", "CLString", 2);
@@ -64,6 +63,7 @@ require("manager/industrymanager.nut");
 require("manager/airconnector.nut");
 require("manager/roadconnector.nut");
 require("manager/waterconnector.nut");
+require("manager/railfirstconnector.nut");
 
 /* extension */
 require("ext/xairport.nut");

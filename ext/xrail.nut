@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -76,5 +76,42 @@ class XRail
 		  }
 		}
 		return true;
+	}
+	
+	function BuildDepotOnRail(path) {
+		local p1 = null;
+		local p2 = null;
+		local p3 = null;
+		local p4 = null;
+		local p5 = null;
+		local count = path.len();
+		while (count > 0 ) {
+			if (p5 != null) {
+				if (XTile.IsStraight(p5, p3) && XTile.IsStraight(p4, p2) && XTile.IsStraight(p3, p1)) {
+					foreach (body in XTile.Adjacent(p3)) {
+						if (AITile.GetMaxHeight(body) != AITile.GetMaxHeight(p3)) continue;
+						local exist = false;
+						if (AIRail.IsRailDepotTile(body)) {
+							if (AIRail.GetRailDepotFrontTile(body) != p3) continue;
+							exist = true;
+						} else {
+							local test = AITestMode();
+							if (!AIRail.BuildRailDepot(body, p3)) continue;
+						}
+						//build entry
+						if (!AIRail.AreTilesConnected(p2, p3, body) && !AIRail.BuildRail(p2, p3, body)) continue;
+						if (!AIRail.AreTilesConnected(p4, p3, body) && !AIRail.BuildRail(p4, p3, body)) continue;
+						if (exist || AIRail.BuildRailDepot(body, p3)) return body;
+					}
+				}
+			}
+			p5 = p4;
+			p4 = p3;
+			p3 = p2;
+			p2 = p1;
+			p1 = path[count-1];
+			count--;
+		}
+		return -1;
 	}
 }

@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -18,6 +18,7 @@ class VehicleMaker extends Infrastructure
 	_station_b = null;
 	_m_id = null;
 	_wgn_id = null;
+	_platformLength = null;
 
 	MainEngine = null; /// engines without specific cargo
 	CargoEngine = null; /// engines with specific cargo
@@ -30,6 +31,8 @@ class VehicleMaker extends Infrastructure
 		Reset();
 	}
 
+	function GetPlatformLength() { return this._platformLength; }
+	function SetPlatformLength(a) { this._platformLength = _platformLength; }
 	function GetDepotA() { return _depot_a; }
 	function SetDepotA(a) { _depot_a = a; }
 	function GetDepotB() { return _depot_b; }
@@ -141,6 +144,7 @@ class VehicleMaker extends Infrastructure
 		_station_b = -1;
 		_wgn_id = -1;
 		_m_id = -1;
+		this._platformLength = 4;
 	}
 
 	function HaveEngineFor(et) {
@@ -203,54 +207,50 @@ class VehicleMaker extends Infrastructure
 		return CargoEngine.CountIfKeepValue(0) < 1;
 	}
 
-	function AllowLoco(loco_id, loco_price, wgn_price, platform_len) {
-		local stationlen = platform_len * 16;
-		local wgn_len = AIVehicle.GetLength(GetWagonID());
-		local loco_len = AIVehicle.GetLength(loco_id);
-		local wgn_cnt = ((stationlen - loco_len) / wgn_len).tointeger();
-		local total_price = wgn_price * wgn_cnt + loco_price;
-		if (2 * total_price > Money.Balance()) return 0;
-		return wgn_cnt;
-	}
-
 	function TryBuildRail() {
-		local dbg = Storage();
-		dbg.SetName("Vehicle.Rail.Build");
-		local wgn_price, wgn_count;
-		while (!IsValidVehicle(GetWagonID())) {
+		local wgn_price, wgn_count, wagon, loco_price;
+		while (!AIVehicle.IsValidVehicle(GetWagonID())) {
 			if (CargoEngine.IsEmpty()) {
-				dbg.Info("couldn't find available wagon");
-				AIVehicle.SellVehicle(GetID());
+				Info("couldn't find available wagon");
+				AIVehicle.SellVehicle(GetVehicle());
 				return false;
 			}
-			local wagon = CargoEngine.Pop();
-			wgn_price = AIEngine.GetPrice(wagon);
-			SetWagonID(BuildVehicle(GetDepotA(), wagon));
+			wagon = CargoEngine.Pop();
+			local cost = AIAccounting();
+			cost.ResetCosts();
+			SetWagonID(AIVehicle.BuildVehicle(GetDepotA(), wagon));
 			if (AIEngine.CanRefitCargo(wagon, GetCargo())) AIVehicle.RefitVehicle(GetWagonID(), GetCargo());
+			wgn_price = cost.GetCosts();
 			if (XCargo.OfVehicle(GetWagonID()) != GetCargo()) AIVehicle.SellVehicle(GetWagonID());
 		}
-
+		
 		while (!IsBuilt()) {
 			if (MainEngine.IsEmpty()) {
-				dbg.Info("couldn't find available loco");
+				Info("couldn't find available loco");
 				AIVehicle.SellVehicle(GetWagonID());
 				return false;
 			}
 			local eng = MainEngine.Pop();
-			SetID(BuildVehicle(GetDepotA(), eng));
-			if (AIEngine.CanRefitCargo(eng, GetCargo())) AIVehicle.RefitVehicle(GetID(), GetCargo());
-			if (!SetOrder(a, b)) AIVehicle.SellVehicle(GetID());
+			SetVehicle(Debug.ResultOf(AIVehicle.BuildVehicle(GetDepotA(), eng), "build train got ID:"));
+			local vhcLength = AIVehicle.GetLength(GetVehicle());
+			while (vhcLength < 16 * this.GetPlatformLength()) {
+				Money.Get(wgn_price);
+				SetWagonID(AIVehicle.BuildVehicle(GetDepotA(), wagon));
+				if (AIVehicle.GetLength(GetVehicle()) == vhcLength) {
+					//wagon not attached
+					if (AIVehicle.IsValidVehicle(GetWagonID())) {
+						AIVehicle.MoveWagon(GetWagonID(), 0, GetVehicle(), 0);
+					} else {
+						XVehicle.Sell(v);
+						return true;
+					}
+				}
+				vhcLength = AIVehicle.GetLength(GetVehicle());
+			}
+			if (AIEngine.CanRefitCargo(eng, GetCargo())) AIVehicle.RefitVehicle(GetVehicle(), GetCargo());
+			if (!this.SetMainOrder()) XVehicle.Sell(GetVehicle());
 		}
-
-		wgn_count = AllowLoco(GetID(), AIEngine.GetPrice(eng), wgn_price);
-		if (wgn_count == 0) {
-			AIVehicle.SellVehicle(GetID());
-			return true;
-		}
-		if (!AIVehicle.MoveWagon(GetWagonID(), 0, GetID(), 0)) {
-			AIVehicle.SellVehicle(GetWagonID());
-			return true;
-		}
+		
 		return false;
 	}
 
