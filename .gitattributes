@@ -1,0 +1,13 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# Declare files that will always have CRLF line endings on checkout.
+*.nut text eol=crlf
+*.txt text eol=crlf
+*.bat text eol=crlf
+*.sh text eol=crlf
+
+.gitattributes export-ignore  
+.gitignore export-ignore
+README.md export-ignore
+bundle.ps1  export-ignore
