@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -44,6 +44,7 @@ class Connector extends DailyTask
 	_Mgr_B = null;
 	_S_Type = null;
 	_Possible_Sources = null;
+	_Possible_Dests = null;
 
 	constructor(name, key) {
 		::DailyTask.constructor(name, key);
@@ -89,6 +90,7 @@ class Connector extends DailyTask
 		_Mgr_B = null;
 
 		_Possible_Sources = {};
+		_Possible_Dests = {};
 	}
 	
 	/**
@@ -172,7 +174,11 @@ class Connector extends DailyTask
 		self._VhcManager.SetStationB(self._D_Station);
 		self._VhcManager.SetDepotA(self._S_Depot);
 		self._VhcManager.SetDepotB(self._D_Depot);
-		self._VhcManager.TryBuild();
+		if (self._V_Type == AIVehicle.VT_RAIL) {
+			self._VhcManager.TryBuildRail();
+		} else {
+			self._VhcManager.TryBuild();
+		}
 		if (self._VhcManager.IsBuilt()) {
 			self._VhcManager.SetNextOrder();
 			self._VhcManager.StartCloned();

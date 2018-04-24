@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -36,6 +36,7 @@ class Service
 		TaskManager.New(RoadConnector());
 		TaskManager.New(AirConnector());
 		TaskManager.New(WaterConnector());
+		TaskManager.New(RailFirstConnector());
 	}
 
 	function CreateKey(id1, id2, cargo, vt) {
