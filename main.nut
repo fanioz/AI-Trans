@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -21,9 +21,6 @@ class Trans extends Base
 	_Vehicles = {};
 	_No_Profit_Vhc = CLList();
 	_Subsidies = CLList();
-	_Inds_Manager = {};
-	_Town_Manager = {};
-	_Station_Tables = {};
 	dataIntegrity = null;
 
 	constructor() {

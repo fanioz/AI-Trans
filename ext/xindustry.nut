@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -12,6 +12,8 @@
  */
 class XIndustry
 {
+	Managers = {};
+	
 	function GetID(location, is_source, cargo) {
 		local list = CLList((is_source ? AIIndustryList_CargoProducing : AIIndustryList_CargoAccepting)(cargo));
 		list.Valuate(AIIndustry.GetAmountOfStationsAround);
@@ -32,11 +34,11 @@ class XIndustry
 	}
 
 	function GetManager(id) {
-		if (!My._Inds_Manager.rawin(id)) {
-			My._Inds_Manager.rawset(id, IndustryManager(id));
-			My._Inds_Manager[id].RefreshStations();
+		if (!XIndustry.Managers.rawin(id)) {
+			XIndustry.Managers.rawset(id, IndustryManager(id));
+			XIndustry.Managers[id].RefreshStations();
 		}
-		return My._Inds_Manager[id];
+		return XIndustry.Managers[id];
 	}
 
 	function GetDest(industryid) {

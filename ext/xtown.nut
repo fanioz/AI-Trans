@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -12,12 +12,13 @@
  */
 class XTown
 {
+	Managers = {};
 	function GetManager(id) {
-		if (!My._Town_Manager.rawin(id)) {
-			My._Town_Manager.rawset(id, TownManager(id));
-			My._Town_Manager[id].RefreshStations();
+		if (!XTown.Managers.rawin(id)) {
+			XTown.Managers.rawset(id, TownManager(id));
+			XTown.Managers[id].RefreshStations();
 		}
-		return My._Town_Manager[id];
+		return XTown.Managers[id];
 	}
 
 	function GetID(location) {

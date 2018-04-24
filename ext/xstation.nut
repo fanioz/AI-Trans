@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -12,6 +12,7 @@
  */
 class XStation
 {
+	Managers = {};
 	/**
 	 * Get the Manager for a station. If there is no manager yet, create one.
 	 * @param station_id The StationID to get the Station Manager for.
@@ -19,7 +20,7 @@ class XStation
 	 */
 	function GetManager(station_id, s_type) {
 		assert(AIStation.IsValidStation(station_id));
-		foreach(st, cls in My._Station_Tables) {
+		foreach(st, cls in XStation.Managers) {
 			if (cls.GetID() == station_id && cls.GetSType() == s_type) {
 				cls.Refresh();
 				return cls;
@@ -27,7 +28,7 @@ class XStation
 		}
 		local cls = StationManager(station_id, s_type);
 		cls.Refresh();
-		My._Station_Tables[cls.GetLocation()] <- cls;
+		XStation.Managers[cls.GetLocation()] <- cls;
 		return cls;
 	}
 
