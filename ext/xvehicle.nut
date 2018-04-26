@@ -331,4 +331,205 @@ class XVehicle
 		if (XVehicle.IsShip(vhc_id)) return 1;
 		return XEngine.GetTrack(AIVehicle.GetEngineType(vhc_id));
 	}
+	
+	/**
+	* Get orders of vehicle in array
+	* structure
+	Stations = [{tile, pos},{tile, pos}]
+	Depots = [[tile, pos],[tile, pos]]
+	Waypoints = [[tile, pos],[tile, pos],..]
+	StopLocations = [[stop, pos],..]
+	Flags = [[flags, pos],..]
+	Conditional =[
+	{	conditional = pos
+		jumpTo = tile
+		condition = condition
+		cmpFunction = function
+		cmpValue = value
+	}]
+	*/
+	function GetOrders(vhc_id) {
+		local t = { Stations = [], Depots = [], Waypoints = [], StopLocations = [], Flags = [], Conditional =[]};
+		for (local c = 0; c < AIOrder.GetOrderCount(vhc_id); c++) {
+			local dest = {Tile = AIOrder.GetOrderDestination(vhc_id, c), Pos = c};
+			if (AIOrder.IsGotoStationOrder(vhc_id, c)) {
+				t.Stations.push(dest);
+				t.StopLocations.push({Stop = AIOrder.GetStopLocation(vhc_id, c), Pos = c});
+				//Info("station pos:", dest.Pos, "dest:", dest.Tile, "flags:", AIOrder.GetOrderFlags(vhc_id, c));
+			}
+			if (AIOrder.IsGotoDepotOrder(vhc_id, c)) {
+				t.Depots.push(dest);
+			}
+			if (AIOrder.IsGotoWaypointOrder(vhc_id, c)) {
+				t.Waypoints.push(dest);
+			}
+			t.Flags.push({Flags = AIOrder.GetOrderFlags(vhc_id, c), Pos = c });
+			if (AIOrder.IsConditionalOrder(vhc_id, c)) {
+				t.Conditional.push({ Pos = c,
+					JumpTo = AIOrder.GetOrderJumpTo(vhc_id, c),
+					Condition = AIOrder.GetOrderCondition(vhc_id, c),
+					CmpFunction = AIOrder.GetOrderCompareFunction(vhc_id, c),
+					CmpValue = AIOrder.GetOrderCompareValue(vhc_id, c)
+				});
+			}
+		}
+		t.Total <- AIOrder.GetOrderCount(vhc_id);
+		return t;
+	}
+	/**
+	* @param orders use orders returned from GetOrders()
+	*/
+	function SetOrders(vhc_id, orders) {
+		local conditionalOrd = [];
+		local neworder = array(orders.Total, {});
+		//new pos
+		while (orders.Stations.len() > 0) {
+			local item = orders.Stations.pop();
+			neworder[item.Pos] = { Tile = item.Tile};
+			//Info("station pos:", item.Pos, "tile:", item.Tile);
+		}
+		while (orders.Depots.len() > 0) {
+			local item = orders.Depots.pop();
+			neworder[item.Pos] = { Tile = item.Tile};
+			//Info("depot pos:", item.Pos, "tile:", item.Tile);
+		}
+		while (orders.Waypoints.len() > 0) {
+			local item = orders.Waypoints.pop();
+			neworder[item.Pos] = { Tile = item.Tile};
+			//Info("wp pos:", item.Pos, "tile:", item.Tile);
+		}
+		while (orders.Conditional.len() > 0) {
+			local item = orders.Conditional.pop();
+			neworder[item.Pos] = {
+				conditional = item.Pos,
+				jumpTo = item.JumpTo,
+				condition = item.Condition,
+				cmpFunction = item.CmpFunction,
+				cmpValue = item.CmpValue
+			};
+		}
+		//existing pos
+		while (orders.StopLocations.len() > 0) {
+			local item = orders.StopLocations.pop();
+			neworder[item.Pos].stopLocation <- item.Stop;
+		}
+		while (orders.Flags.len() > 0) {
+			local item = orders.Flags.pop();
+			neworder[item.Pos].flags <- item.Flags;
+			//Info("flag pos:", item.Pos, "flag:", item.Flags);
+		}
+		
+		AIController.Sleep(1);
+		while(AIOrder.GetOrderCount(vhc_id) > 0) AIOrder.RemoveOrder(vhc_id, 0);
+		while (neworder.len() > 0) {
+			local t = neworder.pop();
+			if (t.rawin("conditional")) {
+				conditionalOrd.push(t);
+				continue;
+			}
+			local dest = -1;
+			local flags = AIOrder.OF_NONE;
+			if (t.rawin("Tile")) dest = t.Tile;
+			if (t.rawin("flags")) flags = t.flags;
+			//Info("Setting dest:", dest, "flags:", flags);
+			//Debug.Echo(AIOrder.AreOrderFlagsValid(dest, flags),"flag valid");
+			Debug.Echo(AIOrder.InsertOrder(vhc_id, 0, dest, flags),"re-Setting order");
+			if (t.rawin("stopLocation")) AIOrder.SetStopLocation(vhc_id, 0, t.stopLocation);
+		}
+		
+		while (conditionalOrd.len() > 0) {
+			local t = conditionalOrd.pop();
+			AIOrder.InsertConditionalOrder(vhc_id, t.conditional, t.jumpTo);
+			AIOrder.SetOrderCondition(vhc_id, t.conditional, t.condition);
+			AIOrder.SetOrderCompareFunction(vhc_id, t.conditional, t.cmpFunction);
+			AIOrder.SetOrderCompareValue(vhc_id, t.conditional, t.cmpValue);
+		}
+	}
+	
+	/**
+	Read route from a vehicle
+	@return true if route is readable
+	*/
+	function ReadRoute(idx) {
+ 		if (!AIVehicle.IsValidVehicle(idx)) {
+ 			Warn(idx, "is not a valid vehicle");
+ 			return;
+ 		}
+ 		local tabel = {};
+ 		tabel.Stations <- [];
+		tabel.Depots <- [];
+		tabel.Waypoints <- []; ///might not needed
+		for (local c=0;c<AIOrder.GetOrderCount(idx);c++) {
+			local dest = AIOrder.GetOrderDestination(idx, c);
+			if (AIOrder.IsGotoStationOrder(idx, c))
+				tabel.Stations.push(dest);
+			if (AIOrder.IsGotoDepotOrder(idx, c))
+				tabel.Depots.push(dest);
+			if (AIOrder.IsGotoWaypointOrder(idx, c)) 
+				tabel.Waypoints.push(dest);
+		}
+		if (tabel.Stations.len()<1) {
+			Warn(AIVehicle.GetName(idx), "stations stop less than 1");
+			return;
+		}
+		tabel.StationsID <- clone tabel.Stations;
+		for(local c=0;c<tabel.Stations.len();c++) {
+			tabel.StationsID[c] = AIStation.GetStationID(tabel.Stations[c]);
+			if (!AIStation.IsValidStation(tabel.StationsID[c])) {
+				Warn(AIVehicle.GetName(idx), "has an invalid station");
+				return;
+			}
+		}
+		tabel.Cargo <- XCargo.OfVehicle(idx);
+		tabel.IsTown <- [true, true];
+		tabel.ServID <- [-1, -1];
+		local src = [true, false];
+		local func = [AIIndustryList_CargoProducing, AIIndustryList_CargoAccepting];
+		for (local x=0;x<2;x++) {
+			local list = func[x](tabel.Cargo);
+			if (list.IsEmpty()) {
+				//from town
+				assert(XCargo.TownStd.HasItem(tabel.Cargo));
+				tabel.IsTown[x] = true;
+				tabel.ServID[x] = XTown.GetID(tabel.Stations[x]);
+				if (!AITown.IsValidTown(tabel.ServID[x])) {
+					Warn("Goto station name", AIStation.GetName(tabel.Stations[x]));
+					Warn("Capture screen at tile", CLString.Tile(tabel.Stations[x]));
+					//CRASH_CANT_DETECT_STATION_BELONG_TO();
+					return;
+				}
+			} else {
+				tabel.ServID[x] = XIndustry.GetID(tabel.Stations[x], src[x], tabel.Cargo);
+				if (AIIndustry.IsValidIndustry(tabel.ServID[x])) {
+					//from industry
+					tabel.IsTown[x] = false;
+				} else {
+					//might be town
+					if (XCargo.TownStd.HasItem(tabel.Cargo)) {
+						tabel.ServID[x] = XTown.GetID(tabel.Stations[x]);
+					} else {
+						tabel.ServID[x] = -1;
+					}
+					if (!AITown.IsValidTown(tabel.ServID[x])) {
+						//not both
+						Warn("Goto station name", AIStation.GetName(tabel.StationsID[x]));
+						Warn("Capture screen at tile", CLString.Tile(tabel.Stations[x]));
+						//CRASH_CANT_DETECT_STATION_BELONG_TO();
+						return;
+					}
+					tabel.IsTown[x] = true;
+				}
+			}
+		}
+		tabel.Key <- Service.CreateKey(tabel.ServID[0], tabel.ServID[1], tabel.Cargo, tabel.VhcType);
+		tabel.VhcCapacity <- AIVehicle.GetCapacity(idx, tabel.Cargo);
+		tabel.VhcType <- AIVehicle.GetVehicleType(idx);
+ 		tabel.VhcID <- idx;
+ 		tabel.Orders <- XVehicle.GetOrders(idx);
+ 		tabel.Engine <- AIVehicle.GetEngineType(idx);
+		tabel.MaxSpeed <- AIEngine.GetMaxSpeed(tabel.Engine);
+		tabel.StationType <- XStation.GetTipe(tabel.VhcType, tabel.Cargo);
+		tabel.Track <- XVehicle.GetTrack(idx);
+		return true;
+ 	}
 }
