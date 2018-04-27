@@ -14,18 +14,22 @@ class XIndustry
 {
 	Managers = {};
 	
-	function GetID(location, is_source, cargo) {
+	/**
+	@param locations - AITileListStationType
+	*/
+	function GetID(locations, is_source, cargo) {
 		local list = CLList((is_source ? AIIndustryList_CargoProducing : AIIndustryList_CargoAccepting)(cargo));
 		list.Valuate(AIIndustry.GetAmountOfStationsAround);
 		list.RemoveValue(0);
-		list.Valuate(function(id, loc) {return AIMap.DistanceMax(AIIndustry.GetLocation(id), loc);}, location);
-		list.RemoveAboveValue(10);
+		list.Valuate(function(id, loc) {return AIMap.DistanceMax(AIIndustry.GetLocation(id), loc);}, locations.Begin());
+		list.RemoveAboveValue(20);
 		list.SortValueAscending();
 		while (list.Count()) {
 			//print(list.GetValue(list.Peek()));
 			local id = list.Pop();
 			local industryTiles = (is_source ? AITileList_IndustryProducing:AITileList_IndustryAccepting)(id, 5);
-			if (industryTiles.HasItem(location)) return id;
+			industryTiles.KeepList(locations);
+			if (industryTiles.Count()>0) return id;
 		}
 		return -1;
 	}
