@@ -51,17 +51,13 @@ class XVehicle
 	}
 
 	/**
-	 * Try to restart a vehicle in depot
+	 * Try to run a stopped vehicle in depot
 	 * @param vhc_ID The ID of vehicle to handle
-	 * @return true only if can restart vehicle
+	 * @return true only if can run vehicle
 	 */
-	function Restart(vhc_ID) {
-		return Debug.Echo(
-				   (AIOrder.GetOrderCount(vhc_ID) == 4) &&
-				   (AIVehicle.GetReliability(vhc_ID) > 40) &&
-				   (!Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, 2), AIOrder.OF_STOP_IN_DEPOT)) &&
-				   (AIVehicle.GetState(vhc_ID) == AIVehicle.VS_IN_DEPOT) &&
-				   AIVehicle.StartStopVehicle(vhc_ID), "(re)Starting vehicle");
+	function Run(vhc_ID) {
+		return Debug.Resultof((AIVehicle.GetState(vhc_ID) == AIVehicle.VS_IN_DEPOT) && 
+			AIVehicle.StartStopVehicle(vhc_ID), "(re)Starting vehicle");
 	}
 
 	/**
@@ -153,13 +149,13 @@ class XVehicle
 			if (AIVehicle.IsValidVehicle(vhc)) {
 				Info("cloning succeed");
 				XVehicle.ResetFlag(vhc);
-				if (XVehicle.Restart(vhc)) return true;
+				if (XVehicle.Run(vhc)) return true;
 			}
 			Warn("starting clone failed", AIError.GetLastErrorString());
 			if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) {
 				if (!AIVehicle.IsStoppedInDepot(vhc_ID)) return false;
 				if (tbl.SourceIsProducing()) XVehicle.ResetFlag(vhc_ID);
-				XVehicle.Restart(vhc_ID);
+				XVehicle.Run(vhc_ID);
 			}
 			XVehicle.Sell(vhc);
 		}
@@ -209,7 +205,7 @@ class XVehicle
 			if (v_man.IsBuilt()) {
 				Info ("New vehicle", v_man.GetVehicle());
 				v_man.SetNextOrder();				
-				if (XVehicle.Restart(v_man.GetVehicle())) return true;
+				if (XVehicle.Run(v_man.GetVehicle())) return true;
 			}
 			AIVehicle.SellVehicle (v_man.GetVehicle());
 		}

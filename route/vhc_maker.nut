@@ -179,7 +179,7 @@ class VehicleMaker extends Infrastructure
 	function StartCloned() {
 		Info("Try to Start and Clone Vehicle");
 		local vhc = GetVehicle();
-		local built = Debug.ResultOf(XVehicle.Restart(vhc), "Starting first vehicle") ? 1 : 0;
+		local built = Debug.ResultOf(XVehicle.Run(vhc), "Starting first vehicle") ? 1 : 0;
 		if (XCargo.TownStd.HasItem(GetCargo())) {
 			local s_temp = GetStationA();
 			SetStationA(GetStationB());
@@ -197,7 +197,7 @@ class VehicleMaker extends Infrastructure
 			vhc = GetVehicle();
 		}
 		SetNextOrder();
-		built += Debug.ResultOf(XVehicle.Restart(vhc), "Starting cloned vehicle") ? 1 : 0;
+		built += Debug.ResultOf(XVehicle.Run(vhc), "Starting cloned vehicle") ? 1 : 0;
 		return Debug.Echo(built, "has been initially built");
 	}
 
