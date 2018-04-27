@@ -167,10 +167,19 @@ class XVehicle
 	 * Reset flag orders
 	*/
 	function ResetFlag(vhc) {
-		local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 1), AIOrder.OF_NO_LOAD);
-		Debug.ResultOf(AIOrder.SetOrderFlags(vhc, 1, flags), "loading flag re-set");
-		flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, 2), AIOrder.OF_STOP_IN_DEPOT) | AIOrder.OF_SERVICE_IF_NEEDED;
-		Debug.ResultOf(AIOrder.SetOrderFlags(vhc, 2, flags), "depot flag re-set");
+		for (local c = 0; c < AIOrder.GetOrderCount(vhc); c++) {
+			if (AIOrder.IsGotoStationOrder(vhc, c)) {
+				local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, c), AIOrder.OF_NO_LOAD);
+				Debug.ResultOf(AIOrder.SetOrderFlags(vhc, c, flags), "loading flag re-set");
+				break;
+			}
+		}
+		for (local c = 0; c < AIOrder.GetOrderCount(vhc); c++) {
+			if (AIOrder.IsGotoDepotOrder(vhc, c)) {
+				local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, c), AIOrder.OF_STOP_IN_DEPOT) | AIOrder.OF_SERVICE_IF_NEEDED;
+				Debug.ResultOf(AIOrder.SetOrderFlags(vhc, c, flags), "depot flag re-set");
+			}
+		}
 	}
 
 	/**
