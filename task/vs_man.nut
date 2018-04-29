@@ -48,9 +48,6 @@ class Task.Vehicle_Mgr extends DailyTask
 			if (age < 500) {
 				Warn(name, "is getting old");
 				XVehicle.TryToSend(idx);
-				if (XVehicle.IsRegistered(idx)) {
-					XVehicle.GetReplacement(My._Vehicles.rawget(idx));
-				}
 			}
 
 			//=============== un-profit vehicle
@@ -74,9 +71,6 @@ class Task.Vehicle_Mgr extends DailyTask
 					}
 					if (XVehicle.TryDuplicate(idx)) Info("duplicating succes");
 				}
-			} else if (AIOrder.GetOrderCount(idx) > 1) {
-				Info(name, "waiting for verification team");
-				continue;
 			}
 			Debug.Echo(XVehicle.Sell(idx), "would sell", name);
 			Money.Pay();
