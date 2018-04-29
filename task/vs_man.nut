@@ -35,7 +35,6 @@ class Task.Vehicle_Mgr extends DailyTask
 				if (AIVehicle.HasSharedOrders(idx)) AIOrder.UnshareOrders(idx);
 				if (XVehicle.Register(idx)) {
 					XVehicle.MakeGroup(idx, My._Vehicles[idx]);
-					Service.Register(My._Vehicles[idx]);
 				} else {
 					XVehicle.TryToSend(idx);
 				}
@@ -65,11 +64,13 @@ class Task.Vehicle_Mgr extends DailyTask
 			Info(name, "is inside depot");
 
 			if (XVehicle.IsRegistered(idx)) {
-				local r_saved = My._Vehicles.rawget(idx);
-				if (r_saved.GetFriends().Count() == 1 && r_saved.SourceIsProducing()) {
-					local price = AIEngine.GetPrice(r_saved.GetEngine());
+				local key = My._Vehicles.rawget(idx);
+				local r_saved = Service.Data.Routes[key];
+				local friends = CLList(AIVehicleList_Group(r_saved.GroupID));
+				if (friends.Count() == 1 && Service.SourceIsProducing(r_saved)) {
+					local price = AIEngine.GetPrice(r_saved.Engine);
 					if (!Money.Get(price)) {
-						if (r_saved.GetFriends().IsEmpty() && My._Yearly_Profit > price) continue;
+						if (friends.IsEmpty() && My._Yearly_Profit > price) continue;
 					}
 					if (XVehicle.TryDuplicate(idx)) Info("duplicating succes");
 				}

@@ -224,10 +224,11 @@ class StationManager extends Infrastructure
 		vhcl.KeepValue(1);
 		local acc = 0;
 		foreach(vhc, v in vhcl) {
-			local vhcc = My._Vehicles[vhc];
-			if (vhcc.GetSType() != GetSType()) continue;
-			local dist = AIMap.DistanceManhattan(vhcc.GetSStation(), vhcc.GetDStation());
-			local td = max(1, Assist.TileToDays(dist, vhcc.GetMaxSpeed()) - 15);
+			local key = My._Vehicles[vhc];
+			local vhcc = Service.Data.Routes.rawget(key);
+			if (XVehicle.GetStationType(vhc) != GetSType()) continue;
+			local dist = AIMap.DistanceManhattan(vhcc.Stations[0], vhcc.Stations[1]);
+			local td = max(1, Assist.TileToDays(dist, XVehicle.MaxSpeed(vhc)) - 15);
 			acc	+= rad * 100 / td;
 		}
 		Debug.Sign(GetLocation(), "occ" + acc)

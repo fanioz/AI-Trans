@@ -46,7 +46,6 @@ require("pathfinder/rail_pf.nut");
 
 /* route */
 require("route/vhc_maker.nut");
-require("route/route.nut");
 
 /* task */
 require("task/manager.nut");

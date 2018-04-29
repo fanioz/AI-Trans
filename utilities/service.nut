@@ -45,21 +45,21 @@ class Service
 	}
 
 	function IsServed(id1, cargo) {
-		foreach(idx, tbl in My._Service_Table) {
-			if (tbl.GetSourceID() != id1) continue;
-			if (tbl.GetCargo() != cargo) continue;
+		foreach(idx, tbl in Service.Data.Routes) {
+			if (tbl.ServID[0] != id1) continue;
+			if (tbl.Cargo != cargo) continue;
 			return true;
 		}
 		return false;
 	}
 
 	function Register(tbl) {
-		local key = tbl.GetKey();
-		if (My._Service_Table.rawin(key)) {
-			My._Service_Table[key].Merge(tbl);
+		local key = tbl.Key;
+		if (Service.Data.Routes.rawin(key)) {
+			Service.Merge(key, tbl);
 			return;
 		}
-		My._Service_Table.rawset(key, tbl);
+		Service.Data.Routes.rawset(key, tbl);
 	}
 
 	function IsSubsidyLocationWas(id, loc, is_source) {
@@ -229,5 +229,31 @@ class Service
 		Info("max.:", maxvhc);
 		Info("we have", maxvhc - vhcc, "left to build", v);
 		return vhcc > maxvhc;
+	}
+	
+	function Merge(key, other) {
+		if (!other.IsValid) return;
+		if (!Service.IsEqual(Service.Data.Routes[key], other)) return;
+		if (!AIVehicle.IsValidVehicle(Service.Data.Routes[key].VhcID)) {
+			Service.Data.Routes.rawset(key, other);
+			return Service.Data.Routes[key].IsValid;
+		}
+		Service.Data.Routes[key].VhcCapacity = max(Service.Data.Routes[key].VhcCapacity, other.VhcCapacity);
+		if (AIEngine.GetDesignDate(Service.Data.Routes[key].Engine) < AIEngine.GetDesignDate(other.Engine)) {
+			AIGroup.SetAutoReplace(Service.Data.Routes[key].GroupID, Service.Data.Routes[key].Engine, other.Engine);
+			Service.Data.Routes[key].Engine = other.Engine;
+		}
+	}
+	
+	function IsEqual(one, other) {
+		if (one.StationsID[0] != other.StationsID[0]) return false;
+		if (one.StationsID[1] != other.StationsID[1]) return false;
+		if (one.Cargo != other.Cargo) return false;
+		if (one.VhcType != other.VhcType) return false;
+		return true;
+	}
+	
+	function SourceIsProducing(route) {
+		return (route.IsTown[0] ? XTown : XIndustry).ProdValue(route.ServID[0], route.Cargo) > route.VhcCapacity;
 	}
 }

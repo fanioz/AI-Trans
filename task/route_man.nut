@@ -12,6 +12,7 @@
 class Task.RouteManager extends DailyTask
 {
 	_checked = CLList();
+	_route_checked = {}; 
 	constructor() {
 		DailyTask.constructor("Route Manager", 10);
 		_silent = true;
@@ -29,7 +30,7 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			local vhclst = CLList(AIVehicleList_Group(grp_id));
-			if (!My._Service_Table.rawin(grp_name)) {
+			if (!Service.Data.Routes.rawin(grp_name)) {
 				Warn(grp_name, "couldn't process without table, kick'em out");
 				XVehicle.Ungroup(vhclst.Begin());
 				continue;
@@ -42,21 +43,51 @@ class Task.RouteManager extends DailyTask
 			}
 			_checked.AddList(vhclst);
 			Info("processing", grp_name, "and friends");
-			local tbl = My._Service_Table[grp_name];
-			local st_id = tbl.GetSStationID();
-			local src_name = (tbl.SourceIsTown() ? AITown : AIIndustry)["GetName"](tbl.GetSourceID());
-			local dst_name = (tbl.DestinationIsTown() ? AITown : AIIndustry)["GetName"](tbl.GetDestinationID());
-			local cargo = tbl.GetCargo();
-			Info(grp_name, "has", num, "of", CLString.VehicleType(tbl.GetVType()), "vehicle");
+			local t = Service.Data.Routes[grp_name];
+			local src_name = (t.IsTown[0] ? AITown : AIIndustry)["GetName"](t.ServID[0]);
+			local dst_name = (t.IsTown[1] ? AITown : AIIndustry)["GetName"](t.ServID[1]);
+			local cargo = t.Cargo;
+			local label = XCargo.Label[cargo];
+			local producing = (t.IsTown[0] ? XTown : XIndustry).ProdValue(t.ServID[0], cargo);
+			Info(grp_name, "has", num, "of", CLString.VehicleType(t.VhcType), "vehicle");
+			Info(grp_name, "Vehicle capacity:", t.VhcCapacity);
 			Info(grp_name, "is travelling from", src_name, "to", dst_name);
-			Info(src_name, "is producing", tbl.GetProduction(), "of", XCargo.Label[cargo], "/ month");
-			vhclst.Valuate(AIVehicle.GetReliability);
-			if (tbl.AllowAdd() && Money.Get(AIEngine.GetPrice(tbl.GetEngine()))) {
-				foreach(vhc, real in vhclst) {
-					XVehicle.TryDuplicate(vhc);
-					break;
-				}
+			Info(src_name, "is producing", producing, "of", label, "/ month");
+			Info("Last build", Assist.DateStr(t.LastBuild));
+			local sname = AIStation.GetName(t.StationsID[0]);
+			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
+			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
+			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 60) continue;
+
+			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
+			local vhc = vhcs2.Begin();
+			vhcs2.Valuate(AIVehicle.GetState);
+			if (vhcs2.CountIfKeepValue(AIVehicle.VS_AT_STATION)) {
+				Info(grp_name, "has vehicles in un/loading state");
+				continue;
 			}
+			vhcs2.KeepValue(AIVehicle.VS_RUNNING);
+			vhcs2.Valuate(XVehicle.IsLowSpeed);
+			vhcs2.KeepValue(1);
+			if (vhcs2.Count()) {
+				Info(sname, "has vehicles in slow motion :D");
+				continue;
+			}
+			local dstation = XStation.GetManager(t.StationsID[1], t.StationType);
+			if (!dstation.CanAddNow(cargo)) {
+				Info(dstation.GetName(), "is busy");
+				continue;
+			}
+			if (dstation.GetOccupancy() > 99) {
+				Info(dstation.GetName(), "is out of space");
+				continue;
+			}
+			Info("Time to make clone");
+			if (!AIMap.IsValidTile(t.Depots[0])) {
+				Warn("TODO:Find a nearby depot");
+				continue;
+			}
+			if (XVehicle.TryDuplicate(vhc)) Service.Data.Routes[grp_name].LastBuild = AIDate.GetCurrentDate() + 10;
 			return Money.Pay();
 		}
 		_checked.Clear();
