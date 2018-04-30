@@ -11,7 +11,8 @@ class Service
 	/* for save/load */
 	static Data = {
 		RouteToClose = []
-		Station_2_Close = []
+		StationToClose = {}
+		VhcToSell = {}
 		Events = []
 		Routes = {}
 	};
@@ -26,7 +27,7 @@ class Service
 			foreach(idx, val in self._Load) {
 				if (!Service.Data.rawin(idx)) {
 					Warn("index", idx, "not found. Have value:", val);
-					Service.Data[idx] < - val;
+					Service.Data.rawset(idx, val);
 				}
 
 				Service.Data[idx] = val;
