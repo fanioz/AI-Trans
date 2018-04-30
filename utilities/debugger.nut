@@ -151,6 +151,7 @@ class Debug
 	* @param id String of start ID, any string.
 	*/
 	static function CanSave(table, level, id) {
+		if (level > 25) throw "max. 25 levels deep reached";
 		if ((typeof table == "table") || (typeof table == "array")) {
 			foreach(idx, val in table) {
 				if (!Debug.CanSave(val, level + 1, idx)) return false;
