@@ -145,7 +145,7 @@ class XVehicle
 			Info("Try to reverse");
 			AIVehicle.ReverseVehicle(vhc_ID);
 		}
-		return Debug.Echo("Try to give command", AIVehicle.SendVehicleToDepot(vhc_ID));
+		return Debug.Echo(AIVehicle.SendVehicleToDepot(vhc_ID), "Try to give command");
 	}
 
 	/**
