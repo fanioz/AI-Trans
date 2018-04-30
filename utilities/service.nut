@@ -255,6 +255,6 @@ class Service
 	}
 	
 	function SourceIsProducing(route) {
-		return (route.IsTown[0] ? XTown : XIndustry).ProdValue(route.ServID[0], route.Cargo) > route.VhcCapacity;
+		return (route.IsTown[0] ? AITown : AIIndustry).GetLastMonthProduction(route.ServID[0], route.Cargo) > 10;
 	}
 }
