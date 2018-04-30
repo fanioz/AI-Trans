@@ -102,10 +102,16 @@ class Task.Vehicle_Mgr extends DailyTask
 			for (local c=0;c<t.StationsID.len();c++) {
 				if (AIStation.IsValidStation(t.StationsID[c])) {
 					if (AIStation.HasStationType(t.StationsID[c], t.StationType)) {
+						local vhcList = XStation.GetVehicleListType(t.StationsID[c], t.StationType);
+						//right now this vhcList is not owned by this route. Lets prove it
+						if (vhcList.Count()>0) {
+							local vhc = vhcList.Begin();
+							if (My._Vehicles.rawin(vhc)) assert(My._Vehicles[vhc] != key);
+							continue;
+						}
 						Service.Data.StationToClose.rawset(t.StationsID[c], t.StationType);
 						copyclose.push(key);
 						closed = false;
-						continue;
 					}
 				}
 			}
