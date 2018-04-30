@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -18,29 +18,14 @@ class Task.RouteManager extends DailyTask
 	}
 
 	function On_Start() {
-		local groups = CLList(AIGroupList());
-		groups.Valuate(XVehicle.GroupCount);
-		groups.SortValueAscending();
-		Info("Service table count:", groups.Count());
-		foreach(grp_id, num in groups) {
-			local grp_name = AIGroup.GetName(grp_id);
-			if (num == 0) {
-				Warn(grp_name, "no longer has vehicle");
-				continue;
-			}
+		Info("Service table count:", Service.Data.Routes.len());
+		foreach(grp_name, t in Service.Data.Routes) {
+			local grp_id = t.GroupID;
 			local vhclst = CLList(AIVehicleList_Group(grp_id));
-			if (!Service.Data.Routes.rawin(grp_name)) {
-				Warn(grp_name, "couldn't process without table, kick'em out");
-				XVehicle.Ungroup(vhclst.Begin());
-				continue;
-			}
-			vhclst.Valuate(XVehicle.IsRegistered);
-			vhclst.KeepValue(1);
-			vhclst.RemoveList(_checked);
-			if (vhclst.IsEmpty()) {
-				continue;
-			}
-			_checked.AddList(vhclst);
+			local num = vhclst.Count();
+			
+			if (_checked.HasItem(grp_id)) continue;
+			_checked.AddItem(grp_id, 1);
 			Warn("...");
 			Info("processing", grp_name, "and friends");
 			local t = Service.Data.Routes[grp_name];
@@ -49,17 +34,32 @@ class Task.RouteManager extends DailyTask
 			local cargo = t.Cargo;
 			local label = XCargo.Label[cargo];
 			local producing = (t.IsTown[0] ? AITown : AIIndustry).GetLastMonthProduction(t.ServID[0], cargo);
-			Info(grp_name, "has", num, "of", CLString.VehicleType(t.VhcType), "vehicle");
+			local sname = AIStation.GetName(t.StationsID[0]);
+			local dname =  AIStation.GetName(t.StationsID[1]);
+			Info(grp_name, "has", num, "of", CLString.VehicleType(t.VhcType));
 			Info(grp_name, "Vehicle capacity:", t.VhcCapacity);
 			Info(grp_name, "is travelling from", src_name, "to", dst_name);
+			Info(grp_name, "uses station from", sname, "to", dname);
 			Info(src_name, "is producing", producing, "of", label, "/ month");
 			Info("Last build", Assist.DateStr(t.LastBuild));
-			local sname = AIStation.GetName(t.StationsID[0]);
-			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
+			
+			if (!(AIStation.IsValidStation(t.StationsID[0]) && AIStation.IsValidStation(t.StationsID[1]))) {
+				Info(grp_name, "Closing route due to station(s) no longer valid");
+				Service.Data.RouteToClose.push(grp_name);
+				continue;
+			}
+			
+			if (num == 0) {
+				XVehicle.GetReplacement(grp_name);
+				continue;
+			}
+			
 			if (producing < 2) {
 				Info(grp_name, "Closing route due to not producing");
 				Service.Data.RouteToClose.push(grp_name);
 			}
+			
+			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
 			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
 			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 60) continue;
 			
