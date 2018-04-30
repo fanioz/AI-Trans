@@ -15,7 +15,6 @@ class Task.RouteManager extends DailyTask
 	_route_checked = {}; 
 	constructor() {
 		DailyTask.constructor("Route Manager", 10);
-		_silent = true;
 	}
 
 	function On_Start() {
@@ -42,6 +41,7 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			_checked.AddList(vhclst);
+			Warn("...");
 			Info("processing", grp_name, "and friends");
 			local t = Service.Data.Routes[grp_name];
 			local src_name = (t.IsTown[0] ? AITown : AIIndustry)["GetName"](t.ServID[0]);
@@ -65,6 +65,12 @@ class Task.RouteManager extends DailyTask
 			
 			if (!XStation.IsAccepting(t.StationsID[1], cargo, t.StationType)) {
 				Info(grp_name, "Closing route due to not accepting");
+				Service.Data.RouteToClose.push(grp_name);
+				continue;
+			}
+			
+			if (t.VhcType == AIVehicle.VT_AIR && Setting.Get(SetString.infrastructure_maintenance)) {
+				Info("Closing air-route");
 				Service.Data.RouteToClose.push(grp_name);
 				continue;
 			}
