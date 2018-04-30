@@ -110,6 +110,25 @@ class Debug
 		//Debug.Say (["Build sign is disabled"], 1);
 		return -1;
 	}
+	
+	/**
+	  * Wrapper for build sign on pathfinding
+	  * Its used with Game.Settings
+	  * @param tile TileID where to build sign
+	  * @param txt Text message to be displayed
+	  * @return a valid signID if its allowed by game setting
+	 */
+	function SignPF(tile, txt) {
+		if (AIController.GetSetting("debug_signsPF")) {
+			local mode = AIExecMode();
+			local lst = AISignList();
+			lst.Valuate(AISign.GetLocation);
+			lst.KeepValue(tile);
+			if (lst.Count()) AISign.RemoveSign(lst.Begin());
+			return AISign.BuildSign(tile, txt);
+		}
+		return -1;
+	}
 
 	/**
 	* Unsign is to easy check wether we have build sign before

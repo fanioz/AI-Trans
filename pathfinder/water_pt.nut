@@ -30,7 +30,7 @@ class Water_PT extends Road_PT
 		local tiles = [];
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
-		Debug.Sign(cur_node, "W");
+		Debug.SignPF(cur_node, "W");
 		if (AIBridge.IsBridgeTile(cur_node)) {
 			local other_end = XTile.GetBridgeTunnelEnd(cur_node);
 			if (prev_tile && _CheckTunnelBridge(prev_tile, cur_node)) {

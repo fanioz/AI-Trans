@@ -152,7 +152,7 @@ class Rail_PF extends AyStar
 			if (!XTile.IsMyTile(cur_node)) return [];
 		/* this._max_cost is the maximum path cost, if we go over it, the path isn't valid. */
 		if (path.GetCost() >= this._max_cost) return [];
-		Debug.Sign(cur_node,"r")
+		Debug.SignPF(cur_node,"r")
 		local tiles = [];
 		local offsets = [AIMap.GetTileIndex(0, 1), AIMap.GetTileIndex(0, -1),
 		                 AIMap.GetTileIndex(1, 0), AIMap.GetTileIndex(-1, 0)];

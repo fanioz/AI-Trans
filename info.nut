@@ -107,6 +107,16 @@ class Trans18 extends AIInfo
 			custom_value = 0,
 			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
 		});
+		
+		AddSetting( {
+			name = "debug_signsPF",
+			description = "Build Signs for pathfinding",
+			easy_value = 0,
+			medium_value = 0,
+			hard_value = 0,
+			custom_value = 0,
+			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
+		});
 
 		AddLabels("loop_time", {_1 = "Normal", _2 = "Sligthly slow", _3 = "More slow", _4 = "Very slow", _5 = "Slowest ever"});
 	}

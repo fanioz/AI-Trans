@@ -33,7 +33,7 @@ class Road_PF extends Road_PT
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
 		local pp_tile = prev_tile ? (parn.GetParent() ? parn.GetParent().GetTile() : null) : null;
-		Debug.Sign(cur_node, "R");
+		Debug.SignPF(cur_node, "R");
 		/* Check if the current tile is part of a bridge or tunnel. */
 		if (XTile.IsBridgeOrTunnel(cur_node) && AIRoad.HasRoadType(cur_node, AIRoad.GetCurrentRoadType())) {
 			local other_end = XTile.GetBridgeTunnelEnd(cur_node);
