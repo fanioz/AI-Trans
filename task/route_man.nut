@@ -48,7 +48,7 @@ class Task.RouteManager extends DailyTask
 			local dst_name = (t.IsTown[1] ? AITown : AIIndustry)["GetName"](t.ServID[1]);
 			local cargo = t.Cargo;
 			local label = XCargo.Label[cargo];
-			local producing = (t.IsTown[0] ? XTown : XIndustry).ProdValue(t.ServID[0], cargo);
+			local producing = (t.IsTown[0] ? AITown : AIIndustry).GetLastMonthProduction(t.ServID[0], cargo);
 			Info(grp_name, "has", num, "of", CLString.VehicleType(t.VhcType), "vehicle");
 			Info(grp_name, "Vehicle capacity:", t.VhcCapacity);
 			Info(grp_name, "is travelling from", src_name, "to", dst_name);
@@ -56,8 +56,18 @@ class Task.RouteManager extends DailyTask
 			Info("Last build", Assist.DateStr(t.LastBuild));
 			local sname = AIStation.GetName(t.StationsID[0]);
 			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
+			if (producing < 2) {
+				Info(grp_name, "Closing route due to not producing");
+				Service.Data.RouteToClose.push(grp_name);
+			}
 			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
 			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 60) continue;
+			
+			if (!XStation.IsAccepting(t.StationsID[1], cargo, t.StationType)) {
+				Info(grp_name, "Closing route due to not accepting");
+				Service.Data.RouteToClose.push(grp_name);
+				continue;
+			}
 
 			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
 			local vhc = vhcs2.Begin();
