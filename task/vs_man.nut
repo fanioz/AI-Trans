@@ -84,16 +84,17 @@ class Task.Vehicle_Mgr extends DailyTask
 			local key = Service.Data.RouteToClose.pop();
 			if (!Service.Data.Routes.rawin(key)) continue;
 			local t = Service.Data.Routes[key];
+			Info("Closing:", key);
 			local vhcl = CLList(AIVehicleList_Group(t.GroupID));
 			if (vhcl.Count() > 0) { 
-				vhcl.DoValuate(XVehicle.IsSendToDepot);
+				vhcl.DoValuate(XVehicle.IsSendToDepot.bindenv(this));
 				local stopped = CLList(vhcl);
 				stopped.Valuate(AIVehicle.IsStoppedInDepot);
 				stopped.KeepValue(1);
 				stopped.DoValuate(XVehicle.Sell);
 				stopped.KeepValue(1);
 				vhcl.RemoveList(stopped);
-				vhcl.Valuate(function(id){Service.Data.VhcToSell.rawset(id,"Closed Route");}); 
+				vhcl.Valuate(function(id){Service.Data.VhcToSell.rawset(id,"Closed Route");return 1;}); 
 			 	copyclose.push(key);
 			 	continue;
 			}
@@ -124,11 +125,11 @@ class Task.Vehicle_Mgr extends DailyTask
 		local toclean = clone Service.Data.StationToClose;
 		foreach(idx, stype in toclean) {
 			if (!AIStation.IsValidStation(idx)) {
-				Service.Data.StationToClose.remove(idx);
+				Service.Data.StationToClose.rawdelete(idx);
 				continue;
 			}
 			if (!AIStation.HasStationType(idx, stype)) {
-				Service.Data.StationToClose.remove(idx);
+				Service.Data.StationToClose.rawdelete(idx);
 				continue;
 			}
 			XStation.RemovePart(idx, stype);
