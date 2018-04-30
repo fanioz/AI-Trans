@@ -63,7 +63,7 @@ class Task.RouteManager extends DailyTask
 			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
 			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 60) continue;
 			
-			if (!XStation.IsAccepting(t.StationsID[1], cargo, t.StationType)) {
+			if (!XStation.IsAccepting(t.StationsID[1], cargo)) {
 				Info(grp_name, "Closing route due to not accepting");
 				Service.Data.RouteToClose.push(grp_name);
 				continue;

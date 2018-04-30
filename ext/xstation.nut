@@ -119,18 +119,9 @@ class XStation
 		return AIStation[ret];
 	}
 
-	function IsAccepting(st_id, cargo, s_type) {
-		local tiles = CLList(AITileList_StationType(st_id, s_type));
-		if (tiles.IsEmpty()) return false;
-		local rad = s_type == AIStation.STATION_AIRPORT ? 5 : 3;
-		local start = tiles.Begin();
-		tiles.Valuate(XTile.IsStraightX, start);
-		local x = tiles.CountIfKeepValue(1);
-		tiles.Valuate(XTile.IsStraightY, start);
-		local y = tiles.CountIfKeepValue(1);
-		tiles.Valuate(AITile.GetCargoAcceptance, cargo, x, y, rad);
-		tiles.RemoveBelowValue(8);
-		return tiles.Count() > 0;
+	function IsAccepting(st_id, cargo) {
+		local cargoList = AICargoList_StationAccepting(st_id);
+		return cargoList.HasItem(cargo);
 	}
 
 	function GetFirstLocation(id, s_type) {
