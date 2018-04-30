@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -95,6 +95,16 @@ class Trans18 extends AIInfo
 			medium_value = 1,
 			hard_value = 1,
 			custom_value = 1,
+			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
+		});
+		
+		AddSetting( {
+			name = "debug_break",
+			description = "Allow AI to pause for debugging",
+			easy_value = 0,
+			medium_value = 0,
+			hard_value = 0,
+			custom_value = 0,
 			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
 		});
 

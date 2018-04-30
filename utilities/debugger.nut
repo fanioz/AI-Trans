@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -122,6 +122,7 @@ class Debug
 	static function Pause(tile, text) {
 		Debug.Sign(tile, (text.len() > 30) ? text.slice(0, 30) : text);
 		Error("break on :", CLString.Tile(tile), "due to:", text);
+		if (AIController.GetSetting("debug_break")) AIController.Break(text);
 	}
 
 	/**
