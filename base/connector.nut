@@ -181,7 +181,11 @@ class Connector extends DailyTask
 		}
 		if (self._VhcManager.IsBuilt()) {
 			self._VhcManager.SetNextOrder();
-			self._VhcManager.StartCloned();
+			if (self._V_Type == AIVehicle.VT_RAIL) {
+				XVehicle.Run(self._VhcManager.GetVehicle());
+			} else {
+				self._VhcManager.StartCloned();
+			}
 		} else {
 			self.Warn("failed on build vehicle");
 		}

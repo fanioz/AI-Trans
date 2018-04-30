@@ -68,6 +68,8 @@ class Task.RouteManager extends DailyTask
 				Service.Data.RouteToClose.push(grp_name);
 				continue;
 			}
+			
+			if (t.VhcType == AIVehicle.VT_RAIL) continue; //
 
 			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
 			local vhc = vhcs2.Begin();
