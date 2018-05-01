@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -36,10 +36,32 @@ class Assist
 				depots.Valuate(XAirport.HasPlaneType, tt);
 				break;
 			case AIVehicle.VT_ROAD:
+				local depot = -1;
+				local ct = [AIRoad.GetCurrentRoadType()];
+				if (ct[0] != tt) AIRoad.SetCurrentRoadType(tt);
+				ct.push(AIRoad.GetCurrentRoadType());
 				depots.Valuate(AIRoad.IsRoadDepotTile);
+				depots.KeepValue(1);
+				if (depots.Count() > 0) { 
+					local pf =  Road_PT();
+					pf.InitializePath([near], depots.ItemsToArray(), []);
+					local path = pf.FindPath(1000);
+					if (path != null) depot = path.GetTile();
+				}
+				if (ct[0] != ct[1]) AIRoad.SetCurrentRoadType(ct[0]); 
+				return depot;
 				break;
 			case AIVehicle.VT_WATER:
+				local depot = -1;
 				depots.Valuate(AIMarine.IsWaterDepotTile);
+				depots.KeepValue(1);
+				if (depots.Count() > 0) { 
+					local pf =  Water_PT();
+					pf.InitializePath([near], depots.ItemsToArray(), []);
+					local path = pf.FindPath(1000);
+					if (path != null) depot = path.GetTile();
+				}
+				return depot;
 				break;
 			default :
 				return -1;
