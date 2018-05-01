@@ -69,6 +69,7 @@ require("ext/xairport.nut");
 require("ext/xcargo.nut");
 require("ext/xengine.nut");
 require("ext/xindustry.nut");
+require("ext/xmap.nut");
 require("ext/xmarine.nut");
 require("ext/xroad.nut");
 require("ext/xrail.nut")
