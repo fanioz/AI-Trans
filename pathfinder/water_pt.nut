@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -26,7 +26,6 @@ class Water_PT extends Road_PT
 	}
 
 	function _Neighbours(path, cur_node) {
-		if (!AITile.HasTransportType(cur_node, AITile.TRANSPORT_WATER)) return [];
 		local tiles = [];
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
