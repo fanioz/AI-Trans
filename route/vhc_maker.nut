@@ -90,6 +90,9 @@ class VehicleMaker extends Infrastructure
 	}
 
 	function SetVehicleOrder() {
+		AIController.Sleep(1);
+		//Remove all order if any
+		while (AIOrder.GetOrderCount(GetVehicle()) > 0) AIOrder.RemoveOrder(GetVehicle(), 0);
 		local flags = ((GetVType() == AIVehicle.VT_ROAD) && GetCargo() == XCargo.Pax_ID) ? AIOrder.OF_NONE : AIOrder.OF_FULL_LOAD_ANY;
 		local via = clone this._waypoints;
 		local ret =	Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), GetStationA(), flags), "set src order");
@@ -189,6 +192,7 @@ class VehicleMaker extends Infrastructure
 			s_temp = GetDepotA();
 			SetDepotA(GetDepotB());
 			SetDepotB(s_temp);
+			this._waypoints.reverse();
 		}
 		vhc = AIVehicle.CloneVehicle(GetDepotA(), vhc, false);
 		if (AIVehicle.IsValidVehicle(vhc)) {
