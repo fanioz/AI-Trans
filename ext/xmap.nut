@@ -7,7 +7,7 @@ class XMap {
 	static sizeY = 10;
 	/**
 	* Generate Map Points, a grid X * Y
-	*//*
+	
 	function GenerateMapPoints() {
 		local c = 0;				
 		for (local x=1;x<AIMap.GetMapSizeX();x+=XMap.sizeX)
@@ -47,6 +47,14 @@ class XMap {
 	function TileIsPoint(tile) {
 		if (!AIMap.IsValidTile(tile)) return false;
 		return (AIMap.GetTileX(tile) % XMap.sizeX == 1) && (AIMap.GetTileY(tile) % XMap.sizeY == 1);
+	}
+	
+	/**
+	* Check if a Tile is at Point
+	*/
+	function TileIsInGrid(tile) {
+		if (!AIMap.IsValidTile(tile)) return false;
+		return (AIMap.GetTileX(tile) % XMap.sizeX == 1) || (AIMap.GetTileY(tile) % XMap.sizeY == 1);
 	}
 	
 	/**
