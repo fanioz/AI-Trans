@@ -228,7 +228,6 @@ class XVehicle
 		while (Debug.ResultOf (v_man.TryBuild (), "try buy engine")) {
 			if (v_man.IsBuilt()) {
 				Info ("New vehicle", v_man.GetVehicle());
-				v_man.SetNextOrder();				
 				if (XVehicle.Run(v_man.GetVehicle())) return true;
 			}
 			AIVehicle.SellVehicle (v_man.GetVehicle());

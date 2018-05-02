@@ -180,7 +180,6 @@ class Connector extends DailyTask
 			self._VhcManager.TryBuild();
 		}
 		if (self._VhcManager.IsBuilt()) {
-			self._VhcManager.SetNextOrder();
 			if (self._V_Type == AIVehicle.VT_RAIL) {
 				XVehicle.Run(self._VhcManager.GetVehicle());
 			} else {

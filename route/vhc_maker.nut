@@ -19,6 +19,7 @@ class VehicleMaker extends Infrastructure
 	_m_id = null;
 	_wgn_id = null;
 	_platformLength = null;
+	_waypoints = null;
 
 	MainEngine = null; /// engines without specific cargo
 	CargoEngine = null; /// engines with specific cargo
@@ -33,6 +34,8 @@ class VehicleMaker extends Infrastructure
 
 	function GetPlatformLength() { return this._platformLength; }
 	function SetPlatformLength(a) { this._platformLength = _platformLength; }
+	function GetWaypoints() { return this._waypoints; }
+	function SetWaypoints(wp) { this._waypoints = wp; }
 	function GetDepotA() { return _depot_a; }
 	function SetDepotA(a) { _depot_a = a; }
 	function GetDepotB() { return _depot_b; }
@@ -86,27 +89,25 @@ class VehicleMaker extends Infrastructure
 		};
 	}
 
-	function SetMainOrder() {
+	function SetVehicleOrder() {
 		local flags = ((GetVType() == AIVehicle.VT_ROAD) && GetCargo() == XCargo.Pax_ID) ? AIOrder.OF_NONE : AIOrder.OF_FULL_LOAD_ANY;
-		return Debug.ResultOf(
-				   AIOrder.InsertOrder(GetVehicle(), 0, GetStationB(), AIOrder.OF_NONE) &&
-				   AIOrder.InsertOrder(GetVehicle(), 0, GetStationA(), flags),
-				   "set main order");
-	}
-
-	/**
-	 * Set common depot order
-	 */
-	function SetNextOrder() {
-		local flags = AIOrder.OF_SERVICE_IF_NEEDED;
-		if (!AIMap.IsValidTile(GetDepotA())) flags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
-		AIOrder.InsertOrder(GetVehicle(), 2, GetDepotA(), flags);
-		if (!AIMap.IsValidTile(GetDepotB())) flags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
-		AIOrder.InsertOrder(GetVehicle(), 2, GetDepotB(), flags);
-		while (AIOrder.GetOrderCount(GetVehicle()) > 4) {
-			AIOrder.RemoveOrder(GetVehicle(), 4);
-		}
-		AIOrder.SkipToOrder(GetVehicle(), 0);
+		local via = clone this._waypoints;
+		local ret =	Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), GetStationA(), flags), "set src order");
+		foreach(tile in via)
+			Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), tile, AIOrder.OF_NONE),"set buoys order");
+		
+		ret = ret && Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), GetStationB(), AIOrder.OF_NONE), "set dst order");
+		flags = AIOrder.OF_SERVICE_IF_NEEDED;
+		local nflags = flags;
+		if (!AIMap.IsValidTile(GetDepotB())) nflags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
+		Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), GetDepotB(), nflags),"set depot order");
+		via.reverse();
+		foreach(tile in via)
+			Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), tile, AIOrder.OF_NONE),"set buoys order");
+		
+		if (!AIMap.IsValidTile(GetDepotA())) nflags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
+		Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), GetDepotA(), nflags),"set depot order");
+		return ret;
 	}
 
 	function Reset() {
@@ -145,6 +146,7 @@ class VehicleMaker extends Infrastructure
 		_wgn_id = -1;
 		_m_id = -1;
 		this._platformLength = 4;
+		this._waypoints = [];
 	}
 
 	function HaveEngineFor(et) {
@@ -191,12 +193,11 @@ class VehicleMaker extends Infrastructure
 		vhc = AIVehicle.CloneVehicle(GetDepotA(), vhc, false);
 		if (AIVehicle.IsValidVehicle(vhc)) {
 			SetVehicle(vhc);
-			SetMainOrder();
+			SetVehicleOrder();
 		} else {
 			TryBuild();
 			vhc = GetVehicle();
 		}
-		SetNextOrder();
 		built += Debug.ResultOf(XVehicle.Run(vhc), "Starting cloned vehicle") ? 1 : 0;
 		return Debug.Echo(built, "has been initially built");
 	}
@@ -248,7 +249,7 @@ class VehicleMaker extends Infrastructure
 				vhcLength = AIVehicle.GetLength(GetVehicle());
 			}
 			if (AIEngine.CanRefitCargo(eng, GetCargo())) AIVehicle.RefitVehicle(GetVehicle(), GetCargo());
-			if (!this.SetMainOrder()) XVehicle.Sell(GetVehicle());
+			if (!this.SetVehicleOrder()) XVehicle.Sell(GetVehicle());
 		}
 		
 		return false;
@@ -269,7 +270,7 @@ class VehicleMaker extends Infrastructure
 			SetVehicle(Debug.ResultOf(AIVehicle.BuildVehicle(GetDepotA(), eng), "build vehicle got ID:"));
 			Debug.ResultOf(AIVehicle.RefitVehicle(GetVehicle(), GetCargo()), "refit to", XCargo.Label[GetCargo()]);
 			if (XCargo.OfVehicle(GetVehicle()) == GetCargo()) {
-				if (SetMainOrder()) break;
+				if (SetVehicleOrder()) break;
 			}
 			Warn("validation failed");
 			AIVehicle.SellVehicle(GetVehicle());
