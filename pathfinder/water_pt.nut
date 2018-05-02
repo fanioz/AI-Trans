@@ -26,6 +26,7 @@ class Water_PT extends Road_PT
 	}
 
 	function _Neighbours(path, cur_node) {
+		if (path.GetLength() > this._max_len) return [];
 		local tiles = [];
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
