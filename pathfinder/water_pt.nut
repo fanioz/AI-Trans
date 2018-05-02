@@ -56,13 +56,6 @@ class Water_PT extends Road_PT
 		}
 		return tiles;
 	}
-	
-	function ShapeIt(path) {
-		local shape = Road_PT.ShapeIt(path);
-		if (path.Count() == 0) return shape;
-		shape += path.GetCost();
-		return shape;
-	}
 };
 
 
@@ -70,5 +63,15 @@ class Water_PF extends Water_PT
 {
 	constructor() {
 		Water_PT.constructor();
+	}
+	
+	function _Cost(path, cur_tile, new_direction) {
+		/* path == null means this is the first node of a path, so the cost is 0. */
+		if (path == null) return 0;
+
+		local prev_tile = path.GetTile();
+		local cost = 0;
+		if (!XMap.TileIsInGrid(cur_tile)) cost+= 20;
+		return path.GetCost() + cost;
 	}
 }
