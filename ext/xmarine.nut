@@ -134,6 +134,23 @@ class XMarine
 			last_node = next_node;
 			next = next.GetParent();
 		}
-		return true;
+		return ret;
+	}
+	
+	function BuildDepotOnLine(path) {
+		local index = 0;
+		while (path.len()>index+1) {
+			local last_node = path[index];
+			local next_node = path[index+1];
+			if (index > 5 && (!XMap.TileIsPoint(last_node)))
+				if (XMap.TileIsInGrid(last_node)) {
+					if (!AIMarine.IsWaterDepotTile(last_node)) {
+						Debug.ResultOf(AIMarine.BuildWaterDepot(last_node, next_node), "build depot");
+					}
+					if (AIMarine.IsWaterDepotTile(last_node)) return last_node;
+				}
+			index++;
+		}
+		return -1;
 	}
 }
