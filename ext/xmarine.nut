@@ -114,6 +114,7 @@ class XMarine
 	}
 
 	function BuildPath(path) {
+		local ret = [];
 		Info("Start building", path.GetLength(), "tiles");
 		local last_node = path.GetTile();
 		local next = path.GetParent();
@@ -122,27 +123,17 @@ class XMarine
 			if (AIMap.DistanceManhattan(last_node, next_node) > 1) {
 				Info("bridge/tunnel should not been built");
 			} else {
-				Debug.Sign(last_node, next.GetCost());
-				//build double straight tile
-				Info("build a road piece");
-				while (next.GetParent()) {
-					local future_node = next.GetParent().GetTile();
-					if (AIMap.DistanceManhattan(next_node, future_node) > 1) break;
-					if (!XTile.IsStraight(last_node, future_node)) break;
-					next_node = future_node;
-					next = next.GetParent();
-				}
-				if (!XRoad.BuildStraight(last_node, next_node)) {
-					/* An error occured while building a piece of road. TODO: handle it.
-					 * Note that is can also be the case that the road was already build. */
-					//Debug.Halt(last_node);
-					ignore.push(next_node);
-					return XRoad.BuildRoute(null, start, finish, ignore, num);
+				//Debug.Sign(last_node, next.GetCost());
+				if (XMap.TileIsPoint(last_node)) {
+					if (!AIMarine.IsBuoyTile(last_node)) {
+						Debug.ResultOf(AIMarine.BuildBuoy(last_node), "build a buoy piece");
+					}
+					if (AIMarine.IsBuoyTile(last_node)) ret.push(last_node);
 				}
 			}
 			last_node = next_node;
 			next = next.GetParent();
 		}
-		return XMarine.IsConnectedTo(start, finish);
+		return true;
 	}
 }
