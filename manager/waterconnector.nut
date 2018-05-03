@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -11,12 +11,14 @@
  */
 class WaterConnector extends Connector
 {
+	_Buoys = null;
 	constructor() {
 		_V_Type = AIVehicle.VT_WATER;
 		Connector.constructor("Water Connector", 10);
 		_Max_Distance = 100;
 		_Min_Distance = 30;
 		_PF = Water_PF();
+		this._Buoys = [];
 	}
 
 	function On_Start() {
@@ -36,6 +38,7 @@ class WaterConnector extends Connector
 		if (_Route_Built) {
 			Info("route built");
 			if (!Money.Get(AIEngine.GetPrice(_Engine_A))) return;
+			this._VhcManager.SetWaypoints(this._Buoys);
 			MakeVehicle(this);
 			_Route_Built = false;
 			_Engine_A = -1;
@@ -72,12 +75,50 @@ class WaterConnector extends Connector
 	function InitService() {
 		if (!_Mgr_A.AllowTryStation(_S_Type)) return 1;
 		if (!_Mgr_B.AllowTryStation(_S_Type)) return 2;
-		local dpoint = _Mgr_B.GetWaterPoint();
+		
+		local dpoint = CLList();
+		this._D_Station = this._Mgr_B.GetExistingWaterStop(this._Cargo_ID, false);
+		if (AIMap.IsValidTile(this._D_Station)) {
+			dpoint.AddItem(this._D_Station, 0);
+		} else {
+			local dests = this._Mgr_B.GetAreaForDock(this._Cargo_ID, false);
+			if (dests.IsEmpty()) return 2;
+			local mode = AITestMode();
+			foreach(body, v in dests) {
+				local head = XMarine.GetWaterSide(body);
+				if (AIMarine.AreWaterTilesConnected(head, XTile.NextTile(body, head))) {
+					if (AIMarine.BuildDock(body, AIStation.STATION_NEW)) {
+						dpoint.AddItem(body, 0);
+						Debug.Sign(body,"D");
+					}
+				}
+			}
+		}
+		
 		if (dpoint.IsEmpty()) {
 			Warn("couldn't got a start point at dest");
 			return 2;
 		}
-		local spoint = _Mgr_A.GetWaterPoint();
+		
+		local spoint = CLList();
+		this._S_Station = this._Mgr_A.GetExistingWaterStop(this._Cargo_ID, true);
+		if (AIMap.IsValidTile(this._S_Station)) {
+			spoint.AddItem(this._S_Station, 0);
+		} else {
+			local dests = this._Mgr_A.GetAreaForDock(this._Cargo_ID, true);
+			if (dests.IsEmpty()) return 1;
+			local mode = AITestMode();
+			foreach(body, v in dests) {
+				local head = XMarine.GetWaterSide(body);
+				if (AIMarine.AreWaterTilesConnected(head, XTile.NextTile(body, head))) {
+					if (AIMarine.BuildDock(body, AIStation.STATION_NEW)) {
+						spoint.AddItem(body, 0);
+						Debug.Sign(body,"D");
+					}
+				}
+			}
+		}
+		
 		if (spoint.IsEmpty()) {
 			Warn("couldn't got a start point at source");
 			return 1;
@@ -89,42 +130,50 @@ class WaterConnector extends Connector
 	function BuildInfrastructure() {
 		local dests = CLList();
 
+		if (!AIMap.IsValidTile(this._D_Station)) {
+			AIMarine.BuildDock(this._End_Point, XStation.FindIDNear(this._End_Point, 15));
+		 	if (AIMarine.IsDockTile(this._End_Point)) this._D_Station = this._End_Point;
+		}
+		if (!AIMap.IsValidTile(this._D_Station)) {
+			Info("build station in", this._Mgr_B.GetName(), "failed");
+			return false;
+		}
+		
+		if (!AIMap.IsValidTile(this._S_Station)) {
+			AIMarine.BuildDock(this._Start_Point, XStation.FindIDNear(this._Start_Point, 15));
+		 	if (AIMarine.IsDockTile(this._Start_Point)) this._S_Station = this._Start_Point;
+		}
+		if (!AIMap.IsValidTile(this._S_Station)) {
+			Info("build station in", this._Mgr_A.GetName(), "failed");
+			return false;
+		}
+		
+		this._Buoys = XMarine.BuildPath(this._Line);
+		this._Buoys.reverse();
+		local arr = Service.PathToArray(this._Line);
+		
 		Info("finding depot in", _Mgr_B.GetName());
-		_D_Depot = _Mgr_B.GetWaterDepot();
+		this._D_Depot = Assist.FindDepot(this._D_Station, 15, this._V_Type, 1);
 		if (!AIMarine.IsWaterDepotTile(_D_Depot)) {
-			_D_Depot = XMarine.BuildDepot(_End_Point, _Mgr_B.GetAreaForWaterDepot());
-		}
-		if (!AIMarine.IsWaterDepotTile(_D_Depot)) {
-			return false;
+			Info("not found");
+			this._D_Depot = XMarine.BuildDepotOnLine(arr)
 		}
 
+		arr.reverse();
+		
 		Info("finding depot in", _Mgr_A.GetName());
-		_S_Depot = _Mgr_A.GetWaterDepot();
+		this._S_Depot = Assist.FindDepot(this._S_Station, 15, this._V_Type, 1);
 		if (!AIMarine.IsWaterDepotTile(_S_Depot)) {
-			_S_Depot = XMarine.BuildDepot(_Start_Point, _Mgr_A.GetAreaForWaterDepot());
+			Info("not found");
+			this._S_Depot = XMarine.BuildDepotOnLine(arr);
 		}
-
+				
 		if (!AIMarine.IsWaterDepotTile(_S_Depot)) {
-			return false;
-		}
-
-		Info("build station in", _Mgr_B.GetName());
-		_D_Station = _Mgr_B.GetExistingWaterStop(_Cargo_ID, false);
-		if (!AIMap.IsValidTile(_D_Station)) {
-			dests.AddList(_Mgr_B.GetAreaForDock(_Cargo_ID, false));
-			if (dests.IsEmpty()) return false;
-			_D_Station = XMarine.BuilderStation(_End_Point, dests);
-			if (!AIMap.IsValidTile(_D_Station)) return false;
-		}
-
-		dests.Clear();
-		Info("build station in", _Mgr_A.GetName());
-		_S_Station = _Mgr_A.GetExistingWaterStop(_Cargo_ID, true);
-		if (!AIMap.IsValidTile(_S_Station)) {
-			dests.AddList(_Mgr_A.GetAreaForDock(_Cargo_ID, true));
-			if (dests.IsEmpty()) return false;
-			_S_Station = XMarine.BuilderStation(_Start_Point, dests);
-			if (!AIMap.IsValidTile(_S_Station)) return false;
+			if (AIMarine.IsWaterDepotTile(this._D_Depot)) {
+				this._S_Depot = this._D_Depot;
+			} else {
+				return false;
+			}
 		}
 		return true;
 	}
