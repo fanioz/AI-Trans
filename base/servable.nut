@@ -203,11 +203,11 @@ class Servable extends CIDLocation
 	}
 
 	function GetRoadDepot() {
-		return Assist.FindDepot(GetLocation(), AIVehicle.VT_ROAD, AIRoad.GetCurrentRoadType());
+		return Assist.FindDepot(GetLocation(), 20, AIVehicle.VT_ROAD, AIRoad.GetCurrentRoadType());
 	}
 
 	function GetWaterDepot() {
-		return Assist.FindDepot(GetLocation(), AIVehicle.VT_WATER, 1);
+		return Assist.FindDepot(GetLocation(), 15, AIVehicle.VT_WATER, 1);
 	}
 
 	function RefreshStations() {

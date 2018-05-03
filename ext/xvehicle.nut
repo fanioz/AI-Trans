@@ -490,7 +490,7 @@ class XVehicle
 		tabel.Track <- XVehicle.GetTrack(idx);
 		tabel.GroupID <- AIVehicle.GetGroupID(idx);
 		if (tabel.Depots.len()==0) {
-			tabel.Depots.push(Assist.FindDepot(tabel.Stations[0], tabel.VhcType, tabel.Track));
+			tabel.Depots.push(Assist.FindDepot(tabel.Stations[0], 20, tabel.VhcType, tabel.Track));
 		}
 		if (tabel.Depots.len()==1) {
 			tabel.Depots.push(-1);

@@ -26,7 +26,7 @@ class Assist
 	}
 
 	//find depot near tile for vt and tt
-	function FindDepot(near, vt, tt) {
+	function FindDepot(near, limit, vt, tt) {
 		local depots = CLList(AIDepotList(vt));
 		switch (vt) {
 			case AIVehicle.VT_RAIL:
@@ -45,8 +45,9 @@ class Assist
 				if (depots.Count() > 0) { 
 					local pf =  Road_PT();
 					pf.InitializePath([near], depots.ItemsToArray(), []);
+					pf._max_len = limit;
 					local path = pf.FindPath(1000);
-					if (path != null) depot = path.GetTile();
+					if (path) depot = path.GetTile();
 				}
 				if (ct[0] != ct[1]) AIRoad.SetCurrentRoadType(ct[0]); 
 				return depot;
@@ -58,8 +59,9 @@ class Assist
 				if (depots.Count() > 0) { 
 					local pf =  Water_PT();
 					pf.InitializePath([near], depots.ItemsToArray(), []);
+					pf._max_len = limit;
 					local path = pf.FindPath(1000);
-					if (path != null) depot = path.GetTile();
+					if (path) depot = path.GetTile();
 				}
 				return depot;
 				break;
@@ -68,7 +70,7 @@ class Assist
 		}
 		depots.KeepValue(1);
 		depots.Valuate(AIMap.DistanceMax, near);
-		depots.RemoveAboveValue(15);
+		depots.RemoveAboveValue(limit);
 		depots.SortValueAscending();
 		foreach(body, v in depots) {
 			return body;
