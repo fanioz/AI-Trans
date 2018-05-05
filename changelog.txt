@@ -135,3 +135,23 @@ Fixes: Not connecting air route with infrastructure maintenance setting activate
 Fixes: crashes with Modulo by Zero error when trying to place an HQ while being Company #1 (0 in code). Thanks xarick
 Fixes: Crashed due to return value of a function is neither bool nor integer, when being used as Valuator. Thanks xarick
 Fixes: AI forced to be stopped due to it took too long to save. Thanks xarick
+
+* 180506
+General: Moving repository to git and uses GitHub as issue tracker
+Bundling: Now using PowerShell script to bundling package for Bananas
+CodeChange: General Pathfinder Optimization
+CodeChange: General code CleanUp
+Codechange:[Load/Save]:Refactoring service route table
+Codechange: Optimize water pathfinder for buoys
+Feature: Trans.Rail is back online (alpha stage). Right now we only support for running one train
+Feature: Trans.Water now can build buoys
+Feature: Closing route if it was not producing/accepting anymore
+Feature: If infrastructure maintenance activated in game, we would close the aircraft route
+Feature: [Debug] Add option to "break" in game
+Feature: [Debug] Make a distinct between build sign for path finding and other sign
+Fixes:[Save] max. 25 levels deep
+Fixes: Do not deleting station if being used by other route
+Fixes:Find nearby depot should be reachable (now for Road & Water)
+Fixes:Checking AITile.HasTransportType should be done on next iteration
+Fixes: Build depot for water now inline
+Fixes: Put a limit distance to find a depot
