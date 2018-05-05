@@ -3,8 +3,8 @@
 */
 
 class XMap {
-	static sizeX = 10;
-	static sizeY = 10;
+	static sizeX = 20;
+	static sizeY = 20;
 	/**
 	* Generate Map Points, a grid X * Y
 	

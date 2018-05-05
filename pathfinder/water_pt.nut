@@ -21,7 +21,7 @@ class Water_PT extends Road_PT
 
 	function InitializePath(sources, goals, ignored_tiles) {
 		Road_PT.InitializePath(sources, goals, ignored_tiles);
-		_max_len = ((_max_len - 20) / 1.2 + 20).tointeger();
+		_max_len += XMap.sizeX + XMap.sizeY;
 		Info("nautical max len:", _max_len);
 	}
 
@@ -50,6 +50,7 @@ class Water_PT extends Road_PT
 						AIMarine.IsDockTile(tile) ||
 						AIMarine.IsWaterDepotTile(tile) ||
 						AIMarine.IsBuoyTile(tile) ||
+						(AITile.IsCoastTile(tile) && AITile.IsWaterTile(cur_node)) ||
 						AIMarine.AreWaterTilesConnected(cur_node, tile)) {
 					tiles.push([tile, _GetDirection(cur_node, tile, false), 0]);
 				}
@@ -72,7 +73,7 @@ class Water_PF extends Water_PT
 
 		local prev_tile = path.GetTile();
 		local cost = 0;
-		if (!XMap.TileIsInGrid(cur_tile)) cost+= 20;
+		if (!XMap.TileIsInGrid(cur_tile)) cost+= 5;
 		return path.GetCost() + cost;
 	}
 }
