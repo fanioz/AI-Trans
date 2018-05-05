@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -28,13 +28,8 @@ class Setting
 	function Init() {
 		local ver = CLCommon.GetVersion();
 		Info("Run On OpenTTD Ver:", ver.Major, ".", ver.Minor, "Build:", ver.Build, "(", (ver.IsRelease ?  "Release" : "Rev." + ver.Revision), ")");
-		local need = 18520;
-		if (ver.Revision < need) {
-			Warn("need ", need, "and your is", ver.Revision);
-			throw "Not match version";
-		}
 		local txt = ["invalid!", "Normal", "Sligthly slow", "More slow", "Very slow", "Slowest"];
-		need = AIController.GetSetting("loop_time");
+		local need = AIController.GetSetting("loop_time");
 		AIController.SetCommandDelay(need);
 		Setting.AllowPax <- AIController.GetSetting("allow_pax");
 		Setting.AllowFreight <- AIController.GetSetting("allow_freight");
