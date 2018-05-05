@@ -18,7 +18,7 @@ class Trans18 extends AIInfo
 	function MinVersionToLoad() { return 1; }
 	function GetDate() { return "2009-02-1"; }
 	function CreateInstance() { return "Trans"; }
-	function GetURL() { return "http://dev.openttdcoop.org/projects/ai-trans/issues"; }
+	function GetURL() { return "https://github.com/fanioz/AI-Trans/issues/new"; }
 
 	function GetSettings() {
 		foreach(v in ["Rail", "Road", "Water", "Air"]) {
