@@ -230,33 +230,45 @@ class RailFirstConnector extends Connector
 		if (spoint.IsEmpty()) return 1;
 		local dpoint = this._Mgr_B.GetAreaForRailStation(this._Cargo_ID, false);
 		if (dpoint.IsEmpty()) return 2;
-		local start = [];
-		local finish = [];
+		this._Start_Point = [];
+		this._End_Point = [];
 		foreach (idx, val in spoint) {
 			local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
 			if (sb.Build()) {
-				start.push([XTile.NW_Of(idx,1), idx]);
+				this._Start_Point.push([XTile.NW_Of(idx,1), idx]);
 				this._S_Station = idx;
 				break;
 			}
 		}
-		if (start.len() == 0) return 1;
+		if (this._Start_Point.len() == 0) return 1;
 		foreach (idx, val in dpoint) {
 			local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
 			if (sb.Build()) {
-				finish.push([XTile.NW_Of(idx,1), idx]);
+				this._End_Point.push([XTile.NW_Of(idx,1), idx]);
 				this._D_Station = idx;
 				break;
 			}
 		}
-		if (finish.len() == 0) return 2;
+		if (this._End_Point.len() == 0) return 2;
 		
-		_PF.InitializePath(start, finish, []);
+		_PF.InitializePath(this._Start_Point, this._End_Point, []);
 		return 0;
 	}
 
 	function BuildInfrastructure() {
 		local path = Service.PathToArray(this._Line);
+		{
+			local mode = AITestMode();
+			local cost = AIAccounting();
+			if (XRail.BuildRail(this._Line)) {
+				this._RouteCost = cost.GetCosts();
+				if (!Money.Get(GetTotalCost(this))) return;
+			} else {
+				_PF.InitializePath(this._Start_Point, this._End_Point, []);
+				Info("Path building failed. Re-find");
+				return;
+			}
+		}
 		XRail.BuildRail(this._Line);
 		local depot = XRail.BuildDepotOnRail(path);
 		if (AIRail.IsRailDepotTile(depot)) this._S_Depot = depot;
