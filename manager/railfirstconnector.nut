@@ -104,7 +104,7 @@ class RailFirstConnector extends Connector
 			if (_Mgr_B == null) return this.SelectDest();
 			Info("selected destination:", _Mgr_B.GetName());
 			switch (InitService()) {
-				case 1 : _Mgr_A = null; break;
+				case 1 : _Mgr_A = null;
 				case 2 : _Mgr_B = null; break;
 			}
 		}
