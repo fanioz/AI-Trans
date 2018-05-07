@@ -82,6 +82,7 @@ class RailFirstConnector extends Connector
 			this._Route_Built = false;
 			this._Engine_A = -1;
 			this._Mgr_A = null;
+			this._Mgr_B = null;
 			this._Cargo_ID = -1;
 			this._LastSuccess = AIDate.GetCurrentDate() + 90;
 		} else if (IsWaitingPath(this)) {
@@ -94,7 +95,6 @@ class RailFirstConnector extends Connector
 			this._Route_Built = BuildInfrastructure();
 			this._Route_Found = false;
 			this._Line = null;
-			this._Mgr_A = null;
 			Info("rail route building:",  this._Route_Built);
 		} else {
 			Info("Initialize service");
