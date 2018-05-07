@@ -160,7 +160,7 @@ class RailFirstConnector extends Connector
 			this._Mgr_B = XIndustry.GetManager(this._Possible_Dests[this._Cargo_ID].Pop());
 		}
 		if (this._Mgr_B == null) {
-			this._Mgr_A = -1;
+			this._Mgr_A = null;
 			Warn("Couldn't find destination");
 		} else {
 			Info("selecting destination:", this._Mgr_B.GetName());
