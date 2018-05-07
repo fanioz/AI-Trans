@@ -336,6 +336,9 @@ class StationBuilder extends Infrastructure
 	_industryTypes = null;
 	_industries = null;
 	_isSourceStation = null;
+	_stationType = null;
+	
+	static TYPE_SIMPLE = 1;
 	
 	constructor(base, cargo, srcIndustry, dstIndustry, isSource) {
 		Infrastructure.constructor(-1, base);
@@ -348,14 +351,17 @@ class StationBuilder extends Infrastructure
 		this._industries = [srcIndustry, dstIndustry];
 		this._industryTypes = [AIIndustry.GetIndustryType(srcIndustry), AIIndustry.GetIndustryType(dstIndustry)];
 		this._isSourceStation = isSource;
+		this._stationType = StationBuilder.TYPE_SIMPLE;
 	}
 	
 	function Build() {
 		local station_id = XStation.FindIDNear(this.GetLocation(), 8);
 		local distance = AIIndustry.GetDistanceManhattanToTile(this._industries[0], AIIndustry.GetLocation(this._industries[1]));
-		AIRail.BuildNewGRFRailStation(this.GetLocation(), this._orientation, this._num_platforms,
-			this._platformLength, station_id, this.GetCargo(), this._industryTypes[0],
-			this._industryTypes[1], distance, this._isSourceStation);
+		if (this._stationType == StationBuilder.TYPE_SIMPLE) {
+			AIRail.BuildNewGRFRailStation(this.GetLocation(), this._orientation, this._num_platforms,
+				this._platformLength, station_id, this.GetCargo(), this._industryTypes[0],
+				this._industryTypes[1], distance, this._isSourceStation);
+		}
 		this.SetID(AIStation.GetStationID(this.GetLocation()));
 		return AIRail.IsRailStationTile(this.GetLocation()) && XTile.IsMyTile(this.GetLocation());
 	}
