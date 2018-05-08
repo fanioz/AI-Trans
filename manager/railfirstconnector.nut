@@ -371,7 +371,7 @@ class StationBuilder extends Infrastructure
 		if (this._stationType == StationBuilder.TYPE_SIMPLE) {
 			if (this._orientation = AIRail.RAILTRACK_NW_SE) {
 				ret.push([XTile.NW_Of(this.GetLocation(),1), this.GetLocation()]);
-				ret.push([XTile.SE_Of(this.GetLocation(),this._platformLength-1), XTile.SE_Of(this.GetLocation(),this._platformLength)]);
+				ret.push([XTile.SE_Of(this.GetLocation(),this._platformLength), XTile.SE_Of(this.GetLocation(),this._platformLength-1)]);
 			}
 		}
 		return ret;
