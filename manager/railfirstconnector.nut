@@ -235,7 +235,7 @@ class RailFirstConnector extends Connector
 		foreach (idx, val in spoint) {
 			local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
 			if (sb.Build()) {
-				this._Start_Point.push([XTile.NW_Of(idx,1), idx]);
+				this._Start_Point.extend(sb.GetStartPath());
 				this._S_Station = idx;
 				break;
 			}
@@ -244,7 +244,7 @@ class RailFirstConnector extends Connector
 		foreach (idx, val in dpoint) {
 			local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
 			if (sb.Build()) {
-				this._End_Point.push([XTile.NW_Of(idx,1), idx]);
+				this._End_Point.extend(sb.GetStartPath());
 				this._D_Station = idx;
 				break;
 			}
@@ -364,5 +364,16 @@ class StationBuilder extends Infrastructure
 		}
 		this.SetID(AIStation.GetStationID(this.GetLocation()));
 		return AIRail.IsRailStationTile(this.GetLocation()) && XTile.IsMyTile(this.GetLocation());
+	}
+	
+	function GetStartPath() {
+		local ret = [];
+		if (this._stationType == StationBuilder.TYPE_SIMPLE) {
+			if (this._orientation = AIRail.RAILTRACK_NW_SE) {
+				ret.push([XTile.NW_Of(this.GetLocation(),1), this.GetLocation()]);
+				ret.push([XTile.SE_Of(this.GetLocation(),this._platformLength-1), XTile.SE_Of(this.GetLocation(),this._platformLength)]);
+			}
+		}
+		return ret;
 	}
 }
