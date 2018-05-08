@@ -367,11 +367,15 @@ class StationBuilder extends Infrastructure
 	}
 	
 	function GetStartPath() {
-		local ret = [];
+		local ret = []; //[Start, Before] [End, After]
 		if (this._stationType == StationBuilder.TYPE_SIMPLE) {
-			if (this._orientation = AIRail.RAILTRACK_NW_SE) {
+			if (this._orientation == AIRail.RAILTRACK_NW_SE) {
 				ret.push([XTile.NW_Of(this.GetLocation(),1), this.GetLocation()]);
 				ret.push([XTile.SE_Of(this.GetLocation(),this._platformLength), XTile.SE_Of(this.GetLocation(),this._platformLength-1)]);
+			}
+			if (this._orientation == AIRail.RAILTRACK_NE_SW) {
+				ret.push([XTile.NE_Of(this.GetLocation(),1), this.GetLocation()]);
+				ret.push([XTile.SW_Of(this.GetLocation(),this._platformLength), XTile.SW_Of(this.GetLocation(),this._platformLength-1)]);
 			}
 		}
 		return ret;
