@@ -246,7 +246,7 @@ class VehicleMaker extends Infrastructure
 					if (AIVehicle.IsValidVehicle(GetWagonID())) {
 						AIVehicle.MoveWagon(GetWagonID(), 0, GetVehicle(), 0);
 					} else {
-						XVehicle.Sell(v);
+						XVehicle.Sell(GetVehicle());
 						return true;
 					}
 				}
