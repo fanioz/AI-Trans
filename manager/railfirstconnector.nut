@@ -275,7 +275,7 @@ class RailFirstConnector extends Connector
 		path.reverse();
 		depot = XRail.BuildDepotOnRail(path);
 		if (AIRail.IsRailDepotTile(depot)) this._D_Depot = depot;
-		AIRail.BuildSignal(path[2], path[1], AIRail.SIGNALTYPE_PBS);
+		XRail.BuildSignal(this._S_Depot, this._D_Depot, 2);
 		return true;
 	}
 	

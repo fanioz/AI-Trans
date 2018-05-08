@@ -117,4 +117,34 @@ class XRail
 		}
 		return -1;
 	}
+	
+	function BuildSignal(before, after, each) {
+		local start = AIRail.GetRailDepotFrontTile(before);
+		local end = AIRail.GetRailDepotFrontTile(after);
+		local pt = Rail_PT();
+		pt.InitializePath([[start, before]],[[end, after]],[]);
+		local path = pt.FindPath(10000);
+		if (!path) return false;
+		
+		local prev = null;
+		local prevprev = null;
+		local c = 0;
+		while (path != null) {
+			c++;
+			if (prevprev != null) {
+				if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
+					//
+				} else {
+					if (c % each == 0)
+						if (!AIRail.BuildSignal(prev, path.GetTile(), AIRail.SIGNALTYPE_PBS)) c--; 
+				}
+			}
+			if (path != null) {
+				prevprev = prev;
+				prev = path.GetTile();
+				path = path.GetParent();
+			}
+		}
+		return true;
+	}
 }
