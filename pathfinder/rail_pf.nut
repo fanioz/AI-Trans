@@ -24,7 +24,7 @@ class Rail_PF extends AyStar
 	 * @param ignored_tiles An array of tiles that cannot occur in the final path.
 	 * @see AyStar::InitializePath()
 	 */
-	function InitializePath(sources, goals, ignored_tiles = []) {		
+	function InitializePath(sources, goals, ignored_tiles) {		
 		assert(typeof(sources) == "array");
 		assert(typeof(goals) == "array");
 
