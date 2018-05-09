@@ -13,7 +13,7 @@ class Rail_PT extends Rail_PF{
 		/* this._max_cost is the maximum path cost, if we go over it, the path isn't valid. */
 		if (path.GetLength() > this._max_len) return [];
 		if (path.GetCost() >= this._max_cost) return [];
-		Debug.SignPF(cur_node,"r")
+		Debug.SignPF(cur_node,"r");
 		local tiles = [];
 		local offsets = [AIMap.GetTileIndex(0, 1), AIMap.GetTileIndex(0, -1),
 		                 AIMap.GetTileIndex(1, 0), AIMap.GetTileIndex(-1, 0)];
@@ -22,11 +22,15 @@ class Rail_PT extends Rail_PF{
 		if (XTile.IsBridgeOrTunnel(cur_node)) {
 			local other_end = XTile.GetBridgeTunnelEnd(cur_node);
 			local next = XTile.NextTile(other_end, cur_node);
-			if (AIRail.AreTilesConnected(path.GetParent().GetTile(), cur_node, next)) {
-				tiles.push([next, this._GetDirection(cur_node, next, other_end, false), 0]);
-			}
-			/* The other end of the bridge / tunnel is a neighbour. Exist thus 0 cost*/
-			tiles.push([other_end, this._GetDirection(next, cur_node, next, true), 0]);
+			local prev = path.GetParent() == null ? -1 : path.GetParent().GetTile();
+			if (prev == next) {
+				/* The other end of the bridge / tunnel is a neighbour. Exist thus 0 cost*/
+				tiles.push([other_end, this._GetDirection(null, prev, cur_node, true), 0]);
+			} 
+			if (prev == other_end) {
+				tiles.push([next, this._GetDirection(null, cur_node, next, true), 0]);
+			}	
+			
 		} else if (path.GetParent() != null && AIMap.DistanceManhattan(cur_node, path.GetParent().GetTile()) > 1) {
 			//
 		} else {
