@@ -12,6 +12,7 @@ class Rail_PF extends AyStar
 	constructor()
 	{
 		AyStar.constructor("Rail Finder");
+		this._max_bridge_length = 50;
 		this._cost_diagonal_tile = 70;
 		this._cost_turn = 100;
 		this._cost_slope = 100;
@@ -42,8 +43,8 @@ class Rail_PF extends AyStar
 		}
 		
 		//this._estimate_multiplier = 2;  // 1024
-		//this._estimate_multiplier = 1.5;  //1244
-		this._estimate_multiplier = 1.4;  //1865
+		this._estimate_multiplier = 1.5;  //1244
+		//this._estimate_multiplier = 1.4;  //1865
 		//this._estimate_multiplier = 1.3;  //4927
 		//this._estimate_multiplier = 1;  //8100
 		this.Initialize(nsources, goals, ignored_tiles);

@@ -51,4 +51,12 @@ class Rail_PT extends Rail_PF{
 		}
 		return tiles;
 	}
+	
+	function _Cost(path, new_tile, new_direction)
+	{
+		/* path == null means this is the first node of a path, so the cost is 0. */
+		if (path == null) return 0;
+		local cost = 1;
+		return path.GetCost() + cost;
+	}
 }
