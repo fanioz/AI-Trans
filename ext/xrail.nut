@@ -147,4 +147,11 @@ class XRail
 		}
 		return true;
 	}
+	
+	function StationDirection(start, finish) {
+		local dx = abs(AIMap.GetTileX(start) - AIMap.GetTileX(finish));
+		local dy = abs(AIMap.GetTileY(start) - AIMap.GetTileY(finish));
+		if (dx > dy) return [AIRail.RAILTRACK_NE_SW, AIRail.RAILTRACK_NW_SE];
+		return [AIRail.RAILTRACK_NW_SE, AIRail.RAILTRACK_NE_SW]; 
+	}
 }

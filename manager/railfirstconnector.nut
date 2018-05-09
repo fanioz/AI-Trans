@@ -230,22 +230,35 @@ class RailFirstConnector extends Connector
 		if (dpoint.IsEmpty()) return 2;
 		this._Start_Point = [];
 		this._End_Point = [];
-		foreach (idx, val in spoint) {
-			local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
-			if (sb.Build()) {
-				this._Start_Point.extend(sb.GetStartPath());
-				this._S_Station = idx;
-				break;
+		local stationDir = XRail.StationDirection(this._Mgr_A.GetLocation(), this._Mgr_B.GetLocation());
+		local built = false;
+		foreach (dir in stationDir) {
+			foreach (idx, val in spoint) {
+				local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
+				sb._orientation = dir;
+				if (sb.Build()) {
+					this._Start_Point.extend(sb.GetStartPath());
+					this._S_Station = idx;
+					built = true;
+					break;
+				}
 			}
+			if (built) break;
 		}
 		if (this._Start_Point.len() == 0) return 1;
-		foreach (idx, val in dpoint) {
-			local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
-			if (sb.Build()) {
-				this._End_Point.extend(sb.GetStartPath());
-				this._D_Station = idx;
-				break;
+		built = false;
+		foreach (dir in stationDir) {
+			foreach (idx, val in dpoint) {
+				local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
+				sb._orientation = dir;
+				if (sb.Build()) {
+					this._End_Point.extend(sb.GetStartPath());
+					this._D_Station = idx;
+					built = true;
+					break;
+				}
 			}
+			if (built) break;
 		}
 		if (this._End_Point.len() == 0) return 2;
 		
