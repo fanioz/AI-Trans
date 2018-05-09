@@ -75,7 +75,9 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			
-			if (t.VhcType == AIVehicle.VT_RAIL) continue; //
+			if (t.VhcType == AIVehicle.VT_RAIL) {
+				if (num >= 2) continue;
+			}
 
 			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
 			local vhc = vhcs2.Begin();

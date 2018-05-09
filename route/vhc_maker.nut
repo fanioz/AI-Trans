@@ -100,7 +100,7 @@ class VehicleMaker extends Infrastructure
 			Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), tile, AIOrder.OF_NONE),"set buoys order");
 		
 		ret = ret && Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), GetStationB(), AIOrder.OF_NONE), "set dst order");
-		flags = AIOrder.OF_SERVICE_IF_NEEDED;
+		flags = (GetVType() == AIVehicle.VT_RAIL) ? AIOrder.OF_NONE : AIOrder.OF_SERVICE_IF_NEEDED;
 		local nflags = flags;
 		if (!AIMap.IsValidTile(GetDepotB())) nflags = flags | AIOrder.OF_GOTO_NEAREST_DEPOT;
 		Debug.ResultOf(AIOrder.AppendOrder(GetVehicle(), GetDepotB(), nflags),"set depot order");
