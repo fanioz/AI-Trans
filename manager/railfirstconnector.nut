@@ -90,8 +90,6 @@ class RailFirstConnector extends Connector
 		} else if (_Route_Found) {
 			Info ("route found");
 			if (!Money.Get(GetTotalCost(this))) return;
-			this._Start_Point = _Line.GetTile();
-			this._End_Point = _Line.GetFirstTile();
 			this._Route_Built = BuildInfrastructure();
 			this._Route_Found = false;
 			this._Line = null;
