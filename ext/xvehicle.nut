@@ -207,10 +207,6 @@ class XVehicle
 		local vt = tbl.VhcType;
 		local vtname = CLString.VehicleType(vt);
 		local engine_new = AIGroup.GetEngineReplacement (AIGroup.GROUP_ALL, engine);
-		if (AIEngine.IsValidEngine(engine_new)) {
-			Info("AutoReplacement for", vtname, "was set to", AIEngine.GetName(engine_new));
-			return true;
-		}
 		Info ("try to find engine replacement for", vtname);
 		local v_man = VehicleMaker (vt);
 		v_man.SetCargo (tbl.Cargo);
@@ -220,18 +216,26 @@ class XVehicle
 		};
 		v_man.SortEngine();
 		engine_new = (vt == AIVehicle.VT_RAIL) ? v_man.GetFirstLoco() : v_man.GetFirst();
-		AIGroup.SetAutoReplace(AIGroup.GROUP_ALL, engine, engine_new);
+		if (AIGroup.SetAutoReplace(AIGroup.GROUP_ALL, engine, engine_new)) {
+			Info("AutoReplacement for", vtname, "was set to", AIEngine.GetName(engine_new));
+		}
 		v_man.SetDepotA (tbl.Depots[0]);
 		v_man.SetDepotB (tbl.Depots[1]);
 		v_man.SetStationA (tbl.Stations[0]);
 		v_man.SetStationB (tbl.Stations[1]);
-		while (Debug.ResultOf (v_man.TryBuild (), "try buy engine")) {
+		Money.Get(0);
+		if (vt == AIVehicle.VT_RAIL) {
+			v_man.TryBuildRail();
+		} else {
+			v_man.TryBuild();
+		}
+		//while (Debug.ResultOf (v_man.TryBuild (), "try buy engine")) {
 			if (v_man.IsBuilt()) {
 				Info ("New vehicle", v_man.GetVehicle());
 				if (XVehicle.Run(v_man.GetVehicle())) return true;
 			}
 			AIVehicle.SellVehicle (v_man.GetVehicle());
-		}
+		//}
 		Info ("failed on build vehicle");
 		return false;
 	}
