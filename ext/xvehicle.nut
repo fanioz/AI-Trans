@@ -449,7 +449,7 @@ class XVehicle
 			local list = func[x](tabel.Cargo);
 			if (list.IsEmpty()) {
 				//from town
-				assert(XCargo.TownStd.HasItem(tabel.Cargo));
+				assert(XCargo.TownStd.HasItem(tabel.Cargo) || XCargo.TownEffect.HasItem(tabel.Cargo));
 				tabel.IsTown[x] = true;
 				tabel.ServID[x] = XTown.GetID(tabel.Stations[x]);
 				if (!AITown.IsValidTown(tabel.ServID[x])) {
