@@ -416,7 +416,6 @@ class XVehicle
 		tabel.Cargo = XCargo.OfVehicle(idx);
 		tabel.VhcType = AIVehicle.GetVehicleType(idx);
 		tabel.StationType = XStation.GetTipe(tabel.VhcType, tabel.Cargo);
-		tabel.Key <- Service.CreateKey(tabel.ServID[0], tabel.ServID[1], tabel.Cargo, tabel.VhcType);
 		tabel.VhcCapacity <- AIVehicle.GetCapacity(idx, tabel.Cargo);
 		tabel.VhcID <- idx;
  		tabel.Engine <- AIVehicle.GetEngineType(idx);
@@ -445,6 +444,7 @@ class XVehicle
 				return tabel;
 			}
 		}
+		tabel.Key <- Service.CreateKey(tabel.StationsID[0], tabel.StationsID[1], tabel.Cargo, tabel.VhcType);
 		local src = [true, false];
 		local func = [AIIndustryList_CargoProducing, AIIndustryList_CargoAccepting];
 		for (local x=0;x<2;x++) {
