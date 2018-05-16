@@ -412,21 +412,27 @@ class XVehicle
 	@return true if route is readable
 	*/
 	function ReadRoute(idx) {
- 		local tabel = {};
- 		tabel.IsValid <- false;
+ 		local tabel = Service.NewRoute();
  		if (!AIVehicle.IsValidVehicle(idx)) {
  			Warn(idx, "is not a valid vehicle");
  			return tabel;
  		}
- 		tabel.Stations <- [];
-		tabel.Depots <- [];
-		tabel.Waypoints <- []; ///might not needed
+		tabel.Cargo = XCargo.OfVehicle(idx);
+		tabel.VhcType = AIVehicle.GetVehicleType(idx);
+		tabel.StationType = XStation.GetTipe(tabel.VhcType, tabel.Cargo);
+		tabel.VhcCapacity <- AIVehicle.GetCapacity(idx, tabel.Cargo);
+		tabel.VhcID <- idx;
+ 		tabel.Engine <- AIVehicle.GetEngineType(idx);
+		tabel.MaxSpeed <- AIEngine.GetMaxSpeed(tabel.Engine);
+		tabel.Track <- XVehicle.GetTrack(idx);
+		tabel.GroupID <- AIVehicle.GetGroupID(idx);
+		
 		for (local c=0;c<AIOrder.GetOrderCount(idx);c++) {
 			local dest = AIOrder.GetOrderDestination(idx, c);
 			if (AIOrder.IsGotoStationOrder(idx, c))
 				tabel.Stations.push(dest);
 			if (AIOrder.IsGotoDepotOrder(idx, c))
-				tabel.Depots.push(dest);
+				tabel.Depots.insert(0, dest);
 			if (AIOrder.IsGotoWaypointOrder(idx, c)) 
 				tabel.Waypoints.push(dest);
 		}
@@ -434,7 +440,7 @@ class XVehicle
 			Warn(AIVehicle.GetName(idx), "stations stop less than 1");
 			return tabel;
 		}
-		tabel.StationsID <- clone tabel.Stations;
+		tabel.StationsID = clone tabel.Stations;
 		for(local c=0;c<tabel.Stations.len();c++) {
 			tabel.StationsID[c] = AIStation.GetStationID(tabel.Stations[c]);
 			if (!AIStation.IsValidStation(tabel.StationsID[c])) {
@@ -442,11 +448,7 @@ class XVehicle
 				return tabel;
 			}
 		}
-		tabel.Cargo <- XCargo.OfVehicle(idx);
-		tabel.VhcType <- AIVehicle.GetVehicleType(idx);
-		tabel.StationType <- XStation.GetTipe(tabel.VhcType, tabel.Cargo);
-		tabel.IsTown <- [true, true];
-		tabel.ServID <- [-1, -1];
+		tabel.Key <- Service.CreateKey(tabel.StationsID[0], tabel.StationsID[1], tabel.Cargo, tabel.VhcType);
 		local src = [true, false];
 		local func = [AIIndustryList_CargoProducing, AIIndustryList_CargoAccepting];
 		for (local x=0;x<2;x++) {
@@ -485,21 +487,13 @@ class XVehicle
 				}
 			}
 		}
- 		tabel.Key <- Service.CreateKey(tabel.ServID[0], tabel.ServID[1], tabel.Cargo, tabel.VhcType);
-		tabel.VhcCapacity <- AIVehicle.GetCapacity(idx, tabel.Cargo);
-		tabel.VhcID <- idx;
- 		tabel.Orders <- XVehicle.GetOrders(idx);
- 		tabel.Engine <- AIVehicle.GetEngineType(idx);
-		tabel.MaxSpeed <- AIEngine.GetMaxSpeed(tabel.Engine);
-		tabel.Track <- XVehicle.GetTrack(idx);
-		tabel.GroupID <- AIVehicle.GetGroupID(idx);
-		if (tabel.Depots.len()==0) {
+ 		if (tabel.Depots.len()==0) {
 			tabel.Depots.push(Assist.FindDepot(tabel.Stations[0], 20, tabel.VhcType, tabel.Track));
 		}
 		if (tabel.Depots.len()==1) {
 			tabel.Depots.push(-1);
 		}
-		tabel.LastBuild <- AIDate.GetCurrentDate() - AIVehicle.GetAge(idx);
+		tabel.LastBuild = AIDate.GetCurrentDate() - AIVehicle.GetAge(idx);
 		tabel.IsValid = true;
 		return tabel;
  	}

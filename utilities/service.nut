@@ -257,4 +257,29 @@ class Service
 	function SourceIsProducing(route) {
 		return (route.IsTown[0] ? AITown : AIIndustry).GetLastMonthProduction(route.ServID[0], route.Cargo) > 10;
 	}
+	
+	function NewRoute() {
+		local tabel = {
+	 		IsValid = false
+	 		Stations = []
+			Depots = []
+			Waypoints = [] ///might not needed
+			StationsID = []
+			Cargo = -1
+			VhcType = -1
+			StationType = AIStation.STATION_ANY
+			IsTown = [true, true]
+			ServID = [-1, -1]
+			Key = ""
+			VhcCapacity = 0
+			VhcID = -1
+	 		Orders = []
+	 		Engine = -1
+			MaxSpeed = 0
+			Track = -1
+			GroupID = -1
+			LastBuild = 0
+		}
+		return tabel;
+	}
 }
