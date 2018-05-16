@@ -236,6 +236,7 @@ class RailFirstConnector extends Connector
 			foreach (idx, val in spoint) {
 				local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
 				sb._orientation = dir;
+				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
 					this._Start_Point.extend(sb.GetStartPath());
 					this._S_Station = idx;
@@ -251,6 +252,7 @@ class RailFirstConnector extends Connector
 			foreach (idx, val in dpoint) {
 				local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
 				sb._orientation = dir;
+				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
 					this._End_Point.extend(sb.GetStartPath());
 					this._D_Station = idx;
@@ -363,6 +365,20 @@ class StationBuilder extends Infrastructure
 		this._industryTypes = [AIIndustry.GetIndustryType(srcIndustry), AIIndustry.GetIndustryType(dstIndustry)];
 		this._isSourceStation = isSource;
 		this._stationType = StationBuilder.TYPE_SIMPLE;
+	}
+	
+	function IsBuildable() {
+		//X = NESW; Y = NWSE
+		local t = XTile.NW_Of(this.GetLocation(),1);
+		local x = this._num_platforms;
+		local y = this._platformLength + 2;
+		if (this._orientation == AIRail.RAILTRACK_NE_SW) {
+			y = this._num_platforms;
+			x = this._platformLength + 2;
+			t = XTile.NE_Of(this.GetLocation(), 1);
+		}
+		//Debug.Pause(t,"base x:"+x+"-y:"+y);
+		return XTile.IsBuildableRange(t, x, y);
 	}
 	
 	function Build() {
