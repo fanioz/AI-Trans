@@ -17,8 +17,6 @@ class RailFirstConnector extends DailyTask
 	_VhcManager = null;
 	_Source_ID = null;
 	_Dest_ID = null;
-	_S_Depot = null;
-	_D_Depot = null;
 	_Serv_Cost = null;
 	_Line = null;
 	_PF = null;
@@ -71,8 +69,6 @@ class RailFirstConnector extends DailyTask
 
 		_Source_ID = -1;
 		_Dest_ID = -1;
-		_S_Depot = -1;
-		_D_Depot = -1;
 
 		_Serv_Cost = 0;
 		_RouteCost = 0;
@@ -254,8 +250,8 @@ class RailFirstConnector extends DailyTask
 		self._VhcManager.SetCargo(self._current.Cargo);
 		self._VhcManager.SetStationA(self._current.Stations[0]);
 		self._VhcManager.SetStationB(self._current.Stations[1]);
-		self._VhcManager.SetDepotA(self._S_Depot);
-		self._VhcManager.SetDepotB(self._D_Depot);
+		self._VhcManager.SetDepotA(self._current.Depots[0]);
+		self._VhcManager.SetDepotB(self._current.Depots[1]);
 		if (self._current.VhcType == AIVehicle.VT_RAIL) {
 			self._VhcManager.TryBuildRail();
 		} else {
@@ -486,12 +482,13 @@ class RailFirstConnector extends DailyTask
 			}
 		}
 		XRail.BuildRail(this._Line);
+		this._current.Depots.clear();
 		local depot = XRail.BuildDepotOnRail(path);
-		if (AIRail.IsRailDepotTile(depot)) this._S_Depot = depot;
+		if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
 		path.reverse();
 		depot = XRail.BuildDepotOnRail(path);
-		if (AIRail.IsRailDepotTile(depot)) this._D_Depot = depot;
-		XRail.BuildSignal(this._S_Depot, this._D_Depot, 2);
+		if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
+		XRail.BuildSignal(this._current.Depots[0], this._current.Depots[1], 2);
 		return true;
 	}
 	
