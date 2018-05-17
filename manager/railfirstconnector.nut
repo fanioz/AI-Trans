@@ -47,7 +47,6 @@ class RailFirstConnector extends DailyTask
 	_WagonNum = null;
 	_Vhc_Price = null;
 	_Vhc_Yearly_Cost = null;
-	_Vhc_Capacity = null;
 	instance = [];
 	_current = null;
 	constructor() {
@@ -67,7 +66,6 @@ class RailFirstConnector extends DailyTask
 		this._WagonNum = 7;
 		this._Vhc_Price = 0;
 		this._Vhc_Yearly_Cost = 0;
-		this._Vhc_Capacity = 0;
 		_Last_Year = AIDate.GetCurrentDate();
 		_LastSuccess = 0;
 		_SkipList = CLList();
@@ -144,12 +142,12 @@ class RailFirstConnector extends DailyTask
 			this._current.Wagon = this._VhcManager.GetFirst();
 			this._Vhc_Price = AIEngine.GetPrice(this._current.Wagon) * this._WagonNum + AIEngine.GetPrice(this._current.Engine);
 			this._Vhc_Yearly_Cost = AIEngine.GetRunningCost(this._current.Wagon) * this._WagonNum + AIEngine.GetRunningCost(this._current.Engine);
-			this._Vhc_Capacity = AIEngine.GetCapacity(this._current.Wagon) * this._WagonNum;
+			this._current.VhcCapacity = AIEngine.GetCapacity(this._current.Wagon) * this._WagonNum;
 		}
 		Info ("Loco engine selected:", AIEngine.GetName (this._current.Engine));
 		Info ("Wagon engine selected:", AIEngine.GetName (this._current.Wagon));
 		Info ("Train price:", this._Vhc_Price);
-		Info ("Train Capacity:", this._Vhc_Capacity);
+		Info ("Train Capacity:", this._current.VhcCapacity);
 		Info ("Train Yearly Cost:", this._Vhc_Yearly_Cost);
 		
 		if (this._Route_Built) {
@@ -351,7 +349,7 @@ class RailFirstConnector extends DailyTask
 		srcIndustries.KeepBelowValue(Setting.Max_Transported);
 		//Info("max transported source left", srcIndustries.Count());
 		srcIndustries.Valuate(XIndustry.ProdValue, this._current.Cargo);
-		//srcIndustries.RemoveBelowValue(this._Vhc_Capacity);
+		//srcIndustries.RemoveBelowValue(this._current.VhcCapacity);
 		if (this._Possible_Sources.rawin(this._current.Cargo)) {
 			this._Possible_Sources[this._current.Cargo].Clear();
 		} else {
@@ -386,7 +384,7 @@ class RailFirstConnector extends DailyTask
 			minDistance = this._Min_Distance,//
 			cargo = this._current.Cargo,//
 			locoSpeed = AIEngine.GetMaxSpeed(this._current.Engine),//
-			wagonCapacity = this._Vhc_Capacity,//
+			wagonCapacity = this._current.VhcCapacity,//
 		}
 		dataBind.vhcCount <- Money.Maximum() / this._Vhc_Price * 10; 
 		dataBind.expense <- this._Vhc_Yearly_Cost * dataBind.vhcCount / 10;
