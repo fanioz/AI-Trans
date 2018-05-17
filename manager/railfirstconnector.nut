@@ -36,7 +36,7 @@ class RailFirstConnector extends DailyTask
 	_Blocked_Track = null;
 	_Engine_A = null;
 	_Engine_B = null;
-	_Track = null;
+	
 	_End_Point = null;
 	_Start_Point = null;
 	_Production = null;
@@ -87,7 +87,6 @@ class RailFirstConnector extends DailyTask
 		_D_Depot = -1;
 		_Engine_A = -1;
 		_Engine_B = -1;
-		_Track = -1;
 		_S_Type = -1;
 
 		_Serv_Cost = 0;
@@ -120,7 +119,7 @@ class RailFirstConnector extends DailyTask
 
 	function On_Start() {
 		if (Service.IsNotAllowed(this._current.VhcType)) return;
-		if (_Track == -1) {
+		if (this._current.Track == -1) {
 			local availableRail = AIRailTypeList();
 			availableRail.RemoveList(this._Blocked_Track);
 			if (availableRail.Count() == 0) {
@@ -128,10 +127,10 @@ class RailFirstConnector extends DailyTask
 				this._Blocked_Track.Clear();
 				return;
 			}
-			this._Track = availableRail.Begin();
-			AIRail.SetCurrentRailType(this._Track);
+			this._current.Track = availableRail.Begin();
 		}
-		Info ("using", CLString.RailTrackType(_Track));
+		AIRail.SetCurrentRailType(this._current.Track);
+		Info ("using", CLString.RailTrackType(this._current.Track));
 		if (!AICargo.IsValidCargo (this._current.Cargo)) {
 			MatchCargo(this);
 			return;
@@ -225,7 +224,7 @@ class RailFirstConnector extends DailyTask
 		if (cargoes.IsEmpty()) {
 			self._Blocked_Cargo.Clear();
 			self.Warn("cargo selection empty");
-			self._Track = -1;
+			self._current.Track = -1;
 			return;
 		}
 		cargoes.Valuate(XCargo.MatchSetting);
@@ -247,7 +246,7 @@ class RailFirstConnector extends DailyTask
 	 */
 	function SelectEngine(self) {
 		self._VhcManager.Reset();
-		if (self._VhcManager.HaveEngineFor(self._Track)) {
+		if (self._VhcManager.HaveEngineFor(self._current.Track)) {
 			self._VhcManager.SetCargo(self._current.Cargo);
 			local c = self._VhcManager.CargoEngine.Count();
 			self.Info("engines found for", XCargo.Label[self._current.Cargo], "were", c);
@@ -259,8 +258,8 @@ class RailFirstConnector extends DailyTask
 			self._Engine_A = self._VhcManager.GetFirst();
 		} else {
 			Info("Could not find engine. current money:", Money.Maximum());
-			self._Blocked_Track.AddItem(self._Track, 0);
-			self._Track = -1;
+			self._Blocked_Track.AddItem(self._current.Track, 0);
+			self._current.Track = -1;
 		}
 		return;
 	}
@@ -429,12 +428,12 @@ class RailFirstConnector extends DailyTask
 	}
 	
 	function InitService() {
-		local stID = this._Mgr_A.GetExistingRailStop(this._Track, this._current.Cargo, true);
+		local stID = this._Mgr_A.GetExistingRailStop(this._current.Track, this._current.Cargo, true);
 		if (AIStation.IsValidStation(stID)) {
 			//right now not handling existing station
 			return 1;
 		}
-		stID = this._Mgr_B.GetExistingRailStop(this._Track, this._current.Cargo, false);
+		stID = this._Mgr_B.GetExistingRailStop(this._current.Track, this._current.Cargo, false);
 		if (AIStation.IsValidStation(stID)) {
 			//right now not handling existing station
 			return 2;
