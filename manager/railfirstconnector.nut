@@ -17,8 +17,6 @@ class RailFirstConnector extends DailyTask
 	_VhcManager = null;
 	_Source_ID = null;
 	_Dest_ID = null;
-	_S_Station = null;
-	_D_Station = null;
 	_S_Depot = null;
 	_D_Depot = null;
 	_Serv_Cost = null;
@@ -73,8 +71,6 @@ class RailFirstConnector extends DailyTask
 
 		_Source_ID = -1;
 		_Dest_ID = -1;
-		_S_Station = -1;
-		_D_Station = -1;
 		_S_Depot = -1;
 		_D_Depot = -1;
 
@@ -256,8 +252,8 @@ class RailFirstConnector extends DailyTask
 	 */
 	function MakeVehicle(self) {
 		self._VhcManager.SetCargo(self._current.Cargo);
-		self._VhcManager.SetStationA(self._S_Station);
-		self._VhcManager.SetStationB(self._D_Station);
+		self._VhcManager.SetStationA(self._current.Stations[0]);
+		self._VhcManager.SetStationB(self._current.Stations[1]);
 		self._VhcManager.SetDepotA(self._S_Depot);
 		self._VhcManager.SetDepotB(self._D_Depot);
 		if (self._current.VhcType == AIVehicle.VT_RAIL) {
@@ -433,6 +429,8 @@ class RailFirstConnector extends DailyTask
 		if (dpoint.IsEmpty()) return 2;
 		this._current.StartPoint = [];
 		this._current.EndPoint = [];
+		this._current.Stations.clear();
+		this._current.StationsID.clear();
 		local stationDir = XRail.StationDirection(this._Mgr_A.GetLocation(), this._Mgr_B.GetLocation());
 		local built = false;
 		foreach (dir in stationDir) {
@@ -442,7 +440,8 @@ class RailFirstConnector extends DailyTask
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
 					this._current.StartPoint.extend(sb.GetStartPath());
-					this._S_Station = idx;
+					this._current.Stations.push(idx);
+					this._current.StationsID.push(AIStation.GetStationID(idx));
 					built = true;
 					break;
 				}
@@ -458,7 +457,8 @@ class RailFirstConnector extends DailyTask
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
 					this._current.EndPoint.extend(sb.GetStartPath());
-					this._D_Station = idx;
+					this._current.Stations.push(idx);
+					this._current.StationsID.push(AIStation.GetStationID(idx));
 					built = true;
 					break;
 				}
