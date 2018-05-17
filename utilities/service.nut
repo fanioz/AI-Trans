@@ -276,6 +276,7 @@ class Service
 			VhcID = -1
 	 		Orders = []
 	 		Engine = -1
+	 		Wagon = -1
 			MaxSpeed = 0
 			Track = -1
 			GroupID = -1

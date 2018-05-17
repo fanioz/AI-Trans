@@ -33,10 +33,7 @@ class RailFirstConnector extends DailyTask
 	_Min_Distance = null;
 	_Last_Year = null;
 	_Blocked_Cargo = null;
-	_Blocked_Track = null;
-	_Engine_A = null;
-	_Engine_B = null;
-	
+	_Blocked_Track = null;	
 	_End_Point = null;
 	_Start_Point = null;
 	_Production = null;
@@ -85,8 +82,6 @@ class RailFirstConnector extends DailyTask
 		_D_Station = -1;
 		_S_Depot = -1;
 		_D_Depot = -1;
-		_Engine_A = -1;
-		_Engine_B = -1;
 		_S_Type = -1;
 
 		_Serv_Cost = 0;
@@ -136,23 +131,23 @@ class RailFirstConnector extends DailyTask
 			return;
 		}
 		Info ("cargo selected:", XCargo.Label[this._current.Cargo]);
-		if (!AIEngine.IsValidEngine (this._Engine_A)) {
+		if (!AIEngine.IsValidEngine (this._current.Engine)) {
 			SelectEngine (this);
 			local c = this._VhcManager.MainEngine.Count();
 			Info("Loco found for pulling ", XCargo.Label[this._current.Cargo], "were", c);
 			if (c < 1) {
 				this._current.Cargo = -1;
-				this._Engine_A = -1;
+				this._current.Engine = -1;
 				return;
 			}
-			this._Engine_A = this._VhcManager.GetFirstLoco();
-			this._Engine_B = this._VhcManager.GetFirst();
-			this._Vhc_Price = AIEngine.GetPrice(this._Engine_B) * this._WagonNum + AIEngine.GetPrice(this._Engine_A);
-			this._Vhc_Yearly_Cost = AIEngine.GetRunningCost(this._Engine_B) * this._WagonNum + AIEngine.GetRunningCost(this._Engine_A);
-			this._Vhc_Capacity = AIEngine.GetCapacity(this._Engine_B) * this._WagonNum;
+			this._current.Engine = this._VhcManager.GetFirstLoco();
+			this._current.Wagon = this._VhcManager.GetFirst();
+			this._Vhc_Price = AIEngine.GetPrice(this._current.Wagon) * this._WagonNum + AIEngine.GetPrice(this._current.Engine);
+			this._Vhc_Yearly_Cost = AIEngine.GetRunningCost(this._current.Wagon) * this._WagonNum + AIEngine.GetRunningCost(this._current.Engine);
+			this._Vhc_Capacity = AIEngine.GetCapacity(this._current.Wagon) * this._WagonNum;
 		}
-		Info ("Loco engine selected:", AIEngine.GetName (_Engine_A));
-		Info ("Wagon engine selected:", AIEngine.GetName (_Engine_B));
+		Info ("Loco engine selected:", AIEngine.GetName (this._current.Engine));
+		Info ("Wagon engine selected:", AIEngine.GetName (this._current.Wagon));
 		Info ("Train price:", this._Vhc_Price);
 		Info ("Train Capacity:", this._Vhc_Capacity);
 		Info ("Train Yearly Cost:", this._Vhc_Yearly_Cost);
@@ -162,7 +157,7 @@ class RailFirstConnector extends DailyTask
 			if (!Money.Get(this._Vhc_Price)) return;
 			this.MakeVehicle (this);
 			this._Route_Built = false;
-			this._Engine_A = -1;
+			this._current.Engine = -1;
 			this._Mgr_A = null;
 			this._Mgr_B = null;
 			this._current.Cargo = -1;
@@ -238,7 +233,7 @@ class RailFirstConnector extends DailyTask
 		self._S_Type = XStation.GetTipe(self._current.VhcType, self._current.Cargo);
 		self._Blocked_Cargo.AddItem(self._current.Cargo, 0);
 		self._Possible_Sources[self._current.Cargo] <- CLList();
-		self._Engine_A = -1;
+		self._current.Engine = -1;
 	}
 
 	/**
@@ -255,7 +250,7 @@ class RailFirstConnector extends DailyTask
 				return;
 			}
 			self._VhcManager.SortEngine();
-			self._Engine_A = self._VhcManager.GetFirst();
+			self._current.Engine = self._VhcManager.GetFirst();
 		} else {
 			Info("Could not find engine. current money:", Money.Maximum());
 			self._Blocked_Track.AddItem(self._current.Track, 0);
@@ -291,11 +286,11 @@ class RailFirstConnector extends DailyTask
 	 * estimating cost for service
 	 */
 	function GetTotalCost(self) {
-		local cost = AIEngine.GetPrice(self._Engine_A);
+		local cost = AIEngine.GetPrice(self._current.Engine);
 		if (self._current.VhcType == AIVehicle.VT_RAIL) {
 			/* TODO : number '4' should be changeable */
 			cost *= 4;
-			cost += AIEngine.GetPrice(self._Engine_B);
+			cost += AIEngine.GetPrice(self._current.Wagon);
 		}
 		self.Info("engine cost", cost);
 		self.Info("infrastructure cost", self._Serv_Cost);
@@ -335,7 +330,7 @@ class RailFirstConnector extends DailyTask
 		}
 		if (this._Mgr_A == null) {
 			this._current.Cargo = -1;
-			this._Engine_A = -1;
+			this._current.Engine = -1;
 			Warn("Couldn't find source");
 		} else {
 			Info("selecting source:", this._Mgr_A.GetName());
@@ -390,7 +385,7 @@ class RailFirstConnector extends DailyTask
 			maxDistance = this._Max_Distance,//
 			minDistance = this._Min_Distance,//
 			cargo = this._current.Cargo,//
-			locoSpeed = AIEngine.GetMaxSpeed(this._Engine_A),//
+			locoSpeed = AIEngine.GetMaxSpeed(this._current.Engine),//
 			wagonCapacity = this._Vhc_Capacity,//
 		}
 		dataBind.vhcCount <- Money.Maximum() / this._Vhc_Price * 10; 
