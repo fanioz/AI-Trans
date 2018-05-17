@@ -40,7 +40,6 @@ class RailFirstConnector extends DailyTask
 	_LastSuccess = null;
 	_Mgr_A = null;
 	_Mgr_B = null;
-	_S_Type = null;
 	_Possible_Sources = null;
 	_Possible_Dests = null;
 	_PlatformLength = null;
@@ -80,7 +79,6 @@ class RailFirstConnector extends DailyTask
 		_D_Station = -1;
 		_S_Depot = -1;
 		_D_Depot = -1;
-		_S_Type = -1;
 
 		_Serv_Cost = 0;
 		_RouteCost = 0;
@@ -228,7 +226,7 @@ class RailFirstConnector extends DailyTask
 		}
 		cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
 		self._current.Cargo = cargoes.Begin();
-		self._S_Type = XStation.GetTipe(self._current.VhcType, self._current.Cargo);
+		self._current.StationType = XStation.GetTipe(self._current.VhcType, self._current.Cargo);
 		self._Blocked_Cargo.AddItem(self._current.Cargo, 0);
 		self._Possible_Sources[self._current.Cargo] <- CLList();
 		self._current.Engine = -1;
@@ -431,8 +429,8 @@ class RailFirstConnector extends DailyTask
 			//right now not handling existing station
 			return 2;
 		}
-		if (!this._Mgr_A.AllowTryStation(this._S_Type)) return 1;
-		if (!this._Mgr_B.AllowTryStation(this._S_Type)) return 2;
+		if (!this._Mgr_A.AllowTryStation(this._current.StationType)) return 1;
+		if (!this._Mgr_B.AllowTryStation(this._current.StationType)) return 2;
 		local spoint = this._Mgr_A.GetAreaForRailStation(this._current.Cargo, true);
 		if (spoint.IsEmpty()) return 1;
 		local dpoint = this._Mgr_B.GetAreaForRailStation(this._current.Cargo, false);
