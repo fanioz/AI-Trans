@@ -30,6 +30,7 @@ class VehicleMaker extends Infrastructure
 		MainEngine = CLList();
 		CargoEngine = CLList();
 		Reset();
+		this._platformLength = 4;
 	}
 
 	function GetPlatformLength() { return this._platformLength; }
@@ -148,7 +149,6 @@ class VehicleMaker extends Infrastructure
 		_station_b = -1;
 		_wgn_id = -1;
 		_m_id = -1;
-		this._platformLength = 4;
 		this._waypoints = [];
 	}
 
