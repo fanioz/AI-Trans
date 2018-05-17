@@ -37,7 +37,6 @@ class RailFirstConnector extends DailyTask
 	_Engine_A = null;
 	_Engine_B = null;
 	_Track = null;
-	_V_Type = null;
 	_End_Point = null;
 	_Start_Point = null;
 	_Production = null;
@@ -61,9 +60,9 @@ class RailFirstConnector extends DailyTask
 			this._current = Service.Data.Projects.rawget("Rail");
 		} else {
 			//set new route
+			this._current.VhcType = AIVehicle.VT_RAIL;
 		}
-		this._V_Type = AIVehicle.VT_RAIL;
-		this._VhcManager = VehicleMaker(_V_Type);
+		this._VhcManager = VehicleMaker(this._current.VhcType);
 		this._Max_Distance = 200;
 		this._Min_Distance = 50;
 		this._PF = Rail_PF();
@@ -114,13 +113,13 @@ class RailFirstConnector extends DailyTask
 	}
 	
 	function On_Save() {
-		Service.Data.Projects.rawset("Rail", this. _current);
+		Service.Data.Projects.rawset("Rail", this._current);
 	}
 	
 	static function get() { return RailFirstConnector.instance[0]; } 
 
 	function On_Start() {
-		if (Service.IsNotAllowed(_V_Type)) return;
+		if (Service.IsNotAllowed(this._current.VhcType)) return;
 		if (_Track == -1) {
 			local availableRail = AIRailTypeList();
 			availableRail.RemoveList(this._Blocked_Track);
@@ -133,11 +132,11 @@ class RailFirstConnector extends DailyTask
 			AIRail.SetCurrentRailType(this._Track);
 		}
 		Info ("using", CLString.RailTrackType(_Track));
-		if (!AICargo.IsValidCargo (_current.Cargo)) {
+		if (!AICargo.IsValidCargo (this._current.Cargo)) {
 			MatchCargo(this);
 			return;
 		}
-		Info ("cargo selected:", XCargo.Label[_current.Cargo]);
+		Info ("cargo selected:", XCargo.Label[this._current.Cargo]);
 		if (!AIEngine.IsValidEngine (this._Engine_A)) {
 			SelectEngine (this);
 			local c = this._VhcManager.MainEngine.Count();
@@ -237,7 +236,7 @@ class RailFirstConnector extends DailyTask
 		}
 		cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
 		self._current.Cargo = cargoes.Begin();
-		self._S_Type = XStation.GetTipe(self._V_Type, self._current.Cargo);
+		self._S_Type = XStation.GetTipe(self._current.VhcType, self._current.Cargo);
 		self._Blocked_Cargo.AddItem(self._current.Cargo, 0);
 		self._Possible_Sources[self._current.Cargo] <- CLList();
 		self._Engine_A = -1;
@@ -275,7 +274,7 @@ class RailFirstConnector extends DailyTask
 		self._VhcManager.SetStationB(self._D_Station);
 		self._VhcManager.SetDepotA(self._S_Depot);
 		self._VhcManager.SetDepotB(self._D_Depot);
-		if (self._V_Type == AIVehicle.VT_RAIL) {
+		if (self._current.VhcType == AIVehicle.VT_RAIL) {
 			self._VhcManager.TryBuildRail();
 		} else {
 			self._VhcManager.TryBuild();
@@ -294,7 +293,7 @@ class RailFirstConnector extends DailyTask
 	 */
 	function GetTotalCost(self) {
 		local cost = AIEngine.GetPrice(self._Engine_A);
-		if (self._V_Type == AIVehicle.VT_RAIL) {
+		if (self._current.VhcType == AIVehicle.VT_RAIL) {
 			/* TODO : number '4' should be changeable */
 			cost *= 4;
 			cost += AIEngine.GetPrice(self._Engine_B);
