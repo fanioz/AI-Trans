@@ -17,6 +17,7 @@ class RailFirstConnector extends Connector
 	_Vhc_Yearly_Cost = null;
 	_Vhc_Capacity = null;
 	instance = [];
+	_current = null;
 	constructor() {
 		this._V_Type = AIVehicle.VT_RAIL;
 		Connector.constructor("Rail First Connector", 10);
@@ -29,8 +30,18 @@ class RailFirstConnector extends Connector
 		this._Vhc_Price = 0;
 		this._Vhc_Yearly_Cost = 0;
 		this._Vhc_Capacity = 0;
+		this._current = Service.NewRoute();
+		if (Service.Data.Projects.rawin("Rail")) {
+			this._current = Service.Data.Projects.rawget("Rail");
+		} else {
+			//set new route
+		}
 		RailFirstConnector.instance.push(this);
 		assert(RailFirstConnector.instance.len() == 1);
+	}
+	
+	function On_Save() {
+		Service.Data.Projects.rawset("Rail", this. _current);
 	}
 	
 	static function get() { return RailFirstConnector.instance[0]; } 

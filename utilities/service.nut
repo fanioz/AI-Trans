@@ -15,6 +15,7 @@ class Service
 		VhcToSell = {}
 		Events = []
 		Routes = {}
+		Projects = {}
 	};
 
 	function Init(self) {
@@ -278,6 +279,7 @@ class Service
 			MaxSpeed = 0
 			Track = -1
 			GroupID = -1
+			Step = 0
 			LastBuild = 0
 		}
 		return tabel;
