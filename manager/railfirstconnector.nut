@@ -33,9 +33,7 @@ class RailFirstConnector extends DailyTask
 	_Min_Distance = null;
 	_Last_Year = null;
 	_Blocked_Cargo = null;
-	_Blocked_Track = null;	
-	_End_Point = null;
-	_Start_Point = null;
+	_Blocked_Track = null;
 	_Production = null;
 	_LastSuccess = null;
 	_Mgr_A = null;
@@ -87,8 +85,6 @@ class RailFirstConnector extends DailyTask
 		_Line = false;
 		_PT = null;
 
-		_End_Point = -1;
-		_Start_Point = -1;
 		_Route_Found = false;
 		_Route_Built = false;
 		_Station_Built = false;
@@ -435,8 +431,8 @@ class RailFirstConnector extends DailyTask
 		if (spoint.IsEmpty()) return 1;
 		local dpoint = this._Mgr_B.GetAreaForRailStation(this._current.Cargo, false);
 		if (dpoint.IsEmpty()) return 2;
-		this._Start_Point = [];
-		this._End_Point = [];
+		this._current.StartPoint = [];
+		this._current.EndPoint = [];
 		local stationDir = XRail.StationDirection(this._Mgr_A.GetLocation(), this._Mgr_B.GetLocation());
 		local built = false;
 		foreach (dir in stationDir) {
@@ -445,7 +441,7 @@ class RailFirstConnector extends DailyTask
 				sb._orientation = dir;
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
-					this._Start_Point.extend(sb.GetStartPath());
+					this._current.StartPoint.extend(sb.GetStartPath());
 					this._S_Station = idx;
 					built = true;
 					break;
@@ -453,7 +449,7 @@ class RailFirstConnector extends DailyTask
 			}
 			if (built) break;
 		}
-		if (this._Start_Point.len() == 0) return 1;
+		if (this._current.StartPoint.len() == 0) return 1;
 		built = false;
 		foreach (dir in stationDir) {
 			foreach (idx, val in dpoint) {
@@ -461,7 +457,7 @@ class RailFirstConnector extends DailyTask
 				sb._orientation = dir;
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
-					this._End_Point.extend(sb.GetStartPath());
+					this._current.EndPoint.extend(sb.GetStartPath());
 					this._D_Station = idx;
 					built = true;
 					break;
@@ -469,9 +465,9 @@ class RailFirstConnector extends DailyTask
 			}
 			if (built) break;
 		}
-		if (this._End_Point.len() == 0) return 2;
+		if (this._current.EndPoint.len() == 0) return 2;
 		
-		_PF.InitializePath(this._Start_Point, this._End_Point, []);
+		_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
 		return 0;
 	}
 
@@ -484,7 +480,7 @@ class RailFirstConnector extends DailyTask
 				this._RouteCost = cost.GetCosts();
 				if (!Money.Get(GetTotalCost(this))) return;
 			} else {
-				_PF.InitializePath(this._Start_Point, this._End_Point, []);
+				_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
 				Info("Path building failed. Re-find");
 				return;
 			}

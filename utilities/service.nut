@@ -280,6 +280,8 @@ class Service
 			MaxSpeed = 0
 			Track = -1
 			GroupID = -1
+			StartPoint = []
+			EndPoint = []
 			Step = 0
 			LastBuild = 0
 		}
