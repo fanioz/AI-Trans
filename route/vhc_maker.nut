@@ -33,7 +33,7 @@ class VehicleMaker extends Infrastructure
 	}
 
 	function GetPlatformLength() { return this._platformLength; }
-	function SetPlatformLength(a) { this._platformLength = _platformLength; }
+	function SetPlatformLength(a) { this._platformLength = a; }
 	function GetWaypoints() { return this._waypoints; }
 	function SetWaypoints(wp) { this._waypoints = wp; }
 	function GetDepotA() { return _depot_a; }
