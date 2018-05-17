@@ -22,7 +22,6 @@ class RailFirstConnector extends DailyTask
 	_S_Depot = null;
 	_D_Depot = null;
 	_Serv_Cost = null;
-	_Cargo_ID = null;
 	_Line = null;
 	_PF = null;
 	_PT = null;
@@ -87,7 +86,6 @@ class RailFirstConnector extends DailyTask
 		_D_Station = -1;
 		_S_Depot = -1;
 		_D_Depot = -1;
-		_Cargo_ID = -1;
 		_Engine_A = -1;
 		_Engine_B = -1;
 		_Track = -1;
@@ -135,17 +133,17 @@ class RailFirstConnector extends DailyTask
 			AIRail.SetCurrentRailType(this._Track);
 		}
 		Info ("using", CLString.RailTrackType(_Track));
-		if (!AICargo.IsValidCargo (_Cargo_ID)) {
+		if (!AICargo.IsValidCargo (_current.Cargo)) {
 			MatchCargo(this);
 			return;
 		}
-		Info ("cargo selected:", XCargo.Label[_Cargo_ID]);
+		Info ("cargo selected:", XCargo.Label[_current.Cargo]);
 		if (!AIEngine.IsValidEngine (this._Engine_A)) {
 			SelectEngine (this);
 			local c = this._VhcManager.MainEngine.Count();
-			Info("Loco found for pulling ", XCargo.Label[this._Cargo_ID], "were", c);
+			Info("Loco found for pulling ", XCargo.Label[this._current.Cargo], "were", c);
 			if (c < 1) {
-				this._Cargo_ID = -1;
+				this._current.Cargo = -1;
 				this._Engine_A = -1;
 				return;
 			}
@@ -169,7 +167,7 @@ class RailFirstConnector extends DailyTask
 			this._Engine_A = -1;
 			this._Mgr_A = null;
 			this._Mgr_B = null;
-			this._Cargo_ID = -1;
+			this._current.Cargo = -1;
 			this._LastSuccess = AIDate.GetCurrentDate() + 90;
 		} else if (IsWaitingPath(this)) {
 			
@@ -238,10 +236,10 @@ class RailFirstConnector extends DailyTask
 			return;
 		}
 		cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
-		self._Cargo_ID = cargoes.Begin();
-		self._S_Type = XStation.GetTipe(self._V_Type, self._Cargo_ID);
-		self._Blocked_Cargo.AddItem(self._Cargo_ID, 0);
-		self._Possible_Sources[self._Cargo_ID] <- CLList();
+		self._current.Cargo = cargoes.Begin();
+		self._S_Type = XStation.GetTipe(self._V_Type, self._current.Cargo);
+		self._Blocked_Cargo.AddItem(self._current.Cargo, 0);
+		self._Possible_Sources[self._current.Cargo] <- CLList();
 		self._Engine_A = -1;
 	}
 
@@ -251,11 +249,11 @@ class RailFirstConnector extends DailyTask
 	function SelectEngine(self) {
 		self._VhcManager.Reset();
 		if (self._VhcManager.HaveEngineFor(self._Track)) {
-			self._VhcManager.SetCargo(self._Cargo_ID);
+			self._VhcManager.SetCargo(self._current.Cargo);
 			local c = self._VhcManager.CargoEngine.Count();
-			self.Info("engines found for", XCargo.Label[self._Cargo_ID], "were", c);
+			self.Info("engines found for", XCargo.Label[self._current.Cargo], "were", c);
 			if (c < 1) {
-				self._Cargo_ID = -1;
+				self._current.Cargo = -1;
 				return;
 			}
 			self._VhcManager.SortEngine();
@@ -272,7 +270,7 @@ class RailFirstConnector extends DailyTask
 	 * common vehicle managers action on building vehicles
 	 */
 	function MakeVehicle(self) {
-		self._VhcManager.SetCargo(self._Cargo_ID);
+		self._VhcManager.SetCargo(self._current.Cargo);
 		self._VhcManager.SetStationA(self._S_Station);
 		self._VhcManager.SetStationB(self._D_Station);
 		self._VhcManager.SetDepotA(self._S_Depot);
@@ -332,13 +330,13 @@ class RailFirstConnector extends DailyTask
 	}
 	function SelectSource() {
 		Info("finding source...");
-		if (!this._Possible_Sources.rawin(this._Cargo_ID) || this._Possible_Sources[this._Cargo_ID].IsEmpty()) this.PopulateSource();
-		if (!this._Possible_Sources[this._Cargo_ID].IsEmpty()) {
-			Info("source left", this._Possible_Sources[this._Cargo_ID].Count());
-			this._Mgr_A = XIndustry.GetManager(this._Possible_Sources[this._Cargo_ID].Pop());
+		if (!this._Possible_Sources.rawin(this._current.Cargo) || this._Possible_Sources[this._current.Cargo].IsEmpty()) this.PopulateSource();
+		if (!this._Possible_Sources[this._current.Cargo].IsEmpty()) {
+			Info("source left", this._Possible_Sources[this._current.Cargo].Count());
+			this._Mgr_A = XIndustry.GetManager(this._Possible_Sources[this._current.Cargo].Pop());
 		}
 		if (this._Mgr_A == null) {
-			this._Cargo_ID = -1;
+			this._current.Cargo = -1;
 			this._Engine_A = -1;
 			Warn("Couldn't find source");
 		} else {
@@ -348,7 +346,7 @@ class RailFirstConnector extends DailyTask
 	}
 	
 	function PopulateSource() {
-		local srcIndustries = AIIndustryList_CargoProducing(this._Cargo_ID);
+		local srcIndustries = AIIndustryList_CargoProducing(this._current.Cargo);
 		srcIndustries.RemoveList(this._Skip_Src);
 		srcIndustries.Valuate(XIndustry.IsRaw);
 		srcIndustries.KeepValue(1);
@@ -356,26 +354,26 @@ class RailFirstConnector extends DailyTask
 		srcIndustries.Valuate(AIIndustry.IsBuiltOnWater);
 		srcIndustries.KeepValue(0);
 		//Info("non wtr source left", srcIndustries.Count());
-		srcIndustries.Valuate(AIIndustry.GetLastMonthTransportedPercentage, this._Cargo_ID);
+		srcIndustries.Valuate(AIIndustry.GetLastMonthTransportedPercentage, this._current.Cargo);
 		srcIndustries.KeepBelowValue(Setting.Max_Transported);
 		//Info("max transported source left", srcIndustries.Count());
-		srcIndustries.Valuate(XIndustry.ProdValue, this._Cargo_ID);
+		srcIndustries.Valuate(XIndustry.ProdValue, this._current.Cargo);
 		//srcIndustries.RemoveBelowValue(this._Vhc_Capacity);
-		if (this._Possible_Sources.rawin(this._Cargo_ID)) {
-			this._Possible_Sources[this._Cargo_ID].Clear();
+		if (this._Possible_Sources.rawin(this._current.Cargo)) {
+			this._Possible_Sources[this._current.Cargo].Clear();
 		} else {
-			this._Possible_Sources[this._Cargo_ID] <- CLList();
+			this._Possible_Sources[this._current.Cargo] <- CLList();
 		}
-		this._Possible_Sources[this._Cargo_ID].AddList(srcIndustries);
+		this._Possible_Sources[this._current.Cargo].AddList(srcIndustries);
 		//Info("source left", srcIndustries.Count());
 	}
 
 	function SelectDest() {
 		Info("finding destination...");
-		if (!this._Possible_Dests.rawin(this._Cargo_ID) || this._Possible_Dests[this._Cargo_ID].IsEmpty()) this.PopulateDestination();
-		if (!this._Possible_Dests[this._Cargo_ID].IsEmpty()) {
-			Info("destination left", this._Possible_Dests[this._Cargo_ID].Count());
-			this._Mgr_B = XIndustry.GetManager(this._Possible_Dests[this._Cargo_ID].Pop());
+		if (!this._Possible_Dests.rawin(this._current.Cargo) || this._Possible_Dests[this._current.Cargo].IsEmpty()) this.PopulateDestination();
+		if (!this._Possible_Dests[this._current.Cargo].IsEmpty()) {
+			Info("destination left", this._Possible_Dests[this._current.Cargo].Count());
+			this._Mgr_B = XIndustry.GetManager(this._Possible_Dests[this._current.Cargo].Pop());
 		}
 		if (this._Mgr_B == null) {
 			this._Mgr_A = null;
@@ -387,13 +385,13 @@ class RailFirstConnector extends DailyTask
 	}
 	
 	function PopulateDestination() {
-		local dstIndustries = AIIndustryList_CargoAccepting(this._Cargo_ID);
+		local dstIndustries = AIIndustryList_CargoAccepting(this._current.Cargo);
 		dstIndustries.RemoveList(this._Skip_Dst);
 		local dataBind = {
 			srcLoc = this._Mgr_A.GetLocation(),//
 			maxDistance = this._Max_Distance,//
 			minDistance = this._Min_Distance,//
-			cargo = this._Cargo_ID,//
+			cargo = this._current.Cargo,//
 			locoSpeed = AIEngine.GetMaxSpeed(this._Engine_A),//
 			wagonCapacity = this._Vhc_Capacity,//
 		}
@@ -423,30 +421,30 @@ class RailFirstConnector extends DailyTask
 		}, dataBind);
 		
 		dstIndustries.KeepAboveValue(Money.Inflated(1000).tointeger());
-		if (this._Possible_Dests.rawin(this._Cargo_ID)) {
-			this._Possible_Dests[this._Cargo_ID].Clear();
+		if (this._Possible_Dests.rawin(this._current.Cargo)) {
+			this._Possible_Dests[this._current.Cargo].Clear();
 		} else {
-			this._Possible_Dests[this._Cargo_ID] <- CLList();
+			this._Possible_Dests[this._current.Cargo] <- CLList();
 		}
-		this._Possible_Dests[this._Cargo_ID].AddList(dstIndustries);	
+		this._Possible_Dests[this._current.Cargo].AddList(dstIndustries);	
 	}
 	
 	function InitService() {
-		local stID = this._Mgr_A.GetExistingRailStop(this._Track, this._Cargo_ID, true);
+		local stID = this._Mgr_A.GetExistingRailStop(this._Track, this._current.Cargo, true);
 		if (AIStation.IsValidStation(stID)) {
 			//right now not handling existing station
 			return 1;
 		}
-		stID = this._Mgr_B.GetExistingRailStop(this._Track, this._Cargo_ID, false);
+		stID = this._Mgr_B.GetExistingRailStop(this._Track, this._current.Cargo, false);
 		if (AIStation.IsValidStation(stID)) {
 			//right now not handling existing station
 			return 2;
 		}
 		if (!this._Mgr_A.AllowTryStation(this._S_Type)) return 1;
 		if (!this._Mgr_B.AllowTryStation(this._S_Type)) return 2;
-		local spoint = this._Mgr_A.GetAreaForRailStation(this._Cargo_ID, true);
+		local spoint = this._Mgr_A.GetAreaForRailStation(this._current.Cargo, true);
 		if (spoint.IsEmpty()) return 1;
-		local dpoint = this._Mgr_B.GetAreaForRailStation(this._Cargo_ID, false);
+		local dpoint = this._Mgr_B.GetAreaForRailStation(this._current.Cargo, false);
 		if (dpoint.IsEmpty()) return 2;
 		this._Start_Point = [];
 		this._End_Point = [];
@@ -454,7 +452,7 @@ class RailFirstConnector extends DailyTask
 		local built = false;
 		foreach (dir in stationDir) {
 			foreach (idx, val in spoint) {
-				local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
+				local sb = StationBuilder(idx, this._current.Cargo, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
 				sb._orientation = dir;
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
@@ -470,7 +468,7 @@ class RailFirstConnector extends DailyTask
 		built = false;
 		foreach (dir in stationDir) {
 			foreach (idx, val in dpoint) {
-				local sb = StationBuilder(idx, this._Cargo_ID, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
+				local sb = StationBuilder(idx, this._current.Cargo, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
 				sb._orientation = dir;
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
