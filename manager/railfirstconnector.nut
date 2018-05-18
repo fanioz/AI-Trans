@@ -111,7 +111,7 @@ class RailFirstConnector extends DailyTask
 		AIRail.SetCurrentRailType(this._current.Track);
 		Info ("using", CLString.RailTrackType(this._current.Track));
 		if (!AICargo.IsValidCargo (this._current.Cargo)) {
-			MatchCargo(this);
+			Service.MatchCargo(this);
 			return;
 		}
 		Info ("cargo selected:", XCargo.Label[this._current.Cargo]);
@@ -206,32 +206,6 @@ class RailFirstConnector extends DailyTask
 			self._Max_Distance += 3;
 			self._Last_Year += 365;
 		}
-	}
-
-	/**
-	 * selecting current cargo id for further process
-	 */
-	function MatchCargo(self) {
-		local cargoes = AICargoList();
-		cargoes.RemoveList(self._Blocked_Cargo);
-		if (cargoes.IsEmpty()) {
-			self._Blocked_Cargo.Clear();
-			self.Warn("cargo selection empty");
-			self._current.Track = -1;
-			return;
-		}
-		cargoes.Valuate(XCargo.MatchSetting);
-		cargoes.KeepValue(1);
-		if (cargoes.IsEmpty()) {
-			self.Warn("could not select any cargo");
-			return;
-		}
-		cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
-		self._current.Cargo = cargoes.Begin();
-		self._current.StationType = XStation.GetTipe(self._current.VhcType, self._current.Cargo);
-		self._Blocked_Cargo.AddItem(self._current.Cargo, 0);
-		self._Possible_Sources[self._current.Cargo] <- CLList();
-		self._current.Engine = -1;
 	}
 
 	/**

@@ -291,4 +291,29 @@ class Service
 	function ServableIsValid(route, i) {
 		return (route.IsTown[i] ? AITown.IsValidTown : AIIndustry.IsValidIndustry)(route.ServID[i]);
 	}
+	
+	/**
+	 * selecting current cargo id for further process
+	 */
+	function MatchCargo(conn) {
+		local cargoes = AICargoList();
+		cargoes.RemoveList(conn._Blocked_Cargo);
+		if (cargoes.IsEmpty()) {
+			conn._Blocked_Cargo.Clear();
+			Warn("cargo selection empty");
+			conn._current.Track = -1;
+			return;
+		}
+		cargoes.Valuate(XCargo.MatchSetting);
+		cargoes.KeepValue(1);
+		if (cargoes.IsEmpty()) {
+			Warn("could not select any cargo");
+			return;
+		}
+		cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
+		conn._current.Cargo = cargoes.Begin();
+		conn._current.StationType = XStation.GetTipe(conn._current.VhcType, conn._current.Cargo);
+		conn._Blocked_Cargo.AddItem(conn._current.Cargo, 0);
+		conn._current.Engine = -1;
+	}
 }
