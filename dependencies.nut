@@ -45,8 +45,8 @@ require("pathfinder/water_pt.nut");
 require("pathfinder/rail_pf.nut");
 require("pathfinder/rail_pt.nut");
 
-/* route */
-require("route/vhc_maker.nut");
+/* builder */
+require("builder/vehicle.nut");
 
 /* task */
 require("task/manager.nut");
