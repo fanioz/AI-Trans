@@ -137,14 +137,17 @@ class RailFirstConnector extends DailyTask
 			Info ("route built");
 			if (!Money.Get(this._Vhc_Price)) return;
 			if (!Service.MakeVehicle (this)) return;
+			this._current.VhcID = this._VhcManager.GetVehicle();
+			this._current.Key = Service.CreateKey(this._current.StationsID[0], this._current.StationsID[1], this._current.Cargo, this._current.VhcType);
+			this._current.MaxSpeed = AIEngine.GetMaxSpeed(this._current.Engine);
+			this._current.IsValid = true;
+			Service.Data.Routes.rawset(this._current.Key, clone this._current);
 			this._Route_Built = false;
-			this._current.Engine = -1;
 			this._Mgr_A = null;
 			this._Mgr_B = null;
-			this._current.ServID[0] = -1;
-			this._current.ServID[1] = -1;
-			this._current.Cargo = -1;
 			this._LastSuccess = AIDate.GetCurrentDate() + 90;
+			this._current = Service.NewRoute();
+			this._current.VhcType = AIVehicle.VT_RAIL;
 		} else if (Service.IsWaitingPath(this)) {
 			
 		} else if (_Route_Found) {
