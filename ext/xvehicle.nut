@@ -251,7 +251,7 @@ class XVehicle
 		local route = XVehicle.ReadRoute(vhc_id);
 		if (route.IsValid) {
 			My._Vehicles[route.VhcID] <- route.Key;
-			Service.Register(route);
+			Service.Data.Routes.rawset(route.Key, route);
 			return true;
 		}
 		return false;
@@ -449,6 +449,18 @@ class XVehicle
 			}
 		}
 		tabel.Key = Service.CreateKey(tabel.StationsID[0], tabel.StationsID[1], tabel.Cargo, tabel.VhcType, tabel.Track);
+		
+		if (Service.Data.Routes.rawin(tabel.Key)) {
+			Service.Data.Routes[tabel.Key].VhcID = tabel.VhcID;
+			Service.Data.Routes[tabel.Key].VhcCapacity = max(Service.Data.Routes[tabel.Key].VhcCapacity, tabel.VhcCapacity);
+			if (AIEngine.GetDesignDate(Service.Data.Routes[tabel.Key].Engine) < AIEngine.GetDesignDate(tabel.Engine)) {
+				AIGroup.SetAutoReplace(Service.Data.Routes[tabel.Key].GroupID, Service.Data.Routes[tabel.Key].Engine, tabel.Engine);
+				Service.Data.Routes[tabel.Key].Engine = tabel.Engine;
+				Service.Data.Routes[tabel.Key].MaxSpeed = tabel.MaxSpeed;
+			}
+			return Service.Data.Routes[tabel.Key];
+		}
+		
 		local src = [true, false];
 		local func = [AIIndustryList_CargoProducing, AIIndustryList_CargoAccepting];
 		for (local x=0;x<2;x++) {

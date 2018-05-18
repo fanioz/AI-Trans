@@ -55,15 +55,6 @@ class Service
 		return false;
 	}
 
-	function Register(tbl) {
-		local key = tbl.Key;
-		if (Service.Data.Routes.rawin(key)) {
-			Service.Merge(key, tbl);
-			return;
-		}
-		Service.Data.Routes.rawset(key, tbl);
-	}
-
 	function IsSubsidyLocationWas(id, loc, is_source) {
 		local fn = XIndustry;
 		if (AISubsidy[(is_source ? "GetSourceType" : "GetDestinationType")](id) == AISubsidy.SPT_TOWN) fn = XTown;
@@ -231,29 +222,6 @@ class Service
 		Info("max.:", maxvhc);
 		Info("we have", maxvhc - vhcc, "left to build", v);
 		return vhcc > maxvhc;
-	}
-	
-	function Merge(key, other) {
-		if (!other.IsValid) return;
-		if (!Service.IsEqual(Service.Data.Routes[key], other)) return;
-		if (!AIVehicle.IsValidVehicle(Service.Data.Routes[key].VhcID)) {
-			Service.Data.Routes.rawset(key, other);
-			return Service.Data.Routes[key].IsValid;
-		}
-		Service.Data.Routes[key].VhcCapacity = max(Service.Data.Routes[key].VhcCapacity, other.VhcCapacity);
-		if (AIEngine.GetDesignDate(Service.Data.Routes[key].Engine) < AIEngine.GetDesignDate(other.Engine)) {
-			AIGroup.SetAutoReplace(Service.Data.Routes[key].GroupID, Service.Data.Routes[key].Engine, other.Engine);
-			Service.Data.Routes[key].Engine = other.Engine;
-		}
-	}
-	
-	function IsEqual(one, other) {
-		if (one.StationsID[0] != other.StationsID[0]) return false;
-		if (one.StationsID[1] != other.StationsID[1]) return false;
-		if (one.Cargo != other.Cargo) return false;
-		if (one.VhcType != other.VhcType) return false;
-		if (one.Track != other.Track) return false;
-		return true;
 	}
 	
 	function SourceIsProducing(route) {

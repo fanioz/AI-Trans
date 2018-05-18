@@ -32,7 +32,6 @@ class Task.Vehicle_Mgr extends DailyTask
 			//=============== Unregistered vehicle
 			if (!XVehicle.IsRegistered(idx)) {
 				Info("Try to registering", name);
-				if (AIVehicle.HasSharedOrders(idx)) AIOrder.UnshareOrders(idx);
 				if (XVehicle.Register(idx)) {
 					XVehicle.MakeGroup(idx, My._Vehicles[idx]);
 				} else {
