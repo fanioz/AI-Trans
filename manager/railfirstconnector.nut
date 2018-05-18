@@ -144,6 +144,8 @@ class RailFirstConnector extends DailyTask
 			this._current.Engine = -1;
 			this._Mgr_A = null;
 			this._Mgr_B = null;
+			this._current.ServID[0] = -1;
+			this._current.ServID[1] = -1;
 			this._current.Cargo = -1;
 			this._LastSuccess = AIDate.GetCurrentDate() + 90;
 		} else if (IsWaitingPath(this)) {
@@ -158,13 +160,25 @@ class RailFirstConnector extends DailyTask
 		} else {
 			Info("Initialize service");
 			_Line = false;
-			if (this._Mgr_A == null) return this.SelectSource();
+			if (this._Mgr_A == null) {
+				if (Service.ServableIsValid(this._current, 0)) {
+					this._Mgr_A = (this._current.IsTown[0] ? XTown : XIndustry).GetManager(this._current.ServID[0]); 
+				} else {
+					return this.SelectSource();
+				}
+			}
 			Info("selected source:", this._Mgr_A.GetName());
-			if (_Mgr_B == null) return this.SelectDest();
+			if (this._Mgr_B == null) {
+				if (Service.ServableIsValid(this._current, 1)) {
+					this._Mgr_B = (this._current.IsTown[1] ? XTown : XIndustry).GetManager(this._current.ServID[1]); 
+				} else {
+					return this.SelectDest();
+				}
+			}
 			Info("selected destination:", _Mgr_B.GetName());
 			switch (InitService()) {
-				case 1 : _Mgr_A = null;
-				case 2 : _Mgr_B = null; break;
+				case 1 : this._Mgr_A = null; this._current.ServID[0] = -1;
+				case 2 : this._Mgr_B = null; this._current.ServID[1] = -1;
 			}
 		}
 		UpdateDistance(this);
@@ -310,7 +324,9 @@ class RailFirstConnector extends DailyTask
 		if (!this._Possible_Sources.rawin(this._current.Cargo) || this._Possible_Sources[this._current.Cargo].IsEmpty()) this.PopulateSource();
 		if (!this._Possible_Sources[this._current.Cargo].IsEmpty()) {
 			Info("source left", this._Possible_Sources[this._current.Cargo].Count());
-			this._Mgr_A = XIndustry.GetManager(this._Possible_Sources[this._current.Cargo].Pop());
+			this._current.ServID[0] = this._Possible_Sources[this._current.Cargo].Pop();
+			this._current.IsTown[0] = false;
+			this._Mgr_A = XIndustry.GetManager(this._current.ServID[0]);
 		}
 		if (this._Mgr_A == null) {
 			this._current.Cargo = -1;
@@ -350,10 +366,13 @@ class RailFirstConnector extends DailyTask
 		if (!this._Possible_Dests.rawin(this._current.Cargo) || this._Possible_Dests[this._current.Cargo].IsEmpty()) this.PopulateDestination();
 		if (!this._Possible_Dests[this._current.Cargo].IsEmpty()) {
 			Info("destination left", this._Possible_Dests[this._current.Cargo].Count());
-			this._Mgr_B = XIndustry.GetManager(this._Possible_Dests[this._current.Cargo].Pop());
+			this._current.ServID[1] = this._Possible_Dests[this._current.Cargo].Pop();
+			this._current.IsTown[1] = false;
+			this._Mgr_B = XIndustry.GetManager(this._current.ServID[1]);
 		}
 		if (this._Mgr_B == null) {
 			this._Mgr_A = null;
+			this._current.ServID[0] = -1;
 			Warn("Couldn't find destination");
 		} else {
 			Info("selecting destination:", this._Mgr_B.GetName());

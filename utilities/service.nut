@@ -287,4 +287,8 @@ class Service
 		}
 		return tabel;
 	}
+	
+	function ServableIsValid(route, i) {
+		return (route.IsTown[i] ? AITown.IsValidTown : AIIndustry.IsValidIndustry)(route.ServID[i]);
+	}
 }
