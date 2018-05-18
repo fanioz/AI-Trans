@@ -283,6 +283,7 @@ class Service
 			StartPoint = []
 			EndPoint = []
 			Step = 0
+			RouteIsBuilt = false
 			LastBuild = 0
 		}
 		return tabel;
@@ -345,7 +346,7 @@ class Service
 			}
 		} else {
 			Info("Could not find engine. current money:", Money.Maximum());
-			conn._Blocked_Track.AddItem(conn._Track, 0);
+			conn._Blocked_Track.AddItem(conn._current._Track, 0);
 			conn._current.Track = -1;
 			return false;
 		}
@@ -402,6 +403,7 @@ class Service
 			conn._RouteCost = 0;
 			conn._Route_Found = false;
 			conn._Mgr_A = null;
+			Service.Data.RouteToClose.push(conn._current);
 			Assist.RemoveAllSigns();
 		}
 		//not removing sign if line = false

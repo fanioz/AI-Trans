@@ -23,7 +23,6 @@ class RailFirstConnector extends DailyTask
 	_PT = null;
 	_RouteCost = null;
 	_Route_Found = null;
-	_Route_Built = null;
 	_Station_Built = null;
 	_Max_Distance = null;
 	_Min_Distance = null;
@@ -78,7 +77,6 @@ class RailFirstConnector extends DailyTask
 		_PT = null;
 
 		_Route_Found = false;
-		_Route_Built = false;
 		_Station_Built = false;
 
 		_Mgr_A = null;
@@ -133,7 +131,7 @@ class RailFirstConnector extends DailyTask
 		Info ("Train Capacity:", this._current.VhcCapacity);
 		Info ("Train Yearly Cost:", this._Vhc_Yearly_Cost);
 		
-		if (this._Route_Built) {
+		if (this._current.RouteIsBuilt) {
 			Info ("route built");
 			if (!Money.Get(this._Vhc_Price)) return;
 			if (!Service.MakeVehicle (this)) return;
@@ -142,7 +140,6 @@ class RailFirstConnector extends DailyTask
 			this._current.MaxSpeed = AIEngine.GetMaxSpeed(this._current.Engine);
 			this._current.IsValid = true;
 			Service.Data.Routes.rawset(this._current.Key, clone this._current);
-			this._Route_Built = false;
 			this._Mgr_A = null;
 			this._Mgr_B = null;
 			this._LastSuccess = AIDate.GetCurrentDate() + 90;
@@ -153,10 +150,10 @@ class RailFirstConnector extends DailyTask
 		} else if (_Route_Found) {
 			Info ("route found");
 			if (!Money.Get(Service.GetTotalCost(this))) return;
-			this._Route_Built = BuildInfrastructure();
+			this._current.RouteIsBuilt = BuildInfrastructure(); 
 			this._Route_Found = false;
 			this._Line = null;
-			Info("rail route building:",  this._Route_Built);
+			Info("rail route building:",  this._current.RouteIsBuilt);
 		} else {
 			Info("Initialize service");
 			_Line = false;
