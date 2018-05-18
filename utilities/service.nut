@@ -386,4 +386,26 @@ class Service
 		Info("total cost", cost);
 		return  cost;
 	}
+	
+	function IsWaitingPath(conn) {
+		if (conn._Mgr_A == null) return false;
+		if (conn._PF.IsRunning()) {
+			conn.Info("still finding", conn._Mgr_A.GetName(), "=>", conn._Mgr_B.GetName());
+			conn._Line = conn._PF.FindPath(200);
+			return true;
+		}
+		if (typeof conn._Line == "instance") {
+			conn._RouteCost = conn._Line.GetBuildCost();
+			conn._Route_Found = true;
+			Assist.RemoveAllSigns();
+		} else if (conn._Line == null) {
+			conn._RouteCost = 0;
+			conn._Route_Found = false;
+			conn._Mgr_A = null;
+			Assist.RemoveAllSigns();
+		}
+		//not removing sign if line = false
+		Info("route found", conn._Route_Found);
+		return false;
+	}
 }

@@ -145,7 +145,7 @@ class RailFirstConnector extends DailyTask
 			this._current.ServID[1] = -1;
 			this._current.Cargo = -1;
 			this._LastSuccess = AIDate.GetCurrentDate() + 90;
-		} else if (IsWaitingPath(this)) {
+		} else if (Service.IsWaitingPath(this)) {
 			
 		} else if (_Route_Found) {
 			Info ("route found");
@@ -205,27 +205,6 @@ class RailFirstConnector extends DailyTask
 		}
 	}
 
-	function IsWaitingPath(self) {
-		if (self._Mgr_A == null) return false;
-		if (self._PF.IsRunning()) {
-			self.Info("still finding", self._Mgr_A.GetName(), "=>", self._Mgr_B.GetName());
-			self._Line = _PF.FindPath(200);
-			return true;
-		}
-		if (typeof self._Line == "instance") {
-			self._RouteCost = _Line.GetBuildCost();
-			self._Route_Found = true;
-			Assist.RemoveAllSigns();
-		} else if (self._Line == null) {
-			self._RouteCost = 0;
-			self._Route_Found = false;
-			self._Mgr_A = null;
-			Assist.RemoveAllSigns();
-		}
-		//not removing sign if line = false
-		Info("route found", self._Route_Found);
-		return false;
-	}
 	function SelectSource() {
 		Info("finding source...");
 		if (!this._Possible_Sources.rawin(this._current.Cargo) || this._Possible_Sources[this._current.Cargo].IsEmpty()) this.PopulateSource();
