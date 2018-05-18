@@ -176,6 +176,10 @@ class RailFirstConnector extends DailyTask
 				}
 			}
 			Info("selected destination:", _Mgr_B.GetName());
+			if (this._current.StartPoint.len() > 0 && this._current.EndPoint.len() > 0) {
+				this._PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
+				return;
+			}
 			switch (InitService()) {
 				case 1 : this._Mgr_A = null; this._current.ServID[0] = -1;
 				case 2 : this._Mgr_B = null; this._current.ServID[1] = -1;
