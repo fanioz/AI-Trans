@@ -315,7 +315,7 @@ class Service
 			}
 		} else {
 			Info("Could not find engine. current money:", Money.Maximum());
-			conn._Blocked_Track.AddItem(conn._current._Track, 0);
+			conn._Blocked_Track.AddItem(conn._current.Track, 0);
 			conn._current.Track = -1;
 			return false;
 		}
