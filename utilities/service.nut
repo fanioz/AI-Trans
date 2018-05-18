@@ -316,4 +316,39 @@ class Service
 		conn._Blocked_Cargo.AddItem(conn._current.Cargo, 0);
 		conn._current.Engine = -1;
 	}
+	
+	/**
+	 * selecting current engine id for further process
+	 */
+	function SelectEngine(conn) {
+		conn._VhcManager.Reset();
+		if (conn._VhcManager.HaveEngineFor(conn._current.Track)) {
+			conn._VhcManager.SetCargo(conn._current.Cargo);
+			local c = conn._VhcManager.CargoEngine.Count();
+			Info("cargo engines found for", XCargo.Label[conn._current.Cargo], "were", c);
+			if (c < 1) {
+				conn._current.Cargo = -1;
+				return false;
+			}
+			conn._VhcManager.SortEngine();
+			if (conn._current.VhcType == AIVehicle.VT_RAIL) {
+				c = conn._VhcManager.MainEngine.Count();
+				Info("Loco found for pulling ", XCargo.Label[conn._current.Cargo], "were", c);
+				if (c < 1) {
+					conn._current.Cargo = -1;
+					return false;
+				}
+				conn._current.Engine = conn._VhcManager.GetFirstLoco();
+				conn._current.Wagon = conn._VhcManager.GetFirst();
+			} else {
+				conn._current.Engine = conn._VhcManager.GetFirst();
+			}
+		} else {
+			Info("Could not find engine. current money:", Money.Maximum());
+			conn._Blocked_Track.AddItem(conn._Track, 0);
+			conn._current.Track = -1;
+			return false;
+		}
+		return true;
+	}
 }

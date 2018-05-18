@@ -110,26 +110,23 @@ class RailFirstConnector extends DailyTask
 		}
 		AIRail.SetCurrentRailType(this._current.Track);
 		Info ("using", CLString.RailTrackType(this._current.Track));
+		
 		if (!AICargo.IsValidCargo (this._current.Cargo)) {
 			Service.MatchCargo(this);
 			return;
 		}
 		Info ("cargo selected:", XCargo.Label[this._current.Cargo]);
+		
 		if (!AIEngine.IsValidEngine (this._current.Engine)) {
-			SelectEngine (this);
-			local c = this._VhcManager.MainEngine.Count();
-			Info("Loco found for pulling ", XCargo.Label[this._current.Cargo], "were", c);
-			if (c < 1) {
-				this._current.Cargo = -1;
-				this._current.Engine = -1;
-				return;
-			}
-			this._current.Engine = this._VhcManager.GetFirstLoco();
-			this._current.Wagon = this._VhcManager.GetFirst();
-			this._Vhc_Price = AIEngine.GetPrice(this._current.Wagon) * this._WagonNum + AIEngine.GetPrice(this._current.Engine);
-			this._Vhc_Yearly_Cost = AIEngine.GetRunningCost(this._current.Wagon) * this._WagonNum + AIEngine.GetRunningCost(this._current.Engine);
+			if (!Service.SelectEngine (this)) return;
 			this._current.VhcCapacity = AIEngine.GetCapacity(this._current.Wagon) * this._WagonNum;
 		}
+		
+		if (this._Vhc_Price < 1) {
+			this._Vhc_Price = AIEngine.GetPrice(this._current.Wagon) * this._WagonNum + AIEngine.GetPrice(this._current.Engine);
+			this._Vhc_Yearly_Cost = AIEngine.GetRunningCost(this._current.Wagon) * this._WagonNum + AIEngine.GetRunningCost(this._current.Engine);
+		}
+			
 		Info ("Loco engine selected:", AIEngine.GetName (this._current.Engine));
 		Info ("Wagon engine selected:", AIEngine.GetName (this._current.Wagon));
 		Info ("Train price:", this._Vhc_Price);
@@ -206,29 +203,6 @@ class RailFirstConnector extends DailyTask
 			self._Max_Distance += 3;
 			self._Last_Year += 365;
 		}
-	}
-
-	/**
-	 * selecting current engine id for further process
-	 */
-	function SelectEngine(self) {
-		self._VhcManager.Reset();
-		if (self._VhcManager.HaveEngineFor(self._current.Track)) {
-			self._VhcManager.SetCargo(self._current.Cargo);
-			local c = self._VhcManager.CargoEngine.Count();
-			self.Info("engines found for", XCargo.Label[self._current.Cargo], "were", c);
-			if (c < 1) {
-				self._current.Cargo = -1;
-				return;
-			}
-			self._VhcManager.SortEngine();
-			self._current.Engine = self._VhcManager.GetFirst();
-		} else {
-			Info("Could not find engine. current money:", Money.Maximum());
-			self._Blocked_Track.AddItem(self._current.Track, 0);
-			self._current.Track = -1;
-		}
-		return;
 	}
 
 	/**
