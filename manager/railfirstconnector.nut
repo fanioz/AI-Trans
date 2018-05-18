@@ -126,7 +126,7 @@ class RailFirstConnector extends DailyTask
 			if (!Money.Get(this._Vhc_Price)) return;
 			if (!Service.MakeVehicle (this)) return;
 			this._current.VhcID = this._VhcManager.GetVehicle();
-			this._current.Key = Service.CreateKey(this._current.StationsID[0], this._current.StationsID[1], this._current.Cargo, this._current.VhcType);
+			this._current.Key = Service.CreateKey(this._current.StationsID[0], this._current.StationsID[1], this._current.Cargo, this._current.VhcType, this._current.Track);
 			this._current.MaxSpeed = AIEngine.GetMaxSpeed(this._current.Engine);
 			this._current.IsValid = true;
 			Service.Data.Routes.rawset(this._current.Key, clone this._current);

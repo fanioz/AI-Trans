@@ -41,9 +41,9 @@ class Service
 		TaskManager.New(RailFirstConnector());
 	}
 
-	function CreateKey(id1, id2, cargo, vt) {
+	function CreateKey(id1, id2, cargo, vt, tt) {
 
-		return CLString.Join([vt, id1, id2, XCargo.Label[cargo]], ":");
+		return CLString.Join([vt, tt, id1, id2, XCargo.Label[cargo]], ":");
 	}
 
 	function IsServed(id1, cargo) {
@@ -252,6 +252,7 @@ class Service
 		if (one.StationsID[1] != other.StationsID[1]) return false;
 		if (one.Cargo != other.Cargo) return false;
 		if (one.VhcType != other.VhcType) return false;
+		if (one.Track != other.Track) return false;
 		return true;
 	}
 	

@@ -448,7 +448,7 @@ class XVehicle
 				return tabel;
 			}
 		}
-		tabel.Key = Service.CreateKey(tabel.StationsID[0], tabel.StationsID[1], tabel.Cargo, tabel.VhcType);
+		tabel.Key = Service.CreateKey(tabel.StationsID[0], tabel.StationsID[1], tabel.Cargo, tabel.VhcType, tabel.Track);
 		local src = [true, false];
 		local func = [AIIndustryList_CargoProducing, AIIndustryList_CargoAccepting];
 		for (local x=0;x<2;x++) {
