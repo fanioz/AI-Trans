@@ -47,6 +47,7 @@ require("pathfinder/rail_pt.nut");
 
 /* builder */
 require("builder/vehicle.nut");
+require("builder/station.nut");
 
 /* task */
 require("task/manager.nut");
