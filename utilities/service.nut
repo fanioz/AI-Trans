@@ -351,4 +351,39 @@ class Service
 		}
 		return true;
 	}
+	
+	/**
+	 * common vehicle managers action on building vehicles
+	 */
+	function MakeVehicle(conn) {
+		conn._VhcManager.SetCargo(conn._current.Cargo);
+		conn._VhcManager.SetStationA(conn._current.Stations[0]);
+		conn._VhcManager.SetStationB(conn._current.Stations[1]);
+		conn._VhcManager.SetDepotA(conn._current.Depots[0]);
+		conn._VhcManager.SetDepotB(conn._current.Depots[1]);
+		if (conn._current.VhcType == AIVehicle.VT_RAIL) {
+			conn._VhcManager.TryBuildRail();
+		} else {
+			conn._VhcManager.TryBuild();
+		}
+		if (conn._VhcManager.IsBuilt()) {
+			conn._VhcManager.StartCloned();
+		} else {
+			Warn("failed on build vehicle");
+		}
+		Money.Pay();
+		return conn._VhcManager.IsBuilt();
+	}
+	
+	/**
+	 * estimating cost for build service
+	 */
+	function GetTotalCost(conn) {
+		Info("engine cost", conn._Vhc_Price);
+		Info("infrastructure cost", conn._Serv_Cost);
+		Info("route cost", conn._RouteCost);
+		local cost = 3 * conn._Vhc_Price + conn._Serv_Cost + conn._RouteCost;
+		Info("total cost", cost);
+		return  cost;
+	}
 }

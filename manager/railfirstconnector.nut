@@ -136,7 +136,7 @@ class RailFirstConnector extends DailyTask
 		if (this._Route_Built) {
 			Info ("route built");
 			if (!Money.Get(this._Vhc_Price)) return;
-			this.MakeVehicle (this);
+			if (!Service.MakeVehicle (this)) return;
 			this._Route_Built = false;
 			this._current.Engine = -1;
 			this._Mgr_A = null;
@@ -149,7 +149,7 @@ class RailFirstConnector extends DailyTask
 			
 		} else if (_Route_Found) {
 			Info ("route found");
-			if (!Money.Get(GetTotalCost(this))) return;
+			if (!Money.Get(Service.GetTotalCost(this))) return;
 			this._Route_Built = BuildInfrastructure();
 			this._Route_Found = false;
 			this._Line = null;
@@ -203,47 +203,6 @@ class RailFirstConnector extends DailyTask
 			self._Max_Distance += 3;
 			self._Last_Year += 365;
 		}
-	}
-
-	/**
-	 * common vehicle managers action on building vehicles
-	 */
-	function MakeVehicle(self) {
-		self._VhcManager.SetCargo(self._current.Cargo);
-		self._VhcManager.SetStationA(self._current.Stations[0]);
-		self._VhcManager.SetStationB(self._current.Stations[1]);
-		self._VhcManager.SetDepotA(self._current.Depots[0]);
-		self._VhcManager.SetDepotB(self._current.Depots[1]);
-		if (self._current.VhcType == AIVehicle.VT_RAIL) {
-			self._VhcManager.TryBuildRail();
-		} else {
-			self._VhcManager.TryBuild();
-		}
-		if (self._VhcManager.IsBuilt()) {
-			self._VhcManager.StartCloned();
-		} else {
-			self.Warn("failed on build vehicle");
-		}
-		Money.Pay();
-		return self._VhcManager.IsBuilt();
-	}
-
-	/**
-	 * estimating cost for service
-	 */
-	function GetTotalCost(self) {
-		local cost = AIEngine.GetPrice(self._current.Engine);
-		if (self._current.VhcType == AIVehicle.VT_RAIL) {
-			/* TODO : number '4' should be changeable */
-			cost *= 4;
-			cost += AIEngine.GetPrice(self._current.Wagon);
-		}
-		self.Info("engine cost", cost);
-		self.Info("infrastructure cost", self._Serv_Cost);
-		self.Info("route cost", self._RouteCost);
-		cost += self._Serv_Cost + self._RouteCost;
-		self.Info("total cost", cost);
-		return  cost;
 	}
 
 	function IsWaitingPath(self) {
@@ -441,7 +400,7 @@ class RailFirstConnector extends DailyTask
 			local cost = AIAccounting();
 			if (XRail.BuildRail(this._Line)) {
 				this._RouteCost = cost.GetCosts();
-				if (!Money.Get(GetTotalCost(this))) return;
+				if (!Money.Get(Service.GetTotalCost(this))) return;
 			} else {
 				_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
 				Info("Path building failed. Re-find");
