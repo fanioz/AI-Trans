@@ -15,21 +15,17 @@ class RailFirstConnector extends DailyTask
 	_Skip_Dst = null;
 	_Skip_Src = null;
 	_VhcManager = null;
-	_Source_ID = null;
-	_Dest_ID = null;
 	_Serv_Cost = null;
 	_Line = null;
 	_PF = null;
 	_PT = null;
 	_RouteCost = null;
 	_Route_Found = null;
-	_Station_Built = null;
 	_Max_Distance = null;
 	_Min_Distance = null;
 	_Last_Year = null;
 	_Blocked_Cargo = null;
 	_Blocked_Track = null;
-	_Production = null;
 	_LastSuccess = null;
 	_Mgr_A = null;
 	_Mgr_B = null;
@@ -58,32 +54,26 @@ class RailFirstConnector extends DailyTask
 		this._WagonNum = 7;
 		this._Vhc_Price = 0;
 		this._Vhc_Yearly_Cost = 0;
-		_Last_Year = AIDate.GetCurrentDate();
-		_LastSuccess = 0;
-		_SkipList = CLList();
-		_Blocked_Cargo = CLList();
-		_Blocked_Track = CLList();
-		_Skip_Dst = CLList();
-		_Skip_Src = CLList();
+		this._Last_Year = AIDate.GetCurrentDate();
+		this._LastSuccess = 0;
+		this._SkipList = CLList();
+		this._Blocked_Cargo = CLList();
+		this._Blocked_Track = CLList();
+		this._Skip_Dst = CLList();
+		this._Skip_Src = CLList();
 
-		_Source_ID = -1;
-		_Dest_ID = -1;
+		this._Serv_Cost = 0;
+		this._RouteCost = 0;
 
-		_Serv_Cost = 0;
-		_RouteCost = 0;
-		_Production = 0;
+		this._Line = false;
+		this._PT = null;
+		this._Route_Found = false;
 
-		_Line = false;
-		_PT = null;
+		this._Mgr_A = null;
+		this._Mgr_B = null;
 
-		_Route_Found = false;
-		_Station_Built = false;
-
-		_Mgr_A = null;
-		_Mgr_B = null;
-
-		_Possible_Sources = {};
-		_Possible_Dests = {};
+		this._Possible_Sources = {};
+		this._Possible_Dests = {};
 		RailFirstConnector.instance.push(this);
 		assert(RailFirstConnector.instance.len() == 1);
 	}
@@ -147,7 +137,7 @@ class RailFirstConnector extends DailyTask
 			this._current.VhcType = AIVehicle.VT_RAIL;
 		} else if (Service.IsWaitingPath(this)) {
 			
-		} else if (_Route_Found) {
+		} else if (this._Route_Found) {
 			Info ("route found");
 			if (!Money.Get(Service.GetTotalCost(this))) return;
 			this._current.RouteIsBuilt = BuildInfrastructure(); 
@@ -156,7 +146,7 @@ class RailFirstConnector extends DailyTask
 			Info("rail route building:",  this._current.RouteIsBuilt);
 		} else {
 			Info("Initialize service");
-			_Line = false;
+			this._Line = false;
 			if (this._Mgr_A == null) {
 				if (Service.ServableIsValid(this._current, 0)) {
 					this._Mgr_A = (this._current.IsTown[0] ? XTown : XIndustry).GetManager(this._current.ServID[0]); 
@@ -182,7 +172,7 @@ class RailFirstConnector extends DailyTask
 				case 2 : this._Mgr_B = null; this._current.ServID[1] = -1;
 			}
 		}
-		UpdateDistance(this);
+		this.UpdateDistance(this);
 		return Money.Pay();
 	}
 	
