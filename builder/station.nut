@@ -73,10 +73,20 @@
 	function Build() {
 		local station_id = XStation.FindIDNear(this.GetLocation(), 8);
 		local distance = AIIndustry.GetDistanceManhattanToTile(this._industries[0], AIIndustry.GetLocation(this._industries[1]));
-		if (this._stationType == StationBuilder.TYPE_TERMINUS) if (!this.BuildEntry()) return false;
 		AIRail.BuildNewGRFRailStation(this.GetLocation(), this._orientation, this._num_platforms,
 				this._platformLength, station_id, this.GetCargo(), this._industryTypes[0],
 				this._industryTypes[1], distance, this._isSourceStation);
+		if (this._stationType == StationBuilder.TYPE_TERMINUS && AIRail.IsRailStationTile(this.GetLocation()))
+			if (!this.BuildEntry()) {
+				local end = -1;
+				if (this._orientation == AIRail.RAILTRACK_NE_SW) {
+					end = XTile.AddOffset(this.GetLocation(), this._platformLength-1, this._num_platforms-1);
+				} else {
+					end = XTile.AddOffset(this.GetLocation(), this._num_platforms-1, this._platformLength-1);
+				}
+				AIRail.RemoveRailStationTileRectangle(this.GetLocation(), end, false);
+				return false;
+			}
 		this.SetID(AIStation.GetStationID(this.GetLocation()));
 		return AIRail.IsRailStationTile(this.GetLocation()) && XTile.IsMyTile(this.GetLocation());
 	}
