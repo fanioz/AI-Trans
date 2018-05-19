@@ -328,10 +328,12 @@ class RailFirstConnector extends DailyTask
 		this._current.StationsID.clear();
 		local stationDir = XRail.StationDirection(this._Mgr_A.GetLocation(), this._Mgr_B.GetLocation());
 		local built = false;
+		local ignored = [];
 		foreach (dir in stationDir) {
 			foreach (idx, val in spoint) {
 				local sb = StationBuilder(idx, this._current.Cargo, this._Mgr_A.GetID(), this._Mgr_B.GetID(), true);
-				sb._orientation = dir;
+				//sb._orientation = dir;
+				sb.SetTerminus(dir);
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
 					this._current.StartPoint.extend(sb.GetStartPath());
@@ -348,13 +350,14 @@ class RailFirstConnector extends DailyTask
 		foreach (dir in stationDir) {
 			foreach (idx, val in dpoint) {
 				local sb = StationBuilder(idx, this._current.Cargo, this._Mgr_A.GetID(), this._Mgr_B.GetID(), false);
-				sb._orientation = dir;
+				sb.SetTerminus(dir);
 				if (sb.IsBuildable() == 0) continue;
 				if (sb.Build()) {
 					this._current.EndPoint.extend(sb.GetStartPath());
 					this._current.Stations.push(idx);
 					this._current.StationsID.push(AIStation.GetStationID(idx));
 					built = true;
+					ignored.extend(sb.GetIgnoredTiles());
 					break;
 				}
 			}
@@ -362,7 +365,7 @@ class RailFirstConnector extends DailyTask
 		}
 		if (this._current.EndPoint.len() == 0) return 2;
 		
-		_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
+		_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, ignored);
 		return 0;
 	}
 
