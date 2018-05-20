@@ -20,6 +20,7 @@
 	_isSourceStation = null;
 	_stationType = null;
 	_heading = null;
+	_depot = null;
 	
 	static TYPE_SIMPLE = 1;
 	static TYPE_TERMINUS = 2;
@@ -36,6 +37,7 @@
 		this._isSourceStation = isSource;
 		this._stationType = StationBuilder.TYPE_SIMPLE;
 		this._heading = 0;
+		this._depot = -1;
 	}
 	
 	function SetTerminus(direction) {
@@ -85,6 +87,13 @@
 					end = XTile.AddOffset(this.GetLocation(), this._num_platforms-1, this._platformLength-1);
 				}
 				AIRail.RemoveRailStationTileRectangle(this.GetLocation(), end, false);
+
+				if (AIRail.IsRailDepotTile(this._depot)) {
+					AITile.DemolishTile(this._depot);
+					AITile.DemolishTile(AIRail.GetRailDepotFrontTile(this._depot));
+					this._depot = -1;
+				}
+				
 				return false;
 			}
 		this.SetID(AIStation.GetStationID(this.GetLocation()));
@@ -94,18 +103,22 @@
 	function BuildEntry() {
 		if (((this._heading == "NW")  && (this._isSourceStation)) || ((this._heading == "SE")  && (!this._isSourceStation))) {
 			if (!this.BuildTerminusNW(this.GetLocation())) return false;
+			this.BuildDepot("NW");
 		}
 		
 		if (((this._heading == "SE")  && (this._isSourceStation)) || ((this._heading == "NW")  && (!this._isSourceStation))) {
 			if (!this.BuildTerminusSE(this.GetLocation())) return false;
+			this.BuildDepot("SE");
 		}
 		
 		if (((this._heading == "NE")  && (this._isSourceStation)) || ((this._heading == "SW")  && (!this._isSourceStation))) {
 			if (!this.BuildTerminusNE(this.GetLocation())) return false;
+			this.BuildDepot("NE");
 		}
 		
 		if (((this._heading == "SW")  && (this._isSourceStation)) || ((this._heading == "NE")  && (!this._isSourceStation))) {
 			if (!this.BuildTerminusSW(this.GetLocation())) return false;
+			this.BuildDepot("SW");
 		}
 		return true;
 	}
@@ -143,6 +156,54 @@
 			}
 		}
 		return ret;
+	}
+	
+	function BuildDepot(direction) {
+		local depots = [];
+		if (direction == "NW") {
+			local head1 = XTile.NW_Of(this.GetLocation(), 1);
+			local head2 = XTile.SW_Of(head1, 1);
+			local depot1 = XTile.NE_Of(head1, 1);
+			local depot2 = XTile.SW_Of(head2, 1);
+			depots.extend([[depot1, head1],[depot2, head2]]);
+		}
+		
+		if (direction == "SE") {
+			local head1 = XTile.SE_Of(this.GetLocation(), this._platformLength);
+			local head2 = XTile.SW_Of(head1, 1);
+			local depot1 = XTile.NE_Of(head1, 1);
+			local depot2 = XTile.SW_Of(head2, 1);
+			depots.extend([[depot1, head1],[depot2, head2]]);
+		}
+		
+		if (direction == "NE") {
+			local head1 = XTile.NE_Of(this.GetLocation(), 1);
+			local head2 = XTile.SE_Of(head1, 1);
+			local depot1 = XTile.NW_Of(head1, 1);
+			local depot2 = XTile.SE_Of(head2, 1);
+			depots.extend([[depot2, head2], [depot1, head1]]);
+		}
+		
+		if (direction == "SW") {
+			local head1 = XTile.SW_Of(this.GetLocation(), this._platformLength);
+			local head2 = XTile.SE_Of(head1, 1);
+			local depot1 = XTile.NW_Of(head1, 1);
+			local depot2 = XTile.SE_Of(head2, 1);
+			depots.extend([[depot2, head2], [depot1, head1]]);
+		}
+		
+		if (!this._isSourceStation) depots.reverse();
+		
+		foreach (body in depots) {
+			AIRail.BuildRailDepot(body[0], body[1]);
+			if (AIRail.IsRailDepotTile(body[0])) {
+				this._depot = body[0];
+				foreach(track in Const.RailTrack)
+					AIRail.BuildRailTrack(body[1], track);
+				return true;
+			}
+		}
+		return false;
 	}
 		
 	function GetIgnoredTiles() {

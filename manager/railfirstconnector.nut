@@ -326,6 +326,7 @@ class RailFirstConnector extends DailyTask
 		this._current.EndPoint = [];
 		this._current.Stations.clear();
 		this._current.StationsID.clear();
+		this._current.Depots.clear();
 		local stationDir = XRail.StationDirection(this._Mgr_A.GetLocation(), this._Mgr_B.GetLocation());
 		local built = false;
 		local ignored = [];
@@ -339,7 +340,9 @@ class RailFirstConnector extends DailyTask
 					this._current.StartPoint.extend(sb.GetStartPath());
 					this._current.Stations.push(idx);
 					this._current.StationsID.push(AIStation.GetStationID(idx));
+					if (AIRail.IsRailDepotTile(sb._depot)) this._current.Depots.push(sb._depot);
 					built = true;
+					ignored.extend(sb.GetIgnoredTiles());
 					break;
 				}
 			}
@@ -356,6 +359,7 @@ class RailFirstConnector extends DailyTask
 					this._current.EndPoint.extend(sb.GetStartPath());
 					this._current.Stations.push(idx);
 					this._current.StationsID.push(AIStation.GetStationID(idx));
+					if (AIRail.IsRailDepotTile(sb._depot)) this._current.Depots.push(sb._depot);
 					built = true;
 					ignored.extend(sb.GetIgnoredTiles());
 					break;
@@ -384,12 +388,13 @@ class RailFirstConnector extends DailyTask
 			}
 		}
 		XRail.BuildRail(this._Line);
-		this._current.Depots.clear();
-		local depot = XRail.BuildDepotOnRail(path);
-		if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
-		path.reverse();
-		depot = XRail.BuildDepotOnRail(path);
-		if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
+		if (this._current.Depots.len() < 1) {
+			local depot = XRail.BuildDepotOnRail(path);
+			if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
+			path.reverse();
+			depot = XRail.BuildDepotOnRail(path);
+			if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
+		}
 		XRail.BuildSignal(this._current.Depots[0], this._current.Depots[1], 10);
 		return true;
 	}
