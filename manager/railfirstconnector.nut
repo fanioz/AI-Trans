@@ -390,7 +390,7 @@ class RailFirstConnector extends DailyTask
 		path.reverse();
 		depot = XRail.BuildDepotOnRail(path);
 		if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
-		XRail.BuildSignal(this._current.Depots[0], this._current.Depots[1], 2);
+		XRail.BuildSignal(this._current.Depots[0], this._current.Depots[1], 10);
 		return true;
 	}
 };
