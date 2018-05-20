@@ -15,6 +15,7 @@ class Service
 		VhcToSell = {}
 		Events = []
 		Routes = {}
+		Projects = {}
 	};
 
 	function Init(self) {
@@ -40,9 +41,9 @@ class Service
 		TaskManager.New(RailFirstConnector());
 	}
 
-	function CreateKey(id1, id2, cargo, vt) {
+	function CreateKey(id1, id2, cargo, vt, tt) {
 
-		return CLString.Join([vt, id1, id2, XCargo.Label[cargo]], ":");
+		return CLString.Join([vt, tt, id1, id2, XCargo.Label[cargo]], ":");
 	}
 
 	function IsServed(id1, cargo) {
@@ -52,15 +53,6 @@ class Service
 			return true;
 		}
 		return false;
-	}
-
-	function Register(tbl) {
-		local key = tbl.Key;
-		if (Service.Data.Routes.rawin(key)) {
-			Service.Merge(key, tbl);
-			return;
-		}
-		Service.Data.Routes.rawset(key, tbl);
 	}
 
 	function IsSubsidyLocationWas(id, loc, is_source) {
@@ -232,28 +224,6 @@ class Service
 		return vhcc > maxvhc;
 	}
 	
-	function Merge(key, other) {
-		if (!other.IsValid) return;
-		if (!Service.IsEqual(Service.Data.Routes[key], other)) return;
-		if (!AIVehicle.IsValidVehicle(Service.Data.Routes[key].VhcID)) {
-			Service.Data.Routes.rawset(key, other);
-			return Service.Data.Routes[key].IsValid;
-		}
-		Service.Data.Routes[key].VhcCapacity = max(Service.Data.Routes[key].VhcCapacity, other.VhcCapacity);
-		if (AIEngine.GetDesignDate(Service.Data.Routes[key].Engine) < AIEngine.GetDesignDate(other.Engine)) {
-			AIGroup.SetAutoReplace(Service.Data.Routes[key].GroupID, Service.Data.Routes[key].Engine, other.Engine);
-			Service.Data.Routes[key].Engine = other.Engine;
-		}
-	}
-	
-	function IsEqual(one, other) {
-		if (one.StationsID[0] != other.StationsID[0]) return false;
-		if (one.StationsID[1] != other.StationsID[1]) return false;
-		if (one.Cargo != other.Cargo) return false;
-		if (one.VhcType != other.VhcType) return false;
-		return true;
-	}
-	
 	function SourceIsProducing(route) {
 		return (route.IsTown[0] ? AITown : AIIndustry).GetLastMonthProduction(route.ServID[0], route.Cargo) > 10;
 	}
@@ -275,11 +245,138 @@ class Service
 			VhcID = -1
 	 		Orders = []
 	 		Engine = -1
+	 		Wagon = -1
 			MaxSpeed = 0
 			Track = -1
 			GroupID = -1
+			StartPoint = []
+			EndPoint = []
+			Step = 0
+			RouteIsBuilt = false
 			LastBuild = 0
 		}
 		return tabel;
+	}
+	
+	function ServableIsValid(route, i) {
+		return (route.IsTown[i] ? AITown.IsValidTown : AIIndustry.IsValidIndustry)(route.ServID[i]);
+	}
+	
+	/**
+	 * selecting current cargo id for further process
+	 */
+	function MatchCargo(conn) {
+		local cargoes = AICargoList();
+		cargoes.RemoveList(conn._Blocked_Cargo);
+		if (cargoes.IsEmpty()) {
+			conn._Blocked_Cargo.Clear();
+			Warn("cargo selection empty");
+			conn._current.Track = -1;
+			return;
+		}
+		cargoes.Valuate(XCargo.MatchSetting);
+		cargoes.KeepValue(1);
+		if (cargoes.IsEmpty()) {
+			Warn("could not select any cargo");
+			return;
+		}
+		cargoes.Valuate(XCargo.GetCargoIncome, 20, 200);
+		conn._current.Cargo = cargoes.Begin();
+		conn._current.StationType = XStation.GetTipe(conn._current.VhcType, conn._current.Cargo);
+		conn._Blocked_Cargo.AddItem(conn._current.Cargo, 0);
+		conn._current.Engine = -1;
+	}
+	
+	/**
+	 * selecting current engine id for further process
+	 */
+	function SelectEngine(conn) {
+		conn._VhcManager.Reset();
+		if (conn._VhcManager.HaveEngineFor(conn._current.Track)) {
+			conn._VhcManager.SetCargo(conn._current.Cargo);
+			local c = conn._VhcManager.CargoEngine.Count();
+			Info("cargo engines found for", XCargo.Label[conn._current.Cargo], "were", c);
+			if (c < 1) {
+				conn._current.Cargo = -1;
+				return false;
+			}
+			conn._VhcManager.SortEngine();
+			if (conn._current.VhcType == AIVehicle.VT_RAIL) {
+				c = conn._VhcManager.MainEngine.Count();
+				Info("Loco found for pulling ", XCargo.Label[conn._current.Cargo], "were", c);
+				if (c < 1) {
+					conn._current.Cargo = -1;
+					return false;
+				}
+				conn._current.Engine = conn._VhcManager.GetFirstLoco();
+				conn._current.Wagon = conn._VhcManager.GetFirst();
+			} else {
+				conn._current.Engine = conn._VhcManager.GetFirst();
+			}
+		} else {
+			Info("Could not find engine. current money:", Money.Maximum());
+			conn._Blocked_Track.AddItem(conn._current.Track, 0);
+			conn._current.Track = -1;
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * common vehicle managers action on building vehicles
+	 */
+	function MakeVehicle(conn) {
+		conn._VhcManager.SetCargo(conn._current.Cargo);
+		conn._VhcManager.SetStationA(conn._current.Stations[0]);
+		conn._VhcManager.SetStationB(conn._current.Stations[1]);
+		conn._VhcManager.SetDepotA(conn._current.Depots[0]);
+		conn._VhcManager.SetDepotB(conn._current.Depots[1]);
+		if (conn._current.VhcType == AIVehicle.VT_RAIL) {
+			conn._VhcManager.TryBuildRail();
+		} else {
+			conn._VhcManager.TryBuild();
+		}
+		if (conn._VhcManager.IsBuilt()) {
+			conn._VhcManager.StartCloned();
+		} else {
+			Warn("failed on build vehicle");
+		}
+		Money.Pay();
+		return conn._VhcManager.IsBuilt();
+	}
+	
+	/**
+	 * estimating cost for build service
+	 */
+	function GetTotalCost(conn) {
+		Info("engine cost", conn._Vhc_Price);
+		Info("infrastructure cost", conn._Serv_Cost);
+		Info("route cost", conn._RouteCost);
+		local cost = 3 * conn._Vhc_Price + conn._Serv_Cost + conn._RouteCost;
+		Info("total cost", cost);
+		return  cost;
+	}
+	
+	function IsWaitingPath(conn) {
+		if (conn._Mgr_A == null) return false;
+		if (conn._PF.IsRunning()) {
+			conn.Info("still finding", conn._Mgr_A.GetName(), "=>", conn._Mgr_B.GetName());
+			conn._Line = conn._PF.FindPath(200);
+			return true;
+		}
+		if (typeof conn._Line == "instance") {
+			conn._RouteCost = conn._Line.GetBuildCost();
+			conn._Route_Found = true;
+			Assist.RemoveAllSigns();
+		} else if (conn._Line == null) {
+			conn._RouteCost = 0;
+			conn._Route_Found = false;
+			conn._Mgr_A = null;
+			Service.Data.RouteToClose.push(conn._current);
+			Assist.RemoveAllSigns();
+		}
+		//not removing sign if line = false
+		Info("route found", conn._Route_Found);
+		return false;
 	}
 }

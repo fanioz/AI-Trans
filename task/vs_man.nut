@@ -32,7 +32,6 @@ class Task.Vehicle_Mgr extends DailyTask
 			//=============== Unregistered vehicle
 			if (!XVehicle.IsRegistered(idx)) {
 				Info("Try to registering", name);
-				if (AIVehicle.HasSharedOrders(idx)) AIOrder.UnshareOrders(idx);
 				if (XVehicle.Register(idx)) {
 					XVehicle.MakeGroup(idx, My._Vehicles[idx]);
 				} else {
@@ -81,9 +80,11 @@ class Task.Vehicle_Mgr extends DailyTask
 
 		local copyclose = [];
 		while (Service.Data.RouteToClose.len()>0) {
-			local key = Service.Data.RouteToClose.pop();
-			if (!Service.Data.Routes.rawin(key)) continue;
-			local t = Service.Data.Routes[key];
+			local t = Service.Data.RouteToClose.pop();
+			local key = t.Key;
+			
+			if (Service.Data.Routes.rawin(key)) delete Service.Data.Routes[key];
+			
 			Info("Closing:", key);
 			local vhcl = CLList(AIVehicleList_Group(t.GroupID));
 			if (vhcl.Count() > 0) { 
@@ -95,7 +96,7 @@ class Task.Vehicle_Mgr extends DailyTask
 				stopped.KeepValue(1);
 				vhcl.RemoveList(stopped);
 				vhcl.Valuate(function(id){Service.Data.VhcToSell.rawset(id,"Closed Route");return 1;}); 
-			 	copyclose.push(key);
+			 	copyclose.push(t);
 			 	continue;
 			}
 			local closed = true;
@@ -106,18 +107,17 @@ class Task.Vehicle_Mgr extends DailyTask
 						//right now this vhcList is not owned by this route. Lets prove it
 						if (vhcList.Count()>0) {
 							local vhc = vhcList.Begin();
-							if (My._Vehicles.rawin(vhc)) assert(My._Vehicles[vhc] != key);
+							//if (My._Vehicles.rawin(vhc)) assert(My._Vehicles[vhc] != key);
 							continue;
 						}
 						Service.Data.StationToClose.rawset(t.StationsID[c], t.StationType);
-						copyclose.push(key);
+						copyclose.push(t);
 						closed = false;
 					}
 				}
 			}
 			if (!closed) continue;
-			if (Service.Data.Routes[key].rawin("GroupID")) AIGroup.DeleteGroup(Service.Data.Routes[key].GroupID);
-			Service.Data.Routes.rawdelete(key);
+			AIGroup.DeleteGroup(t.GroupID);
 		}
 		Service.Data.RouteToClose.extend(copyclose);
 

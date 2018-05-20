@@ -207,10 +207,6 @@ class XVehicle
 		local vt = tbl.VhcType;
 		local vtname = CLString.VehicleType(vt);
 		local engine_new = AIGroup.GetEngineReplacement (AIGroup.GROUP_ALL, engine);
-		if (AIEngine.IsValidEngine(engine_new)) {
-			Info("AutoReplacement for", vtname, "was set to", AIEngine.GetName(engine_new));
-			return true;
-		}
 		Info ("try to find engine replacement for", vtname);
 		local v_man = VehicleMaker (vt);
 		v_man.SetCargo (tbl.Cargo);
@@ -220,18 +216,26 @@ class XVehicle
 		};
 		v_man.SortEngine();
 		engine_new = (vt == AIVehicle.VT_RAIL) ? v_man.GetFirstLoco() : v_man.GetFirst();
-		AIGroup.SetAutoReplace(AIGroup.GROUP_ALL, engine, engine_new);
+		if (AIGroup.SetAutoReplace(AIGroup.GROUP_ALL, engine, engine_new)) {
+			Info("AutoReplacement for", vtname, "was set to", AIEngine.GetName(engine_new));
+		}
 		v_man.SetDepotA (tbl.Depots[0]);
 		v_man.SetDepotB (tbl.Depots[1]);
 		v_man.SetStationA (tbl.Stations[0]);
 		v_man.SetStationB (tbl.Stations[1]);
-		while (Debug.ResultOf (v_man.TryBuild (), "try buy engine")) {
+		Money.Get(0);
+		if (vt == AIVehicle.VT_RAIL) {
+			v_man.TryBuildRail();
+		} else {
+			v_man.TryBuild();
+		}
+		//while (Debug.ResultOf (v_man.TryBuild (), "try buy engine")) {
 			if (v_man.IsBuilt()) {
 				Info ("New vehicle", v_man.GetVehicle());
 				if (XVehicle.Run(v_man.GetVehicle())) return true;
 			}
 			AIVehicle.SellVehicle (v_man.GetVehicle());
-		}
+		//}
 		Info ("failed on build vehicle");
 		return false;
 	}
@@ -247,7 +251,7 @@ class XVehicle
 		local route = XVehicle.ReadRoute(vhc_id);
 		if (route.IsValid) {
 			My._Vehicles[route.VhcID] <- route.Key;
-			Service.Register(route);
+			Service.Data.Routes.rawset(route.Key, route);
 			return true;
 		}
 		return false;
@@ -444,6 +448,19 @@ class XVehicle
 				return tabel;
 			}
 		}
+		tabel.Key = Service.CreateKey(tabel.StationsID[0], tabel.StationsID[1], tabel.Cargo, tabel.VhcType, tabel.Track);
+		
+		if (Service.Data.Routes.rawin(tabel.Key)) {
+			Service.Data.Routes[tabel.Key].VhcID = tabel.VhcID;
+			Service.Data.Routes[tabel.Key].VhcCapacity = max(Service.Data.Routes[tabel.Key].VhcCapacity, tabel.VhcCapacity);
+			if (AIEngine.GetDesignDate(Service.Data.Routes[tabel.Key].Engine) < AIEngine.GetDesignDate(tabel.Engine)) {
+				AIGroup.SetAutoReplace(Service.Data.Routes[tabel.Key].GroupID, Service.Data.Routes[tabel.Key].Engine, tabel.Engine);
+				Service.Data.Routes[tabel.Key].Engine = tabel.Engine;
+				Service.Data.Routes[tabel.Key].MaxSpeed = tabel.MaxSpeed;
+			}
+			return Service.Data.Routes[tabel.Key];
+		}
+		
 		local src = [true, false];
 		local func = [AIIndustryList_CargoProducing, AIIndustryList_CargoAccepting];
 		for (local x=0;x<2;x++) {
@@ -482,8 +499,7 @@ class XVehicle
 				}
 			}
 		}
- 		tabel.Key <- Service.CreateKey(tabel.ServID[0], tabel.ServID[1], tabel.Cargo, tabel.VhcType);
-		if (tabel.Depots.len()==0) {
+ 		if (tabel.Depots.len()==0) {
 			tabel.Depots.push(Assist.FindDepot(tabel.Stations[0], 20, tabel.VhcType, tabel.Track));
 		}
 		if (tabel.Depots.len()==1) {

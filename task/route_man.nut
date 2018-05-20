@@ -28,7 +28,6 @@ class Task.RouteManager extends DailyTask
 			_checked.AddItem(grp_id, 1);
 			Warn("...");
 			Info("processing", grp_name, "and friends");
-			local t = Service.Data.Routes[grp_name];
 			local src_name = (t.IsTown[0] ? AITown : AIIndustry)["GetName"](t.ServID[0]);
 			local dst_name = (t.IsTown[1] ? AITown : AIIndustry)["GetName"](t.ServID[1]);
 			local cargo = t.Cargo;
@@ -45,7 +44,7 @@ class Task.RouteManager extends DailyTask
 			
 			if (!(AIStation.IsValidStation(t.StationsID[0]) && AIStation.IsValidStation(t.StationsID[1]))) {
 				Info(grp_name, "Closing route due to station(s) no longer valid");
-				Service.Data.RouteToClose.push(grp_name);
+				Service.Data.RouteToClose.push(t);
 				continue;
 			}
 			
@@ -56,7 +55,7 @@ class Task.RouteManager extends DailyTask
 			
 			if (producing < 2) {
 				Info(grp_name, "Closing route due to not producing");
-				Service.Data.RouteToClose.push(grp_name);
+				Service.Data.RouteToClose.push(t);
 			}
 			
 			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
@@ -65,17 +64,19 @@ class Task.RouteManager extends DailyTask
 			
 			if (!XStation.IsAccepting(t.StationsID[1], cargo)) {
 				Info(grp_name, "Closing route due to not accepting");
-				Service.Data.RouteToClose.push(grp_name);
+				Service.Data.RouteToClose.push(t);
 				continue;
 			}
 			
 			if (t.VhcType == AIVehicle.VT_AIR && Setting.Get(SetString.infrastructure_maintenance)) {
 				Info("Closing air-route");
-				Service.Data.RouteToClose.push(grp_name);
+				Service.Data.RouteToClose.push(t);
 				continue;
 			}
 			
-			if (t.VhcType == AIVehicle.VT_RAIL) continue; //
+			if (t.VhcType == AIVehicle.VT_RAIL) {
+				if (num >= 2) continue;
+			}
 
 			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
 			local vhc = vhcs2.Begin();

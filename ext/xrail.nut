@@ -51,29 +51,32 @@ class XRail
 		local prev = null;
 		local prevprev = null;
 		while (path != null) {
-		  if (prevprev != null) {
-		    if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
-		      if (AITunnel.GetOtherTunnelEnd(prev) == path.GetTile()) {
-		        AITunnel.BuildTunnel(AIVehicle.VT_RAIL, prev);
-		      } else {
-		        local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), prev) + 1);
-		        bridge_list.Valuate(AIBridge.GetMaxSpeed);
-		        bridge_list.Sort(CLList.SORT_BY_VALUE, false);
-		        AIBridge.BuildBridge(AIVehicle.VT_RAIL, bridge_list.Begin(), prev, path.GetTile());
-		      }
-		      prevprev = prev;
-		      prev = path.GetTile();
-		      path = path.GetParent();
-		    } else {
-		      AIRail.BuildRail(prevprev, prev, path.GetTile());
-		    }
-		  }
-		  if (path != null) {
-		    prevprev = prev;
-
-		    prev = path.GetTile();
-		    path = path.GetParent();
-		  }
+			if (prevprev != null) {
+				if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
+					if (AITunnel.GetOtherTunnelEnd(prev) == path.GetTile()) {
+						if (!Debug.ResultOf(AITunnel.BuildTunnel(AIVehicle.VT_RAIL, prev), "Build rail tunnel")) {
+							return false;
+						}
+					} else {
+						local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), prev) + 1);
+						bridge_list.Valuate(AIBridge.GetMaxSpeed);
+						bridge_list.Sort(CLList.SORT_BY_VALUE, false);
+						if (!Debug.ResultOf(AIBridge.BuildBridge(AIVehicle.VT_RAIL, bridge_list.Begin(), prev, path.GetTile()), "Build rail bridge")) {
+							return false;
+						}
+					}
+					prevprev = prev;
+					prev = path.GetTile();
+					path = path.GetParent();
+				} else {
+					if (!AIRail.BuildRail(prevprev, prev, path.GetTile())) return false;
+				}
+			}
+			if (path != null) {
+				prevprev = prev;
+				prev = path.GetTile();
+				path = path.GetParent();
+			}
 		}
 		return true;
 	}
@@ -113,5 +116,43 @@ class XRail
 			count--;
 		}
 		return -1;
+	}
+	
+	function BuildSignal(before, after, each) {
+		local start = AIRail.GetRailDepotFrontTile(before);
+		local end = AIRail.GetRailDepotFrontTile(after);
+		local pt = Rail_PT();
+		pt.InitializePath([[start, before]],[[end, after]],[]);
+		local path = pt.FindPath(10000);
+		if (!path) return false;
+		
+		local prev = null;
+		local prevprev = null;
+		local c = 0;
+		while (path != null) {
+			c++;
+			if (prevprev != null) {
+				if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
+					//
+				} else {
+					if (c % each == 0)
+						if (!AIRail.BuildSignal(prev, path.GetTile(), AIRail.SIGNALTYPE_PBS)) c--; 
+				}
+			}
+			if (path != null) {
+				prevprev = prev;
+				prev = path.GetTile();
+				path = path.GetParent();
+			}
+		}
+		return true;
+	}
+	
+	function StationDirection(start, finish) {
+		local dx = abs(AIMap.GetTileX(start) - AIMap.GetTileX(finish));
+		local dy = abs(AIMap.GetTileY(start) - AIMap.GetTileY(finish));
+		local ret = clone Const.RailStationDir;
+		if (dx < dy) ret.reverse();
+		return ret;
 	}
 }
