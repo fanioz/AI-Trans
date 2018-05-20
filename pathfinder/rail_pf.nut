@@ -42,8 +42,8 @@ class Rail_PF extends AyStar
 			nsources.push(path);
 		}
 		
-		//this._estimate_multiplier = 2;  // 1024
-		this._estimate_multiplier = 1.5;  //1244
+		this._estimate_multiplier = 2;  // 1024
+		//this._estimate_multiplier = 1.5;  //1244
 		//this._estimate_multiplier = 1.4;  //1865
 		//this._estimate_multiplier = 1.3;  //4927
 		//this._estimate_multiplier = 1;  //8100
