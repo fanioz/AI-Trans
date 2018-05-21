@@ -360,8 +360,13 @@ class Service
 	function IsWaitingPath(conn) {
 		if (conn._Mgr_A == null) return false;
 		if (conn._PF.IsRunning()) {
-			conn.Info("still finding", conn._Mgr_A.GetName(), "=>", conn._Mgr_B.GetName());
+			Info(conn._MaxStep - conn._CurStep," step left for finding", conn._Mgr_A.GetName(), "=>", conn._Mgr_B.GetName());
 			conn._Line = conn._PF.FindPath(200);
+			conn._CurStep += 200;
+			if (conn._CurStep > conn._MaxStep) {
+				conn._Line = null;
+				conn._CurStep = 0;
+			} else 
 			return true;
 		}
 		if (typeof conn._Line == "instance") {
@@ -371,7 +376,10 @@ class Service
 		} else if (conn._Line == null) {
 			conn._RouteCost = 0;
 			conn._Route_Found = false;
-			conn._Mgr_A = null;
+			conn._Mgr_B = null;
+			conn._current.ServID[1] = -1;
+			this._current.StartPoint.clear();
+			this._current.EndPoint.clear();
 			Service.Data.RouteToClose.push(conn._current);
 			Assist.RemoveAllSigns();
 		}

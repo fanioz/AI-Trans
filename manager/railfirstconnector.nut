@@ -19,6 +19,8 @@ class RailFirstConnector extends DailyTask
 	_Line = null;
 	_PF = null;
 	_PT = null;
+	_MaxStep = null;
+	_CurStep = null;
 	_RouteCost = null;
 	_Route_Found = null;
 	_Max_Distance = null;
@@ -50,6 +52,8 @@ class RailFirstConnector extends DailyTask
 		this._Max_Distance = 200;
 		this._Min_Distance = 50;
 		this._PF = Rail_PF();
+		this._MaxStep = 7000;
+		this._CurStep = 0;
 		this._PlatformLength = 4;
 		this._WagonNum = 7;
 		this._Vhc_Price = 0;
@@ -165,6 +169,7 @@ class RailFirstConnector extends DailyTask
 			Info("selected destination:", _Mgr_B.GetName());
 			if (this._current.StartPoint.len() > 0 && this._current.EndPoint.len() > 0) {
 				this._PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
+				this._CurStep = 0;
 				return;
 			}
 			switch (InitService()) {
@@ -370,6 +375,7 @@ class RailFirstConnector extends DailyTask
 		if (this._current.EndPoint.len() == 0) return 2;
 		
 		_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, ignored);
+		this._CurStep = 0;
 		return 0;
 	}
 
