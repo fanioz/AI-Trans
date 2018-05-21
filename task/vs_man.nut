@@ -18,7 +18,7 @@ class Task.Vehicle_Mgr extends DailyTask
 
 	function On_Start() {
 		local cur_date = AIDate.GetCurrentDate();
-		local max_reg = 10;
+		local max_reg = 50;
 		local lst = CLList(AIVehicleList());
 		lst.RemoveList(_check_list);
 		if (lst.IsEmpty()) _check_list.Clear();
