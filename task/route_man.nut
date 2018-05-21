@@ -48,22 +48,8 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			
-			if (num == 0) {
-				XVehicle.GetReplacement(grp_name);
-				continue;
-			}
-			
 			if (producing < 2) {
 				Info(grp_name, "Closing route due to not producing");
-				Service.Data.RouteToClose.push(t);
-			}
-			
-			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
-			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
-			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 60) continue;
-			
-			if (!XStation.IsAccepting(t.StationsID[1], cargo)) {
-				Info(grp_name, "Closing route due to not accepting");
 				Service.Data.RouteToClose.push(t);
 				continue;
 			}
@@ -74,6 +60,21 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			
+			if (!XStation.IsAccepting(t.StationsID[1], cargo)) {
+				Info(grp_name, "Closing route due to not accepting");
+				Service.Data.RouteToClose.push(t);
+				continue;
+			}
+			
+			if (num == 0) {
+				XVehicle.GetReplacement(grp_name);
+				continue;
+			}
+			
+			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
+			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
+			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 70) continue;
+
 			if (t.VhcType == AIVehicle.VT_RAIL) {
 				if (num >= 2) continue;
 			}
