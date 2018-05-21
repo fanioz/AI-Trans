@@ -67,7 +67,11 @@ class Task.RouteManager extends DailyTask
 			}
 			
 			if (num == 0) {
-				XVehicle.GetReplacement(grp_name);
+				if (AIMap.IsValidTile(t.Depots[0])) {
+					XVehicle.GetReplacement(grp_name);
+				} else {
+					Warn("TODO:Find a nearby depot");
+				}
 				continue;
 			}
 			
