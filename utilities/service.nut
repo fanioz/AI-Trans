@@ -330,7 +330,7 @@ class Service
 		conn._VhcManager.SetStationA(conn._current.Stations[0]);
 		conn._VhcManager.SetStationB(conn._current.Stations[1]);
 		conn._VhcManager.SetDepotA(conn._current.Depots[0]);
-		conn._VhcManager.SetDepotB(conn._current.Depots[1]);
+		conn._VhcManager.SetDepotB((conn._current.Depots.len() > 1) ? conn._current.Depots[1] : -1);
 		if (conn._current.VhcType == AIVehicle.VT_RAIL) {
 			conn._VhcManager.TryBuildRail();
 		} else {
