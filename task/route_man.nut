@@ -117,6 +117,7 @@ class Task.RouteManager extends DailyTask
 				Warn("TODO:Find a nearby depot");
 				continue;
 			}
+			Money.Get(AIEngine.GetPrice(t.Engine) * 2);
 			if (XVehicle.TryDuplicate(vhc)) Service.Data.Routes[grp_name].LastBuild = AIDate.GetCurrentDate() + 10;
 			return Money.Pay();
 		}
