@@ -359,6 +359,7 @@ class Service
 	
 	function IsWaitingPath(conn) {
 		if (conn._Mgr_A == null) return false;
+		if (conn._Mgr_B == null) return false;		
 		if (conn._PF.IsRunning()) {
 			Info(conn._MaxStep - conn._CurStep," step left for finding", conn._Mgr_A.GetName(), "=>", conn._Mgr_B.GetName());
 			conn._Line = conn._PF.FindPath(200);
