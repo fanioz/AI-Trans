@@ -155,3 +155,24 @@ Fixes:Find nearby depot should be reachable (now for Road & Water)
 Fixes:Checking AITile.HasTransportType should be done on next iteration
 Fixes: Build depot for water now inline
 Fixes: Put a limit distance to find a depot
+
+
+* 18xxyy
+General: Code refactoring, simplify, cleanups, etc..
+Feature: Trans.Rail now could handle two train
+Feature:[Station] Uses Dual line Terminus station
+Feature:[Station] Rail station direction now determined by distance
+Feature:[Rail] Build signal between depots/station
+Feature: Continue building current train route if loaded from a save game
+Add: Build rail depot within station
+Add:[PF] Rail path tracker - check connectivity
+Add:[Station] Check if tile is buildable before build station
+Add:[Save]-able progress of building route
+Fixes:[PF] Rail PT cannot detect existing bridge/tunnel
+Fixes: GetReplacement() should build a replacement vehicle
+Fixes: Save the route built state
+Fixes: Don't build station entry if not built station
+Fixes: Re-order priority for closing route and adding vehicle
+Changes: Raise up limit for vehicle registration once
+Change: Add track type to create unique key
+Change: Goto depot is not mandatory
