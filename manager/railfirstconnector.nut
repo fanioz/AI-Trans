@@ -92,6 +92,10 @@ class RailFirstConnector extends DailyTask
 		if (Service.IsNotAllowed(this._current.VhcType)) return;
 		if (this._current.Track == -1) {
 			local availableRail = AIRailTypeList();
+			availableRail.Valuate(function(id) {
+				local speed = AIRail.GetMaxSpeed(id);
+				return speed == 0 ? 100000 : speed;
+			});
 			availableRail.RemoveList(this._Blocked_Track);
 			if (availableRail.Count() == 0) {
 				Info("No rail type available");
