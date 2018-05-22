@@ -97,15 +97,21 @@ class Task.RouteManager extends DailyTask
 				Info(sname, "has vehicles in slow motion :D");
 				continue;
 			}
-			local dstation = XStation.GetManager(t.StationsID[1], t.StationType);
-			if (!dstation.CanAddNow(cargo)) {
-				Info(dstation.GetName(), "is busy");
-				continue;
+			
+			if (t.VhcType == AIVehicle.VT_AIR) {
+				local dstation = XStation.GetManager(t.StationsID[1], t.StationType);
+				
+				if (!dstation.CanAddNow(cargo)) {
+					Info(dstation.GetName(), "is busy");
+					continue;
+				}
+
+				if (dstation.GetOccupancy() > 99) {
+					Info(dstation.GetName(), "is out of space");
+					continue;
+				}
 			}
-			if (dstation.GetOccupancy() > 99) {
-				Info(dstation.GetName(), "is out of space");
-				continue;
-			}
+			
 			Info("Time to make clone");
 			if (!AIMap.IsValidTile(t.Depots[0])) {
 				Warn("TODO:Find a nearby depot");
