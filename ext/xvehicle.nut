@@ -220,7 +220,7 @@ class XVehicle
 			Info("AutoReplacement for", vtname, "was set to", AIEngine.GetName(engine_new));
 		}
 		v_man.SetDepotA (tbl.Depots[0]);
-		v_man.SetDepotB (tbl.Depots[1]);
+		if (tbl.Depots.len()>1) v_man.SetDepotB (tbl.Depots[1]);
 		v_man.SetStationA (tbl.Stations[0]);
 		v_man.SetStationB (tbl.Stations[1]);
 		Money.Get(0);
