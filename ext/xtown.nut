@@ -24,11 +24,7 @@ class XTown
 	function GetID(location) {
 		local id = AITile.GetClosestTown(location);
 		if (AITown.IsWithinTownInfluence(id, location)) return id;
-		local lst = AITownList();
-		lst.Valuate(AITown.IsWithinTownInfluence, location);
-		lst.KeepValue(1);
-		if (lst.Count()) return lst.Begin();
-		return -1;
+		return AITile.GetTownAuthority(location);
 	}
 
 	function CanAccept(id, cargo) {

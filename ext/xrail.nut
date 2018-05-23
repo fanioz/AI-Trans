@@ -118,11 +118,9 @@ class XRail
 		return -1;
 	}
 	
-	function BuildSignal(before, after, each) {
-		local start = AIRail.GetRailDepotFrontTile(before);
-		local end = AIRail.GetRailDepotFrontTile(after);
+	function BuildSignal(start, end, each) {
 		local pt = Rail_PT();
-		pt.InitializePath([[start, before]],[[end, after]],[]);
+		pt.InitializePath(start, end, []);
 		local path = pt.FindPath(10000);
 		if (!path) return false;
 		

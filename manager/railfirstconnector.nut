@@ -19,6 +19,8 @@ class RailFirstConnector extends DailyTask
 	_Line = null;
 	_PF = null;
 	_PT = null;
+	_MaxStep = null;
+	_CurStep = null;
 	_RouteCost = null;
 	_Route_Found = null;
 	_Max_Distance = null;
@@ -50,6 +52,8 @@ class RailFirstConnector extends DailyTask
 		this._Max_Distance = 200;
 		this._Min_Distance = 50;
 		this._PF = Rail_PF();
+		this._MaxStep = 7000;
+		this._CurStep = 0;
 		this._PlatformLength = 4;
 		this._WagonNum = 7;
 		this._Vhc_Price = 0;
@@ -88,6 +92,10 @@ class RailFirstConnector extends DailyTask
 		if (Service.IsNotAllowed(this._current.VhcType)) return;
 		if (this._current.Track == -1) {
 			local availableRail = AIRailTypeList();
+			availableRail.Valuate(function(id) {
+				local speed = AIRail.GetMaxSpeed(id);
+				return speed == 0 ? 100000 : speed;
+			});
 			availableRail.RemoveList(this._Blocked_Track);
 			if (availableRail.Count() == 0) {
 				Info("No rail type available");
@@ -129,6 +137,19 @@ class RailFirstConnector extends DailyTask
 			this._current.Key = Service.CreateKey(this._current.StationsID[0], this._current.StationsID[1], this._current.Cargo, this._current.VhcType, this._current.Track);
 			this._current.MaxSpeed = AIEngine.GetMaxSpeed(this._current.Engine);
 			this._current.IsValid = true;
+			local startEndBack = [];
+			foreach (aPoints in [this._current.StartPoint, this._current.EndPoint]) 
+				foreach (points in aPoints)
+					if (AITile.IsBuildable(points[0])) startEndBack.push(points);
+			
+			if (startEndBack.len() > 1) {
+				this._PF.InitializePath([startEndBack[0]], [startEndBack[1]], []);
+				local line2 = this._PF.FindPath(10000);
+				if (line2) { 
+					this._current.RouteBackIsBuilt = XRail.BuildRail(line2);
+					XRail.BuildSignal([startEndBack[1]], [startEndBack[0]], 10); 
+				}
+			}
 			Service.Data.Routes.rawset(this._current.Key, clone this._current);
 			this._Mgr_A = null;
 			this._Mgr_B = null;
@@ -165,6 +186,7 @@ class RailFirstConnector extends DailyTask
 			Info("selected destination:", _Mgr_B.GetName());
 			if (this._current.StartPoint.len() > 0 && this._current.EndPoint.len() > 0) {
 				this._PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
+				this._CurStep = 0;
 				return;
 			}
 			switch (InitService()) {
@@ -370,6 +392,7 @@ class RailFirstConnector extends DailyTask
 		if (this._current.EndPoint.len() == 0) return 2;
 		
 		_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, ignored);
+		this._CurStep = 0;
 		return 0;
 	}
 
@@ -395,7 +418,14 @@ class RailFirstConnector extends DailyTask
 			depot = XRail.BuildDepotOnRail(path);
 			if (AIRail.IsRailDepotTile(depot)) this._current.Depots.push(depot);
 		}
-		XRail.BuildSignal(this._current.Depots[0], this._current.Depots[1], 10);
+		
+		if (this._current.Depots.len() > 1) {
+			XRail.BuildSignal([[AIRail.GetRailDepotFrontTile(this._current.Depots[0]), this._current.Depots[0]]], 
+				[[AIRail.GetRailDepotFrontTile(this._current.Depots[1]), this._current.Depots[1]]], 10);
+		} else {
+			XRail.BuildSignal(this._current.StartPoint, this._current.EndPoint, 10);
+		}
+		
 		return true;
 	}
 };

@@ -471,7 +471,7 @@ class XVehicle
 				tabel.IsTown[x] = true;
 				tabel.ServID[x] = XTown.GetID(tabel.Stations[x]);
 				if (!AITown.IsValidTown(tabel.ServID[x])) {
-					Warn("Goto station name", AIStation.GetName(tabel.Stations[x]));
+					Warn("Goto station name", AIStation.GetName(tabel.StationsID[x]));
 					Warn("Capture screen at tile", CLString.Tile(tabel.Stations[x]));
 					//CRASH_CANT_DETECT_STATION_BELONG_TO();
 					return tabel;

@@ -3,7 +3,7 @@ class Rail_PT extends Rail_PF{
 	
 	constructor() {
 		Rail_PF.constructor();
-		SetName("Road Finder");
+		SetName("Rail Tracker");
 	}
 	
 	function _Neighbours(path, cur_node)

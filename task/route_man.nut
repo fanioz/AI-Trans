@@ -48,22 +48,8 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			
-			if (num == 0) {
-				XVehicle.GetReplacement(grp_name);
-				continue;
-			}
-			
 			if (producing < 2) {
 				Info(grp_name, "Closing route due to not producing");
-				Service.Data.RouteToClose.push(t);
-			}
-			
-			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
-			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
-			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 60) continue;
-			
-			if (!XStation.IsAccepting(t.StationsID[1], cargo)) {
-				Info(grp_name, "Closing route due to not accepting");
 				Service.Data.RouteToClose.push(t);
 				continue;
 			}
@@ -74,8 +60,30 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			
+			if (!XStation.IsAccepting(t.StationsID[1], cargo)) {
+				Info(grp_name, "Closing route due to not accepting");
+				Service.Data.RouteToClose.push(t);
+				continue;
+			}
+			
+			if (num == 0) {
+				if (AIMap.IsValidTile(t.Depots[0])) {
+					XVehicle.GetReplacement(grp_name);
+				} else {
+					Warn("TODO:Find a nearby depot");
+				}
+				continue;
+			}
+			
+			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);
+			if (t.VhcCapacity > Debug.Echo(waiting, "at", sname, label, "waiting:")) continue;
+			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 70) continue;
+
 			if (t.VhcType == AIVehicle.VT_RAIL) {
-				if (num >= 2) continue;
+				if (!t.RouteBackIsBuilt && num > 2) {
+					local id = vhclst.Begin();
+					XVehicle.TryToSend(id);
+				}
 			}
 
 			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
@@ -92,20 +100,27 @@ class Task.RouteManager extends DailyTask
 				Info(sname, "has vehicles in slow motion :D");
 				continue;
 			}
-			local dstation = XStation.GetManager(t.StationsID[1], t.StationType);
-			if (!dstation.CanAddNow(cargo)) {
-				Info(dstation.GetName(), "is busy");
-				continue;
+			
+			if (t.VhcType == AIVehicle.VT_AIR) {
+				local dstation = XStation.GetManager(t.StationsID[1], t.StationType);
+				
+				if (!dstation.CanAddNow(cargo)) {
+					Info(dstation.GetName(), "is busy");
+					continue;
+				}
+
+				if (dstation.GetOccupancy() > 99) {
+					Info(dstation.GetName(), "is out of space");
+					continue;
+				}
 			}
-			if (dstation.GetOccupancy() > 99) {
-				Info(dstation.GetName(), "is out of space");
-				continue;
-			}
+			
 			Info("Time to make clone");
 			if (!AIMap.IsValidTile(t.Depots[0])) {
 				Warn("TODO:Find a nearby depot");
 				continue;
 			}
+			Money.Get(AIEngine.GetPrice(t.Engine) * 2);
 			if (XVehicle.TryDuplicate(vhc)) Service.Data.Routes[grp_name].LastBuild = AIDate.GetCurrentDate() + 10;
 			return Money.Pay();
 		}
