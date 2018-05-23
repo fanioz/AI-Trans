@@ -253,6 +253,7 @@ class Service
 			EndPoint = []
 			Step = 0
 			RouteIsBuilt = false
+			RouteBackIsBuilt = false
 			LastBuild = 0
 		}
 		return tabel;

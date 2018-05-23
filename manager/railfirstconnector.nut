@@ -137,6 +137,19 @@ class RailFirstConnector extends DailyTask
 			this._current.Key = Service.CreateKey(this._current.StationsID[0], this._current.StationsID[1], this._current.Cargo, this._current.VhcType, this._current.Track);
 			this._current.MaxSpeed = AIEngine.GetMaxSpeed(this._current.Engine);
 			this._current.IsValid = true;
+			local startEndBack = [];
+			foreach (aPoints in [this._current.StartPoint, this._current.EndPoint]) 
+				foreach (points in aPoints)
+					if (AITile.IsBuildable(points[0])) startEndBack.push(points);
+			
+			if (startEndBack.len() > 1) {
+				this._PF.InitializePath([startEndBack[0]], [startEndBack[1]], []);
+				local line2 = this._PF.FindPath(10000);
+				if (line2) { 
+					this._current.RouteBackIsBuilt = XRail.BuildRail(line2);
+					XRail.BuildSignal([startEndBack[1]], [startEndBack[0]], 10); 
+				}
+			}
 			Service.Data.Routes.rawset(this._current.Key, clone this._current);
 			this._Mgr_A = null;
 			this._Mgr_B = null;

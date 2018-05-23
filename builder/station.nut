@@ -138,21 +138,25 @@
 			if (((this._heading == "NW")  && (this._isSourceStation)) || ((this._heading == "SE")  && (!this._isSourceStation))) {
 				//BuildTerminusNW
 				ret.push(this._getTiles(this.GetLocation(), [6,4], -2));
+				ret.push(this._getTiles(this.GetLocation(), [7,5], -2));
 			}
 			
 			if (((this._heading == "SE")  && (this._isSourceStation)) || ((this._heading == "NW")  && (!this._isSourceStation))) {
 				//BuildTerminusSE
 				ret.push(this._getTiles(this.GetLocation(), [13,11], 2));
+				ret.push(this._getTiles(this.GetLocation(), [12,10], 2));
 			}
 			
 			if (((this._heading == "NE")  && (this._isSourceStation)) || ((this._heading == "SW")  && (!this._isSourceStation))) {
 				//BuildTerminusNE
 				ret.push(this._getTiles(this.GetLocation(), [-11,-10], -8));
+				ret.push(this._getTiles(this.GetLocation(), [-3, -2], -8));
 			}
 			
 			if (((this._heading == "SW")  && (this._isSourceStation)) || ((this._heading == "NE")  && (!this._isSourceStation))) {
 				//BuildTerminusSW
 				ret.push(this._getTiles(this.GetLocation(), [6,5], 8));
+				ret.push(this._getTiles(this.GetLocation(), [14,13], 8));
 			}
 		}
 		return ret;
@@ -208,6 +212,7 @@
 		
 	function GetIgnoredTiles() {
 		local ret = [];
+		/*
 		if (this._stationType == StationBuilder.TYPE_TERMINUS) {
 			if (((this._heading == "NW")  && (this._isSourceStation)) || ((this._heading == "SE")  && (!this._isSourceStation))) {
 				//BuildTerminusNW
@@ -229,6 +234,7 @@
 				ret.extend(this._getTiles(this.GetLocation(), [13, 14], 8));
 			}
 		}
+		*/
 		return ret;
 	}
 	
