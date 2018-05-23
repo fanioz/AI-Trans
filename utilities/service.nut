@@ -389,4 +389,14 @@ class Service
 		Info("route found", conn._Route_Found);
 		return false;
 	}
+	
+	function GetVehicleList(t) {
+		local list1 = AIVehicleList_Station(t.StationsID[0]);
+		local vhclist = AIVehicleList_Station(t.StationsID[1]);
+		list1.KeepList(vhclist);
+		vhclist.KeepList(list1);
+		vhclist.Valuate(AIVehicle.GetVehicleType);
+		vhclist.KeepValue(t.VhcType);
+		return CLList(vhclist);
+	}
 }

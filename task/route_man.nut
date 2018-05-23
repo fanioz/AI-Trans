@@ -21,7 +21,7 @@ class Task.RouteManager extends DailyTask
 		Info("Service table count:", Service.Data.Routes.len());
 		foreach(grp_name, t in Service.Data.Routes) {
 			local grp_id = t.GroupID;
-			local vhclst = CLList(AIVehicleList_Group(grp_id));
+			local vhclst = Service.GetVehicleList(t);
 			local num = vhclst.Count();
 			
 			if (_checked.HasItem(grp_id)) continue;
