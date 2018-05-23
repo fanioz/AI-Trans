@@ -80,7 +80,10 @@ class Task.RouteManager extends DailyTask
 			if (Debug.Echo(AIStation.GetCargoRating(t.StationsID[0], cargo), "at", sname, label, "rating:") > 70) continue;
 
 			if (t.VhcType == AIVehicle.VT_RAIL) {
-				if (num >= 2) continue;
+				if (!t.RouteBackIsBuilt && num > 2) {
+					local id = vhclst.Begin();
+					XVehicle.TryToSend(id);
+				}
 			}
 
 			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
