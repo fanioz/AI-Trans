@@ -81,8 +81,11 @@ class Task.RouteManager extends DailyTask
 
 			if (t.VhcType == AIVehicle.VT_RAIL) {
 				if (!t.RouteBackIsBuilt && num > 2) {
+					vhclst.Valuate(AIVehicle.GetAgeLeft);
+					vhclst.SortValueAscending();
 					local id = vhclst.Begin();
 					XVehicle.TryToSend(id);
+					continue;
 				}
 			}
 
