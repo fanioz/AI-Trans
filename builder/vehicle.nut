@@ -150,6 +150,7 @@ class VehicleMaker extends Infrastructure
 		_wgn_id = -1;
 		_m_id = -1;
 		this._waypoints = [];
+		this.SetName("Vehicle Maker");
 	}
 
 	function HaveEngineFor(et) {
