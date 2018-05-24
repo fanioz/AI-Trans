@@ -154,8 +154,6 @@ class RailFirstConnector extends DailyTask
 			Info ("route found");
 			if (!Money.Get(Service.GetTotalCost(this))) return;
 			this._current.RouteIsBuilt = BuildInfrastructure(); 
-			this._Route_Found = false;
-			this._Line = null;
 			Info("rail route building:",  this._current.RouteIsBuilt);
 		} else {
 			Info("Initialize service");
@@ -399,6 +397,7 @@ class RailFirstConnector extends DailyTask
 			} else {
 				_PF.InitializePath(this._current.StartPoint, this._current.EndPoint, []);
 				Info("Path building failed. Re-find");
+				this._Route_Found = false;
 				return;
 			}
 		}
@@ -418,6 +417,8 @@ class RailFirstConnector extends DailyTask
 			XRail.BuildSignal(this._current.StartPoint, this._current.EndPoint, 10);
 		}
 		
+		this._Line = null;
+		this._Route_Found = false;
 		return true;
 	}
 };
