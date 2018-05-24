@@ -143,6 +143,8 @@ class RailFirstConnector extends DailyTask
 				Service.Data.Projects.rawset("RouteBack", []);
 			Service.Data.Projects["RouteBack"].push(this._current.Key);
 			
+			this._Possible_Sources.rawdelete(this._current.Cargo);
+			this._Possible_Dests.rawdelete(this._current.Cargo);
 			this._Mgr_A = null;
 			this._Mgr_B = null;
 			this._LastSuccess = AIDate.GetCurrentDate() + 90;
