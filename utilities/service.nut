@@ -337,13 +337,12 @@ class Service
 		} else {
 			conn._VhcManager.TryBuild();
 		}
-		if (conn._VhcManager.IsBuilt()) {
-			conn._VhcManager.StartCloned();
-		} else {
+		if (!conn._VhcManager.IsBuilt()) {
 			Warn("failed on build vehicle");
+			return false;
 		}
 		Money.Pay();
-		return conn._VhcManager.IsBuilt();
+		return conn._VhcManager.StartCloned();
 	}
 	
 	/**
