@@ -381,7 +381,7 @@ class Service
 			conn._current.ServID[1] = -1;
 			this._current.StartPoint.clear();
 			this._current.EndPoint.clear();
-			Service.Data.RouteToClose.push(conn._current);
+			conn._PF.Reset();
 			Assist.RemoveAllSigns();
 		}
 		//not removing sign if line = false
