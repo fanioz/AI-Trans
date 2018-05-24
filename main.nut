@@ -63,6 +63,7 @@ class Trans extends Base
 			TaskManager.New(Task.CurrentValue());
 			TaskManager.New(Task.RouteManager());
 			TaskManager.New(Task.Vehicle_Mgr());
+			TaskManager.New(Task.TrackDoubler());
 
 			/*
 			* ============ Main Loop ================
