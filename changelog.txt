@@ -157,9 +157,11 @@ Fixes: Build depot for water now inline
 Fixes: Put a limit distance to find a depot
 
 
-* 18xxyy
+* 180525
 General: Code refactoring, simplify, cleanups, etc..
-Feature: Trans.Rail now could handle two train
+Feature: Trans.Rail now could handle two train on single track
+Feature: Trans.Rail now could handle more train on double track
+Feature: Trans.Rail will try to build the second track 
 Feature:[Station] Uses Dual line Terminus station
 Feature:[Station] Rail station direction now determined by distance
 Feature:[Rail] Build signal between depots/station
@@ -173,6 +175,9 @@ Fixes: GetReplacement() should build a replacement vehicle
 Fixes: Save the route built state
 Fixes: Don't build station entry if not built station
 Fixes: Re-order priority for closing route and adding vehicle
+Fixes: Don't crash if got an invalid industry ID
+Fixes: Don't Crash if only have one depot
 Changes: Raise up limit for vehicle registration once
 Change: Add track type to create unique key
 Change: Goto depot is not mandatory
+Change: Limit iteration steps used by pathfinder
