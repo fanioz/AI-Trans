@@ -220,6 +220,7 @@ class RailFirstConnector extends DailyTask
 		if (!this._Possible_Sources[this._current.Cargo].IsEmpty()) {
 			Info("source left", this._Possible_Sources[this._current.Cargo].Count());
 			this._current.ServID[0] = this._Possible_Sources[this._current.Cargo].Pop();
+			if (!AIIndustry.IsValidIndustry(this._current.ServID[0])) return;
 			this._current.IsTown[0] = false;
 			this._Mgr_A = XIndustry.GetManager(this._current.ServID[0]);
 		}
@@ -262,6 +263,7 @@ class RailFirstConnector extends DailyTask
 		if (!this._Possible_Dests[this._current.Cargo].IsEmpty()) {
 			Info("destination left", this._Possible_Dests[this._current.Cargo].Count());
 			this._current.ServID[1] = this._Possible_Dests[this._current.Cargo].Pop();
+			if (!AIIndustry.IsValidIndustry(this._current.ServID[1])) return;
 			this._current.IsTown[1] = false;
 			this._Mgr_B = XIndustry.GetManager(this._current.ServID[1]);
 		}
