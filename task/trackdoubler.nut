@@ -20,12 +20,15 @@ class Task.TrackDoubler extends DailyTask
 	function On_Start() {
 		if (!Service.Data.Projects.rawin("RouteBack")) return;
 		local keep = [];
+		local cur_type = AIRail.GetCurrentRailType();
 		while (Debug.Echo(Service.Data.Projects["RouteBack"].len(), "RouteBack count")) {
 			local key = Service.Data.Projects["RouteBack"].pop();
 			if (!Service.Data.Routes.rawin(key)) continue;
 			Info("Processing", key);
 			local t = Service.Data.Routes[key];
 			if (t.RouteBackIsBuilt) continue; //no need to go further
+			if (AIRail.GetCurrentRailType() != t.Track)
+				AIRail.SetCurrentRailType(t.Track);
 			if (this.dispObj.rawin(key)) {
 				local obj = this.dispObj[key];
 				if (obj.Line) {
@@ -82,6 +85,8 @@ class Task.TrackDoubler extends DailyTask
 				keep.push(key);
 			}			
 		}
-		Service.Data.Projects["RouteBack"].extend(keep)
+		Service.Data.Projects["RouteBack"].extend(keep);
+		if (AIRail.GetCurrentRailType() != cur_type)
+			AIRail.SetCurrentRailType(cur_type);
 	}
 }
