@@ -15,6 +15,7 @@ class Service
 		VhcToSell = {}
 		Events = []
 		Routes = {}
+		RailStations = {}
 		Projects = {}
 	};
 

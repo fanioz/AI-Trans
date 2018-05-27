@@ -357,7 +357,7 @@ class RailFirstConnector extends DailyTask
 					this._current.StartPoint.extend(sb.GetStartPath());
 					this._current.Stations.push(idx);
 					this._current.StationsID.push(AIStation.GetStationID(idx));
-					if (AIRail.IsRailDepotTile(sb._depot)) this._current.Depots.push(sb._depot);
+					if (AIRail.IsRailDepotTile(sb._station.Depot)) this._current.Depots.push(sb._station.Depot);
 					built = true;
 					ignored.extend(sb.GetIgnoredTiles());
 					break;
@@ -376,7 +376,7 @@ class RailFirstConnector extends DailyTask
 					this._current.EndPoint.extend(sb.GetStartPath());
 					this._current.Stations.push(idx);
 					this._current.StationsID.push(AIStation.GetStationID(idx));
-					if (AIRail.IsRailDepotTile(sb._depot)) this._current.Depots.push(sb._depot);
+					if (AIRail.IsRailDepotTile(sb._station.Depot)) this._current.Depots.push(sb._station.Depot);
 					built = true;
 					ignored.extend(sb.GetIgnoredTiles());
 					break;
