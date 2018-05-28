@@ -71,8 +71,8 @@ class Trans18 extends AIInfo
 			description = "Trans AI processing speed",
 			min_value = 1,
 			max_value = 5,
-			easy_value = 5,
-			medium_value = 3,
+			easy_value = 1,
+			medium_value = 1,
 			hard_value = 1,
 			custom_value = 1,
 			flags = 0
