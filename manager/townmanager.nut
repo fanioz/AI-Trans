@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -131,7 +131,11 @@ class TownManager extends Servable
 			local id = XAirport.RealBuild(location, type, x, y, this);
 			if (AIStation.IsValidStation(id)) {
 				Info("just build an airport");
-				return location;
+				local tiles = AITileList_StationType(id, AIStation.STATION_AIRPORT);
+				tiles.Valuate(AIAirport.IsAirportTile);
+				tiles.KeepValue(1);
+				if (!tiles.IsEmpty()) return tiles.Begin();
+				Should_Not_Reached_Here();
 			}
 		}
 		Info("can't build an airport");
