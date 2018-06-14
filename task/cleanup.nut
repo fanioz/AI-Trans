@@ -1,22 +1,29 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
 
 /**
- * Task to manage all vehicle
+ * Task to cleanup stuffs
  */
-class Task.Vehicle_Mgr extends DailyTask
+class Task.CleanUp extends DailyTask
 {
 	_check_list = CLList();
 	constructor() {
-		DailyTask.constructor("Vehicle Manager", 3);
+		DailyTask.constructor("CleanUp", 3);
 	}
 
 	function On_Start() {
+		ScrapVehicles();
+		CloseRoute();
+		CleanVehicles();
+		CleanStation();
+	}	
+	
+	function ScrapVehicles() {
 		local cur_date = AIDate.GetCurrentDate();
 		local max_reg = 50;
 		local lst = CLList(AIVehicleList());
@@ -77,6 +84,9 @@ class Task.Vehicle_Mgr extends DailyTask
 			Debug.Echo(XVehicle.Sell(idx), "would sell", name);
 			Money.Pay();
 		}
+	}
+	
+	function CloseRoute() {
 
 		local copyclose = [];
 		while (Service.Data.RouteToClose.len()>0) {
@@ -120,14 +130,16 @@ class Task.Vehicle_Mgr extends DailyTask
 			AIGroup.DeleteGroup(t.GroupID);
 		}
 		Service.Data.RouteToClose.extend(copyclose);
-
-		//clean vehicles
+	}
+	
+	function CleanVehicles() {
 		foreach(i, v in Service.Data.VhcToSell) if (AIVehicle.IsStoppedInDepot(i)) XVehicle.Sell(i);
 		foreach(i, v in My._Vehicles) if (!AIVehicle.IsValidVehicle(i)) My._Vehicles.rawdelete(i);
 		My._No_Profit_Vhc.Valuate(AIVehicle.IsValidVehicle);
 		My._No_Profit_Vhc.KeepValue(1);
-
-		//clean station
+	}
+	
+	function CleanStation() {
 		local toclean = clone Service.Data.StationToClose;
 		foreach(idx, stype in toclean) {
 			if (!AIStation.IsValidStation(idx)) {

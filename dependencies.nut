@@ -56,7 +56,7 @@ require("task/cv.nut");
 require("task/events.nut");
 require("task/route_man.nut");
 require("task/trackdoubler.nut");
-require("task/vs_man.nut");
+require("task/cleanup.nut");
 
 /* managers */
 require("manager/stationmanager.nut");
