@@ -85,7 +85,7 @@ class XStation
 					AIRoad.RemoveRoadStation(tile);
 					continue;
 				case AIStation.STATION_TRAIN:
-					AIRail.RemoveRailStationTileRectangle(tile, tile, true);
+					AIRail.RemoveRailStationTileRectangle(tile, tile, false);
 					continue;
 				case AIStation.STATION_DOCK:
 					AIMarine.RemoveDock(tile);
