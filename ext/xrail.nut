@@ -153,4 +153,27 @@ class XRail
 		if (dx < dy) ret.reverse();
 		return ret;
 	}
+	
+	function RemoveRail(path) {
+		local prev = null;
+		local prevprev = null;
+		while (path != null) {
+			if (prevprev != null) {
+				if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
+					Debug.ResultOf(AITile.DemolishTile(prev), "Demolish bridge/tunnel");
+					prevprev = prev;
+					prev = path.GetTile();
+					path = path.GetParent();
+				} else {
+					Debug.ResultOf(AIRail.RemoveRail(prevprev, prev, path.GetTile()),"Remove rail");
+				}
+			}
+			if (path != null) {
+				prevprev = prev;
+				prev = path.GetTile();
+				path = path.GetParent();
+			}
+		}
+		return true;
+	}
 }
