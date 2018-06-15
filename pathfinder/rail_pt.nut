@@ -13,6 +13,8 @@ class Rail_PT extends Rail_PF{
 		/* this._max_cost is the maximum path cost, if we go over it, the path isn't valid. */
 		if (path.GetLength() > this._max_len) return [];
 		if (path.GetCost() >= this._max_cost) return [];
+		// if there is signal, make sure it was match signal
+		if (AIRail.GetSignalType(path.GetParent().GetTile(), path.GetTile()) != AIRail.SIGNALTYPE_NONE) return [];
 		Debug.SignPF(cur_node,"r");
 		local tiles = [];
 		local offsets = [AIMap.GetTileIndex(0, 1), AIMap.GetTileIndex(0, -1),
