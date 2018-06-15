@@ -21,7 +21,7 @@ class Task.CleanUp extends DailyTask
 		CloseRoute();
 		CleanVehicles();
 		CleanStation();
-	}	
+	}
 	
 	function ScrapVehicles() {
 		local cur_date = AIDate.GetCurrentDate();
@@ -109,6 +109,63 @@ class Task.CleanUp extends DailyTask
 			 	copyclose.push(t);
 			 	continue;
 			}
+			
+			if (t.VhcType == AIVehicle.VT_ROAD) {
+				local pf = Road_PT();
+				pf.InitializePath([t.Stations[0]], [t.Stations[1]], []);
+				local path = pf.FindPath(10000);
+				if (path) {
+					XRoad.RemoveRoad(path);
+					copyclose.push(t);
+					continue;
+				}
+			}
+			
+			if (t.VhcType == AIVehicle.VT_RAIL) {
+				local pf = Rail_PT();
+				pf.InitializePath(t.StartPoint, t.EndPoint, []);
+				local path = pf.FindPath(10000);
+				if (path) {
+					XRail.RemoveRail(path);
+					copyclose.push(t);
+					continue;
+				}
+				
+				pf = Rail_PT();
+				pf.InitializePath(t.EndPoint, t.StartPoint, []);
+				path = pf.FindPath(10000);
+				if (path) {
+					XRail.RemoveRail(path);
+					copyclose.push(t);
+					continue;
+				}
+			}
+			
+			
+			
+			local hasdepot = false;
+			foreach (depot in t.Depots) {
+				if (AIMarine.IsWaterDepotTile(depot)) {
+					AIMarine.RemoveWaterDepot(depot);
+					hasdepot = true;
+				}
+				
+				if (AIRoad.IsRoadDepotTile(depot)) {
+					AIRoad.RemoveRoadDepot(depot);
+					hasdepot = true;
+				}
+				
+				if (AIRail.IsRailDepotTile(depot)) {
+					AITile.DemolishTile(depot);
+					hasdepot = true;
+				}
+			}
+			
+			if (hasdepot) {
+				copyclose.push(t);
+				continue;
+			}
+
 			local closed = true;
 			for (local c=0;c<t.StationsID.len();c++) {
 				if (AIStation.IsValidStation(t.StationsID[c])) {
