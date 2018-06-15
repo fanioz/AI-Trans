@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -302,5 +302,27 @@ class XRoad
 	function CanExit(prev, cur, next) {
 		if (AIRoad.AreRoadTilesConnected(prev, cur) && AIRoad.AreRoadTilesConnected(cur, next)) return true;
 		return (AIRoad.CanBuildConnectedRoadPartsHere(cur, prev, next) > 0);
+	}
+	
+	function RemoveRoad(path) {
+		if (path == null)
+			return false;
+
+		Info("Start removing", path.GetLength(), "tiles");
+		
+		local last_node = path.GetTile();
+		local next = path.GetParent();
+		while (next) {
+			local next_node = next.GetTile();
+			if (AIMap.DistanceManhattan(last_node, next_node) > 1) {
+				if (XTile.IsBridgeOrTunnel(last_node)) {
+					Debug.ResultOf(AITile.DemolishTile(last_node), "Removing bridge/tunnel");
+				}
+			} else {
+				Debug.ResultOf(AIRoad.RemoveRoad(last_node, next_node), "Removing road");
+			}
+			last_node = next_node;
+			next = next.GetParent();
+		}
 	}
 }
