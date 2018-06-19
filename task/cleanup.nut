@@ -110,17 +110,6 @@ class Task.CleanUp extends DailyTask
 			 	continue;
 			}
 			
-			if (t.VhcType == AIVehicle.VT_ROAD) {
-				local pf = Road_PT();
-				pf.InitializePath([t.Stations[0]], [t.Stations[1]], []);
-				local path = pf.FindPath(10000);
-				if (path) {
-					XRoad.RemoveRoad(path);
-					copyclose.push(t);
-					continue;
-				}
-			}
-			
 			if (t.VhcType == AIVehicle.VT_RAIL && t.StartPoint.len() > 0 && t.EndPoint.len() > 0) {
 				local pf = Rail_PT();
 				pf.InitializePath(t.StartPoint, t.EndPoint, []);
@@ -145,16 +134,6 @@ class Task.CleanUp extends DailyTask
 			
 			local hasdepot = false;
 			foreach (depot in t.Depots) {
-				if (AIMarine.IsWaterDepotTile(depot)) {
-					AIMarine.RemoveWaterDepot(depot);
-					hasdepot = true;
-				}
-				
-				if (AIRoad.IsRoadDepotTile(depot)) {
-					AIRoad.RemoveRoadDepot(depot);
-					hasdepot = true;
-				}
-				
 				if (AIRail.IsRailDepotTile(depot)) {
 					foreach (aPoints in [t.StartPoint, t.EndPoint]) 
 						foreach (points in aPoints)
