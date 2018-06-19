@@ -121,7 +121,7 @@ class Task.CleanUp extends DailyTask
 				}
 			}
 			
-			if (t.VhcType == AIVehicle.VT_RAIL) {
+			if (t.VhcType == AIVehicle.VT_RAIL && t.StartPoint.len() > 0 && t.EndPoint.len() > 0) {
 				local pf = Rail_PT();
 				pf.InitializePath(t.StartPoint, t.EndPoint, []);
 				local path = pf.FindPath(10000);
