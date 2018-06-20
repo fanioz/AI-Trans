@@ -136,12 +136,14 @@ class Task.CleanUp extends DailyTask
 			foreach (depot in t.Depots) {
 				if (AIRail.IsRailDepotTile(depot)) {
 					foreach (aPoints in [t.StartPoint, t.EndPoint]) 
-						foreach (points in aPoints)
-							foreach (tile in points)
-								AITile.DemolishTile(tile);
-					local front = AIRail.GetRailDepotFrontTile(depot);
-					foreach (tile in XTile.Adjacent(front)) if (!AIRail.IsRailStationTile(tile)) AITile.DemolishTile(tile);
-					AITile.DemolishTile(front);
+						foreach (points in aPoints) {
+							if (points.len() > 1) {
+								local next = XTile.NextTile(points[0], points[1]);
+								AITile.DemolishTile(next);
+								AITile.DemolishTile(points[1]);
+							}
+						}
+					AITile.DemolishTile(depot);
 					hasdepot = true;
 				}
 			}
