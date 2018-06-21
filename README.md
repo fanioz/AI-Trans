@@ -1,6 +1,6 @@
 # Trans AI
 
-Trans is an AI for [OpenTTD](http://www.openttd.org). It try to transporting cargoes from/to any towns and industries using Bus, Truck, Tram, Aircraft and Ship. In the future it would try to use all available vehicles. Current strategy is try to use only one type of industry (if possible) as the destination of transporting cargo named [Cargo Concept](http://www.openttdcoop.org/wiki/Gametype:Cargo_Concept)
+Trans is an AI for [OpenTTD](http://www.openttd.org). It try to transporting cargoes from/to any towns and industries using Bus, Truck, Tram, Aircraft and Ship. In the future it would try to use all available vehicles. Current strategy is try to use only one type of industry (if possible) as the destination of transporting cargo named [Cargo Concept](http://www.openttdcoop.org/wiki/Gametype:Cargo_Concept). See implemented feature at [ROADMAP.md](ROADMAP.md).
 
 ## What is this repository for? ##
 
@@ -51,7 +51,8 @@ By contributing your code, you agree to license your contribution under the GNU 
 
 The [issue tracker](https://github.com/fanioz/AI_Trans/issues) is
 the preferred channel for [bug reports](#bug-reports), [features requests](#feature-requests)
-and [submitting pull requests](#pull-requests)
+and [submitting pull requests](#pull-requests), refer to [ROADMAP.md](ROADMAP.md) for contributing.
+
 
 ## Authors
 
