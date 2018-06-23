@@ -227,9 +227,16 @@
 			AIRail.BuildRailDepot(body[0], body[1]);
 			if (AIRail.IsRailDepotTile(body[0])) {
 				this._station.Depot = body[0];
-				foreach(track in Const.RailTrack)
-					AIRail.BuildRailTrack(body[1], track);
-				return true;
+				local built = AIRail.GetRailTracks(body[1]);
+				foreach(track in Const.RailTrack) {
+					if (Assist.HasBit(built, track)) continue;
+					if (!AIRail.BuildRailTrack(body[1], track)) {
+						AITile.DemolishTile(body[0]);
+						//Debug.Pause(body[1],"head");
+						break;
+					}
+				}
+				if (AIRail.IsRailDepotTile(body[0])) return true;
 			}
 		}
 		return false;
