@@ -224,10 +224,6 @@
 		if (!this._station.IsSource) depots.reverse();
 		
 		foreach (body in depots) {
-			if ((AITile.GetMinHeight(body[0]) != AITile.GetMaxHeight(body[1])) || (AITile.GetMinHeight(body[1]) != AITile.GetMaxHeight(body[0]))) {
-				XTile.SetFlatHeight(body[1], AITile.GetMaxHeight(body[1]));
-				if ((AITile.GetMinHeight(body[0]) != AITile.GetMaxHeight(body[1])) || (AITile.GetMinHeight(body[1]) != AITile.GetMaxHeight(body[0]))) continue;
-			}	
 			AIRail.BuildRailDepot(body[0], body[1]);
 			if (AIRail.IsRailDepotTile(body[0])) {
 				this._station.Depot = body[0];
