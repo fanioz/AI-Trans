@@ -111,9 +111,8 @@ class AirConnector extends Connector
 			local town_list2 = CLList(town_list);
 			town_list2.Valuate(AITown.GetDistanceManhattanToTile, AITown.GetLocation(_Source_ID));
 			town_list2.RemoveBelowValue(_Min_Distance);
-			town_list2.Valuate(Assist.IncomeTown, AITown.GetLocation(_Source_ID), _Cargo_ID, _Engine_A);
-			town_list2.RemoveBelowValue(1);
 			foreach(town_to, d in town_list2) {
+				if (Assist.IncomeTown(town_to, AITown.GetLocation(_Source_ID), _Cargo_ID, _Engine_A) < 1) continue;
 				local manager2 = XTown.GetManager(town_to);
 				_D_Station = manager2.GetExistingAirport(_Track, _Cargo_ID);
 				if (AIMap.IsValidTile(_D_Station)) {

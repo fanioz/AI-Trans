@@ -137,8 +137,6 @@ class Service
 			manager = XIndustry.GetManager;
 			fn_src = [AIIndustry, XIndustry];
 		}
-		destiny.Valuate(Service.IsServed, cargoid);
-		destiny.RemoveValue(1);
 		destiny.Valuate(fn_src[0].GetLastMonthTransportedPercentage, cargoid);
 		destiny.KeepBelowValue(Setting.Max_Transported);
 		destiny.Valuate(fn_src[0].GetLocation);
@@ -146,6 +144,7 @@ class Service
 		foreach(idx, loc in destiny) {
 			if (ignored.HasItem(loc)) continue;
 			if (dst_loc == loc) continue;
+			if (Service.IsServed(idx, cargoid)) continue;
 			if (conn._V_Type == AIVehicle.VT_WATER) {
 				if (!manager(idx).HasCoast()) {
 					conn._Skip_Src.AddItem(loc, idx);
