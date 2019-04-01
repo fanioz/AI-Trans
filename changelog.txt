@@ -188,3 +188,8 @@ Change: Goto depot is not mandatory
 Change: Limit iteration steps used by pathfinder
 Change: Set default processing speed to normal
 Change: Don't keep Station when removing Rail Station
+
+* 190402 
+Fixes: Not build rail depot if cant build it entry
+Fixes: Prevent excessive CPU usage in valuator function
+Fixes: index info not found inside valuator
