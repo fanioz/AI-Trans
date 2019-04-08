@@ -1,12 +1,12 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
 
-class TransHeap
+class ListSorter
 {
 	data = null;
 	key = null;
@@ -35,3 +35,4 @@ class TransHeap
 		return data.len();
 	}
 }
+
