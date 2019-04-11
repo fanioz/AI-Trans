@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -36,7 +36,8 @@ require("base/daily.nut");
 require("base/connector.nut");
 
 /* --linked library --*/
-require("pathfinder/heap.nut");
+require("pathfinder/sorter.nut");
+require("pathfinder/fibonacci_heap.nut");
 require("pathfinder/aystar.nut");
 require("pathfinder/aypath.nut");
 require("pathfinder/road_pt.nut");
