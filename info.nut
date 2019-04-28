@@ -1,12 +1,12 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
 
-class Trans18 extends AIInfo
+class Trans19 extends AIInfo
 {
 	function GetAuthor() { return "fanioz"; }
 	function GetName() { return "Trans"; }
@@ -125,4 +125,4 @@ class Trans18 extends AIInfo
 /*
 *Tell the core, I'm an AI too ...
 */
-RegisterAI(Trans18());
+RegisterAI(Trans19());
