@@ -34,6 +34,16 @@ class Trans19 extends AIInfo
 		}
 
 		AddSetting( {
+			name = "allow_town_action",
+			description = "Allow To Use Town Actions",
+			easy_value = 1,
+			medium_value = 1,
+			hard_value = 1,
+			custom_value = 1,
+			flags = AICONFIG_BOOLEAN
+		});
+
+		AddSetting( {
 			name = "allow_pax",
 			description = "Allow pax cargo",
 			easy_value = 1,
