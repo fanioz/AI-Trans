@@ -310,7 +310,7 @@ class RailFirstConnector extends DailyTask
 		//My.Info("=> :Profit estimated: ", profit);
 		//print("=> :profit: " + profit);
 		//return rrate ;
-		return profit;
+		return profit.tointeger();
 		}, dataBind);
 		
 		dstIndustries.KeepAboveValue(Money.Inflated(1000).tointeger());
