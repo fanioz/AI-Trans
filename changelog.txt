@@ -194,7 +194,7 @@ Fixes: Not build rail depot if cant build it entry
 Fixes: Prevent excessive CPU usage in valuator function
 Fixes: index info not found inside valuator
 
-* 190605 
+* 190506 
 Fixes: Return value of valuator is not valid (not integer/bool)
 Feature: Add ability to use Town Actions and option to disable it
 Change: Uses modified Fibonacci Heap from library for pathfinding.
