@@ -12,7 +12,8 @@
 class Task.RouteManager extends DailyTask
 {
 	_checked = CLList();
-	_route_checked = {}; 
+	_route_checked = {};
+	lastTownAction = {};
 	constructor() {
 		DailyTask.constructor("Route Manager", 10);
 	}
@@ -73,6 +74,37 @@ class Task.RouteManager extends DailyTask
 					Warn("TODO:Find a nearby depot");
 				}
 				continue;
+			}
+			
+			local target = -1;
+			
+			if (t.IsTown[0]) target = t.ServID[0]
+			else {
+				target = AITile.GetTownAuthority(t.Stations[0]);
+			}
+			
+			if ((AIController.GetSetting("allow_town_action")>0) && AITown.IsValidTown(target)) {
+				if (!this.lastTownAction.rawin(target)) this.lastTownAction.rawset(target, 0);
+				if (!AITown.HasStatue(target))
+					if (AITown.IsActionAvailable(target, AITown.TOWN_ACTION_BUILD_STATUE))
+						if (Debug.ResultOf(AITown.PerformTownAction(target, AITown.TOWN_ACTION_BUILD_STATUE), "Build statue on", src_name))
+							//do not act for the AITown.Actions below
+							this.lastTownAction.rawset(target, AIDate.GetCurrentDate()); 
+				
+				
+				local jeda = AIDate.GetCurrentDate()-this.lastTownAction.rawget(target);
+				local rating = AITown.GetRating(target, My.ID);
+				if ((jeda > 30) && rating != AITown.TOWN_RATING_OUTSTANDING) {
+					foreach (action in [AITown.TOWN_ACTION_BRIBE, AITown.TOWN_ACTION_BUY_RIGHTS, AITown.TOWN_ACTION_FUND_BUILDINGS, 
+						AITown.TOWN_ACTION_ADVERTISE_LARGE, AITown.TOWN_ACTION_ADVERTISE_MEDIUM,
+						AITown.TOWN_ACTION_ADVERTISE_SMALL] ) {
+						if (!AITown.IsActionAvailable(target, action)) continue;
+						if (Debug.ResultOf(AITown.PerformTownAction(target, action), "Action:", action,"on", src_name)) {
+							this.lastTownAction.rawset(target, AIDate.GetCurrentDate());
+							break;
+						}
+					}
+				}
 			}
 			
 			local waiting = AIStation.GetCargoWaiting(t.StationsID[0], cargo);

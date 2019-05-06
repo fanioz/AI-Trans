@@ -1,12 +1,12 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
 
-class Trans18 extends AIInfo
+class Trans19 extends AIInfo
 {
 	function GetAuthor() { return "fanioz"; }
 	function GetName() { return "Trans"; }
@@ -32,6 +32,16 @@ class Trans18 extends AIInfo
 				flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
 			});
 		}
+
+		AddSetting( {
+			name = "allow_town_action",
+			description = "Allow To Use Town Actions",
+			easy_value = 1,
+			medium_value = 1,
+			hard_value = 1,
+			custom_value = 1,
+			flags = AICONFIG_BOOLEAN
+		});
 
 		AddSetting( {
 			name = "allow_pax",
@@ -125,4 +135,4 @@ class Trans18 extends AIInfo
 /*
 *Tell the core, I'm an AI too ...
 */
-RegisterAI(Trans18());
+RegisterAI(Trans19());
