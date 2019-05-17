@@ -37,7 +37,7 @@ class XMarine
 	function FindPath(start, finish, ignored) {
 		local pf = Water_PF();
 		pf.InitializePath(start, finish, ignored);
-		return pf.FindPath(-1);
+		return pf.FindPath(10000);
 	}
 
 	function IsConnectedTo(tile1, tile2) {
@@ -48,7 +48,7 @@ class XMarine
 		}
 		local pf =  Water_PT();
 		pf.InitializePath(tile1, tile2, []);
-		return (typeof pf.FindPath(-1)) == "instance";
+		return (typeof pf.FindPath(10000)) == "instance";
 	}
 
 	function BuilderStation(tile, area) {
@@ -59,7 +59,7 @@ class XMarine
 			local head = XMarine.GetWaterSide(body);
 			if (head == tile) continue;
 			local path = XMarine.FindPath([head], [tile], restriction.ItemsToArray());
-			if (path == null) continue;
+			if (!path) continue;
 			local ecost = AIMarine.GetBuildCost(AIMarine.BT_DOCK) + path.GetBuildCost();
 			Info("est. Cost", ecost);
 			if (!Money.Get(ecost)) continue;

@@ -52,7 +52,7 @@ class XRoad
 				head = tile;
 			} else {
 				path = XRoad.FindPath([tile], [body], restriction.ItemsToArray());
-				if (path == null) continue;
+				if (!path) continue;
 				if (!Money.Get(est_cost + path.GetBuildCost())) continue;
 				Info("route len", path.GetLength());
 				local pf = Service.GetEndTiles(path);
@@ -196,7 +196,7 @@ class XRoad
 		area.KeepBetweenValue(3, 20);
 		if (area.IsEmpty()) return -1;
 		local path = XRoad.FindPath(area.ItemsToArray(), [tile], []);
-		if (path == null) return -1;
+		if (!path) return -1;
 		local est_cost = path.GetBuildCost() + AIRoad.GetBuildCost(AIRoad.GetCurrentRoadType(), AIRoad.BT_DEPOT);
 		Info("Est. Cost", est_cost);
 		if (!Money.Get(est_cost)) return -1;
@@ -217,21 +217,21 @@ class XRoad
 		}
 		local pf =  Road_PT();
 		pf.InitializePath(tile1, tile2, []);
-		return (typeof pf.FindPath(-1)) == "instance";
+		return (typeof pf.FindPath(10000)) == "instance";
 	}
 
 	function FindPath(start, finish, ignored) {
 		local pf = Road_PF();
 		pf.InitializePath(start, finish, ignored);
-		return pf.FindPath(-1);
+		return pf.FindPath(10000);
 	}
 
 	function BuildRoute(path, start, finish, ignore, num) {
 		if (num < 1) return false;
 		num--;
-		if (path == null) {
+		if (!path) {
 			path = XRoad.FindPath(start, finish, ignore);
-			if (path == null) return false;
+			if (!path) return false;
 		}
 
 		Info("Start building", path.GetLength(), "tiles on", num, "try");
