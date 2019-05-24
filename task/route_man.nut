@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -120,10 +120,13 @@ class Task.RouteManager extends DailyTask
 					continue;
 				}
 			}
-
+			
 			local vhcs2 = CLList(AIVehicleList_Group(grp_id));
 			local vhc = vhcs2.Begin();
 			vhcs2.Valuate(AIVehicle.GetState);
+			
+			if (waiting > t.VhcCapacity * 2) this.AddVehicle(vhc, grp_name);
+			
 			if (vhcs2.CountIfKeepValue(AIVehicle.VS_AT_STATION)) {
 				Info(grp_name, "has vehicles in un/loading state");
 				continue;
@@ -156,9 +159,17 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			Money.Get(AIEngine.GetPrice(t.Engine) * 2);
-			if (XVehicle.TryDuplicate(vhc)) Service.Data.Routes[grp_name].LastBuild = AIDate.GetCurrentDate() + 10;
+			this.AddVehicle(vhc, grp_name);
 			return Money.Pay();
 		}
 		_checked.Clear();
+	}
+	
+	function AddVehicle(vhc, grpName) {
+		if (XVehicle.TryDuplicate(vhc)) {
+			Service.Data.Routes[grpName].LastBuild = AIDate.GetCurrentDate() + 10;
+			return true;
+		}
+		return false;
 	}
 }
