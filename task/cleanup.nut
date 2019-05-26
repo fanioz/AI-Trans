@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -63,6 +63,13 @@ class Task.CleanUp extends DailyTask
 				Warn(name, "is not profitable");
 				XVehicle.TryToSend(idx);
 				Service.Data.VhcToSell.rawset(idx, "Not profitable");
+			}
+			
+			//=============== more than 2 year and not profitable
+			if (AIVehicle.GetAge(idx) > 730 && AIVehicle.GetProfitLastYear(idx) < 0) {
+				Warn(name, "had no future");
+				XVehicle.TryToSend(idx);
+				Service.Data.VhcToSell.rawset(idx, "No future");
 			}
 
 			//=============== stopped in depot
