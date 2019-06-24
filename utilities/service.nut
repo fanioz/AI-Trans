@@ -126,7 +126,7 @@ class Service
 			destiny.AddList(AITownList());
 			destiny.Valuate(AITown.GetPopulation);
 			destiny.KeepAboveValue(Setting.Min_Town_Population);
-			fn_src = [AITown, XTown];
+			fn_src = [AITown, XTown, "IsValidTown"];
 			manager = XTown.GetManager;
 		} else {
 			destiny.AddList(AIIndustryList_CargoProducing(cargoid));
@@ -135,7 +135,7 @@ class Service
 				destiny.KeepValue(0);
 			}
 			manager = XIndustry.GetManager;
-			fn_src = [AIIndustry, XIndustry];
+			fn_src = [AIIndustry, XIndustry, "IsValidIndustry"];
 		}
 		destiny.Valuate(fn_src[0].GetLastMonthTransportedPercentage, cargoid);
 		destiny.KeepBelowValue(Setting.Max_Transported);
@@ -144,6 +144,7 @@ class Service
 		foreach(idx, loc in destiny) {
 			if (ignored.HasItem(loc)) continue;
 			if (dst_loc == loc) continue;
+			if (!fn_src[0][fn_src[2]](idx)) continue;
 			if (Service.IsServed(idx, cargoid)) continue;
 			if (conn._V_Type == AIVehicle.VT_WATER) {
 				if (!manager(idx).HasCoast()) {
