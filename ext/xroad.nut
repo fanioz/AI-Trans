@@ -113,8 +113,8 @@ class XRoad
 					retry -= 8;
 					break;
 				case AIError.ERR_NOT_ENOUGH_CASH:
-				case AIError.ERR_VEHICLE_IN_THE_WAY:
 					retry++;
+				case AIError.ERR_VEHICLE_IN_THE_WAY:
 					AIController.Sleep(5 * retry);
 					break;
 				case AIError.ERR_FLAT_LAND_REQUIRED:
