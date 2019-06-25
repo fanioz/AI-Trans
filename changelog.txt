@@ -199,3 +199,10 @@ Fixes: Return value of valuator is not valid (not integer/bool)
 Feature: Add ability to use Town Actions and option to disable it
 Change: Uses modified Fibonacci Heap from library for pathfinding.
 Change: TransHeap class now become ListSorter.
+
+* 190625
+Change: Limit iteration for path finding
+Change: Add vehicle more often
+Fixes: Sell vehicle without bright future
+Fix: Don't wait too long if road has vehicle in the way
+Fix: Assertion failed due to invalid Industry (thanks to MatthijsH)
