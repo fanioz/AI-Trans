@@ -111,7 +111,11 @@ class AirConnector extends Connector
 			local town_list2 = CLList(town_list);
 			town_list2.Valuate(AITown.GetDistanceManhattanToTile, AITown.GetLocation(_Source_ID));
 			town_list2.RemoveBelowValue(_Min_Distance);
+			local maxEngineDistance = AIEngine.GetMaximumOrderDistance(_Engine_A);
 			foreach(town_to, d in town_list2) {
+				local orderDistance = AIOrder.GetOrderDistance(AIVehicle.VT_AIR, _S_Station, AITown.GetLocation(town_to));
+				//Info("orderDistance:", orderDistance, ":maxEngineDistance", maxEngineDistance);
+				if (orderDistance > maxEngineDistance) continue;
 				if (Assist.IncomeTown(town_to, AITown.GetLocation(_Source_ID), _Cargo_ID, _Engine_A) < 1) continue;
 				local manager2 = XTown.GetManager(town_to);
 				_D_Station = manager2.GetExistingAirport(_Track, _Cargo_ID);
