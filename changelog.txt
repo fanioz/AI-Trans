@@ -206,3 +206,6 @@ Change: Add vehicle more often
 Fixes: Sell vehicle without bright future
 Fix: Don't wait too long if road has vehicle in the way
 Fix: Assertion failed due to invalid Industry (thanks to MatthijsH)
+
+* 190720
+Fixes: Aircraft did not respect NewGRF maximum distance (thanks to ssmit132)
