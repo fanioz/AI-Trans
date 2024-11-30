@@ -9,8 +9,7 @@
 /**
  * Class that connect a route by aircraft.
  */
-class AirConnector extends Connector
-{
+class AirConnector extends Connector {
 	_Airport = null;
 	_Blocked_Airport = CLList();
 
@@ -115,12 +114,13 @@ class AirConnector extends Connector
 			foreach(town_to, d in town_list2) {
 				local orderDistance = AIOrder.GetOrderDistance(AIVehicle.VT_AIR, _S_Station, AITown.GetLocation(town_to));
 				//Info("orderDistance:", orderDistance, ":maxEngineDistance", maxEngineDistance);
-				if (orderDistance > maxEngineDistance) continue;
+				//thanks to Xarrick for fixing this here : https://www.tt-forums.net/viewtopic.php?p=1258586#p1258586
+				if (maxEngineDistance != 0 && orderDistance > maxEngineDistance) continue;
 				if (Assist.IncomeTown(town_to, AITown.GetLocation(_Source_ID), _Cargo_ID, _Engine_A) < 1) continue;
 				local manager2 = XTown.GetManager(town_to);
 				_D_Station = manager2.GetExistingAirport(_Track, _Cargo_ID);
 				if (AIMap.IsValidTile(_D_Station)) {
-					Info("there is an airport in the", manager2.GetName() , "that needs extra planes");
+					Info("there is an airport in the", manager2.GetName(), "that needs extra planes");
 					_Route_Found = true;
 					return;
 				}
