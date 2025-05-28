@@ -68,7 +68,7 @@ class XStation
 				return id;
 			}
 		}
-		return Setting.Get(SetString.adjacent_stations) ? AIStation.STATION_JOIN_ADJACENT : AIStation.STATION_NEW;
+		return AIStation.STATION_JOIN_ADJACENT;
 	}
 
 	function IsInUse(id) {

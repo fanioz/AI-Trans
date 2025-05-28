@@ -36,7 +36,6 @@ enum SetString {
 		nonuniform_stations = "station.nonuniform_stations"
 		station_spread = "station.station_spread"
 		modified_catchment = "station.modified_catchment"
-		adjacent_stations = "station.adjacent_stations"
 		distant_join_stations = "station.distant_join_stations"
 		infrastructure_maintenance = "economy.infrastructure_maintenance"
 }
