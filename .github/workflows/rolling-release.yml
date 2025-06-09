@@ -1,14 +1,14 @@
-# This is a basic workflow to help you get started with Actions
-# Nama alur kerja: Rilis otomatis berdasarkan tanggal commit
-name: Rolling Release (Based on Commit date)
+# Workflow Name: Unified Release Rolling & Bananas
+name: Rolling Release
 
-# Pemicu: Alur kerja ini akan berjalan setiap kali ada push ke branch 'master'
+# Trigger: Runs on push to the master branch OR on push of the 'bananas' tag
 on:
   push:
     branches:
-      - github_action  # Ganti dengan 'master' sebelum pull request
- # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+      - master
+    tags:
+      - 'bananas'
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -16,47 +16,66 @@ jobs:
       contents: write
 
     steps:
-      # Langkah 1: Mengambil kode dari repositori Anda, termasuk riwayat git
-      - name: Checkout Kode
+      # Step 1: Checkout the code
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Langkah 2: Dapatkan versi YYMMDD dari commit terakhir
-      - name: Get release version (YYMMDD)
+      # Step 2: Prepare the release version using YYMMDD format
+      - name: Prepare Release Version (YYMMDD)
         run: echo "VERSION=$(git log -1 --pretty=format:%cd --date=format:%y%m%d)" >> $GITHUB_ENV
 
-      # Langkah 3: Siapkan direktori staging dengan nama folder berdasarkan versi
-      - name: Staging Directory 
+      # Step 3: Generate dynamic release notes from Git history for all releases
+      - name: Generate Dynamic Release Notes
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          CHANGELOG_BODY=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:'* %s')
+          {
+            echo "CHANGELOG_BODY<<EOF"
+            echo -e "Changes since ${PREVIOUS_TAG}:\n"
+            echo "${CHANGELOG_BODY}"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+      
+      # Step 4: Set up release parameters based on the trigger
+      - name: Prepare Release Parameters
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "RELEASE_TAG_NAME=${{ env.VERSION }}" >> $GITHUB_ENV
+            echo "RELEASE_NAME=Trans AI Rolling Release ${{ env.VERSION }}" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/tags/bananas" ]]; then
+            echo "RELEASE_TAG_NAME=bananas" >> $GITHUB_ENV
+            echo "RELEASE_NAME=Trans AI Release ${{ env.VERSION }} for Bananas Content Service" >> $GITHUB_ENV
+          fi
+
+      # Step 5: Prepare the staging directory
+      - name: Prepare Staging Directory
         run: mkdir -p staging/Trans-AI_${{ env.VERSION }}
 
-      # Langkah 4: Salin semua file proyek ke direktori staging
-      - name: Copy Project file to Staging
+      # Step 6: Copy project files using git archive to respect .gitignore
+      - name: Copy Project Files via Git Archive
         run: git archive --format=tar HEAD | tar -x -C staging/Trans-AI_${{ env.VERSION }}/
 
-      # Langkah 5: Perbarui versi di info.nut menggunakan versi YYMMDD
-      - name: Change Version in info.nut
+      # Step 7: Update the version number inside info.nut
+      - name: Update Version in info.nut
         run: sed -i 's/return 200101/return ${{ env.VERSION }}/g' staging/Trans-AI_${{ env.VERSION }}/info.nut
 
-      # Langkah 6: Buat arsip rilis final (.tar tanpa kompresi dan .zip)
-      - name: Final Release
+      # Step 8: Create the final release archives (tar and zip)
+      - name: Create Final Release Archives
         run: |
           cd staging
-          tar -cf ../Trans-AI_${{ env.VERSION }}.tar Trans-AI_${{ env.VERSION }}          
+          tar -cf ../Trans-AI_${{ env.VERSION }}.tar Trans-AI_${{ env.VERSION }}
+          zip -r ../Trans-AI_${{ env.VERSION }}.zip Trans-AI_${{ env.VERSION }}
           cd ..
-      
-      # Langkah 7: Buat atau perbarui Rilisan GitHub
-      - name: GitHub Release 
+
+      # Step 9: Create the GitHub Release using the prepared parameters
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # Nama tag untuk rilis ini, menggunakan versi YYMMDD
-          tag_name: ${{ env.VERSION }}
-          # Nama rilis yang akan ditampilkan
-          name: "Trans AI Release ${{ env.VERSION }}"
-          # Unggah file .tar (tanpa kompresi) dan .zip
+          tag_name: ${{ env.RELEASE_TAG_NAME }}
+          name: ${{ env.RELEASE_NAME }}
+          body: ${{ env.CHANGELOG_BODY }}
           files: |
             Trans-AI_${{ env.VERSION }}.tar
-          # Gunakan changelog.txt sebagai badan rilis
-          body_path: changelog.txt
-          # Izinkan action untuk menimpa rilis jika tag sudah ada
           make_latest: true
