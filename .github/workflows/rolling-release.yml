@@ -32,7 +32,7 @@ jobs:
 
       # Langkah 4: Salin semua file proyek ke direktori staging
       - name: Copy Project file to Staging
-        run: rsync -av --exclude='.git' --exclude='.github' --exclude='staging' . staging/Trans-AI_${{ env.VERSION }}/
+        run: git archive --format=tar HEAD | tar -x -C staging/Trans-AI_${{ env.VERSION }}/
 
       # Langkah 5: Perbarui versi di info.nut menggunakan versi YYMMDD
       - name: Change Version in info.nut
@@ -42,8 +42,7 @@ jobs:
       - name: Final Release
         run: |
           cd staging
-          tar -cf ../Trans-AI_${{ env.VERSION }}.tar Trans-AI_${{ env.VERSION }}
-          zip -r ../Trans-AI_${{ env.VERSION }}.zip Trans-AI_${{ env.VERSION }}
+          tar -cf ../Trans-AI_${{ env.VERSION }}.tar Trans-AI_${{ env.VERSION }}          
           cd ..
       
       # Langkah 7: Buat atau perbarui Rilisan GitHub
@@ -57,7 +56,6 @@ jobs:
           # Unggah file .tar (tanpa kompresi) dan .zip
           files: |
             Trans-AI_${{ env.VERSION }}.tar
-            Trans-AI_${{ env.VERSION }}.zip
           # Gunakan changelog.txt sebagai badan rilis
           body_path: changelog.txt
           # Izinkan action untuk menimpa rilis jika tag sudah ada
