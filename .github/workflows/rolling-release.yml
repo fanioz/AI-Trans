@@ -59,7 +59,7 @@ jobs:
 
       # Step 7: Update the version number inside info.nut
       - name: Update Version in info.nut
-        run: sed -i 's/return 200101/return ${{ env.VERSION }}/g' staging/Trans-AI_${{ env.VERSION }}/info.nut
+        run: sed -i 's/return 300101/return ${{ env.VERSION }}/g' staging/Trans-AI_${{ env.VERSION }}/info.nut
 
       # Step 8: Create the final release archives (tar and zip)
       - name: Create Final Release Archives
