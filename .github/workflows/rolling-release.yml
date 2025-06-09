@@ -1,0 +1,64 @@
+# This is a basic workflow to help you get started with Actions
+# Nama alur kerja: Rilis otomatis berdasarkan tanggal commit
+name: Rolling Release (Based on Commit date)
+
+# Pemicu: Alur kerja ini akan berjalan setiap kali ada push ke branch 'master'
+on:
+  push:
+    branches:
+      - master  # Ganti dengan 'main' jika itu adalah branch utama Anda
+ # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # Langkah 1: Mengambil kode dari repositori Anda, termasuk riwayat git
+      - name: Checkout Kode
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Langkah 2: Dapatkan versi YYMMDD dari commit terakhir
+      - name: Get release version (YYMMDD)
+        run: echo "VERSION=$(git log -1 --pretty=format:%cd --date=format:%y%m%d)" >> $GITHUB_ENV
+
+      # Langkah 3: Siapkan direktori staging dengan nama folder berdasarkan versi
+      - name: Staging Directory 
+        run: mkdir -p staging/Trans-AI_${{ env.VERSION }}
+
+      # Langkah 4: Salin semua file proyek ke direktori staging
+      - name: Copy Project file to Staging
+        run: rsync -av --exclude='.git' --exclude='.github' --exclude='staging' . staging/Trans-AI_${{ env.VERSION }}/
+
+      # Langkah 5: Perbarui versi di info.nut menggunakan versi YYMMDD
+      - name: Change Version in info.nut
+        run: sed -i 's/return 200101/return ${{ env.VERSION }}/g' staging/Trans-AI_${{ env.VERSION }}/info.nut
+
+      # Langkah 6: Buat arsip rilis final (.tar tanpa kompresi dan .zip)
+      - name: Final Release
+        run: |
+          cd staging
+          tar -cf ../Trans-AI_${{ env.VERSION }}.tar Trans-AI_${{ env.VERSION }}
+          zip -r ../Trans-AI_${{ env.VERSION }}.zip Trans-AI_${{ env.VERSION }}
+          cd ..
+      
+      # Langkah 7: Buat atau perbarui Rilisan GitHub
+      - name: GitHub Release 
+        uses: softprops/action-gh-release@v2
+        with:
+          # Nama tag untuk rilis ini, menggunakan versi YYMMDD
+          tag_name: ${{ env.VERSION }}
+          # Nama rilis yang akan ditampilkan
+          name: "Trans AI Release ${{ env.VERSION }}"
+          # Unggah file .tar (tanpa kompresi) dan .zip
+          files: |
+            Trans-AI_${{ env.VERSION }}.tar
+            Trans-AI_${{ env.VERSION }}.zip
+          # Gunakan changelog.txt sebagai badan rilis
+          body_path: changelog.txt
+          # Izinkan action untuk menimpa rilis jika tag sudah ada
+          make_latest: true
