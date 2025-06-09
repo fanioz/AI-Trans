@@ -47,17 +47,18 @@ jobs:
       # Step 4: Set up release parameters based on the trigger
       - name: Prepare Release Parameters
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/*" ]]; then
-            echo "RELEASE_TAG_NAME=${{ env.VERSION }}" >> $GITHUB_ENV
-            echo "RELEASE_NAME=Trans AI Rolling Release (Branch: ${{ github.ref_name }}) ${{ env.VERSION }}" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/tags/*" ]]; then
-            TAG_NAME=${{ github.ref_name }}
-            echo "RELEASE_TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
-            echo "RELEASE_NAME=Trans AI Release ${TAG_NAME} for Bananas Content Service" >> $GITHUB_ENV
-          else
-            echo "::error::Unexpected trigger ref: ${{ github.ref }}. Could not determine release parameters."
-            exit 1
-          fi
+          case "${{ github.ref }}" in
+            refs/heads/*)
+              echo "RELEASE_TAG_NAME=${{ env.VERSION }}" >> $GITHUB_ENV
+              echo "RELEASE_NAME=Trans AI Rolling Release (Branch: ${{ github.ref_name }}) ${{ env.VERSION }}" >> $GITHUB_ENV
+            refs/tags/*)
+              TAG_NAME=${{ github.ref_name }}
+              echo "RELEASE_TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+              echo "RELEASE_NAME=Trans AI Release ${TAG_NAME} for Bananas Content Service" >> $GITHUB_ENV
+            *)
+              echo "::error::Unexpected trigger ref: ${{ github.ref }}. Could not determine release parameters."
+              exit 1
+          esac
 
       # Step 5: Prepare the staging directory
       - name: Prepare Staging Directory
