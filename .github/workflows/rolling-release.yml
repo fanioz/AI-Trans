@@ -80,17 +80,25 @@ jobs:
         run: |
           cd staging
           tar -cf ../Trans-AI_${{ env.VERSION }}.tar Trans-AI_${{ env.VERSION }}
-          zip -r ../Trans-AI_${{ env.VERSION }}.zip Trans-AI_${{ env.VERSION }}
           cd ..
 
-      # Step 9: Create the GitHub Release using the prepared parameters
+      # Step 9: Create GitHub Release using the official GitHub CLI
       - name: Create GitHub Release
         if: env.RELEASE_TAG_NAME != '' # Ensure parameters were set
-        uses: softprops/action-gh-release@v2.3.0
-        with:
-          tag_name: ${{ env.RELEASE_TAG_NAME }}
-          name: ${{ env.RELEASE_NAME }}
-          body: ${{ env.CHANGELOG_BODY }}
-          files: |
-            Trans-AI_${{ env.VERSION }}.tar
-          make_latest: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Hapus rilis dengan tag yang sama jika sudah ada, untuk memungkinkan penimpaan.
+          # '|| true' memastikan langkah ini tidak gagal jika rilisnya belum ada.
+          gh release delete "${{ env.RELEASE_TAG_NAME }}" --yes || true
+
+          # Buat rilis baru, tandai sebagai "Latest", dan isi dengan detail yang sudah disiapkan.
+          gh release create "${{ env.RELEASE_TAG_NAME }}" \
+            --latest \
+            --title "${{ env.RELEASE_NAME }}" \
+            --notes "${{ env.CHANGELOG_BODY }}"
+
+          # Unggah file-file aset ke rilis yang baru dibuat.
+          gh release upload "${{ env.RELEASE_TAG_NAME }}" \
+            "Trans-AI_${{ env.VERSION }}.tar"
+            
