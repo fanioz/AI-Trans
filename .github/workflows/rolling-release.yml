@@ -86,7 +86,7 @@ jobs:
       # Step 9: Create the GitHub Release using the prepared parameters
       - name: Create GitHub Release
         if: env.RELEASE_TAG_NAME != '' # Ensure parameters were set
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.3.0
         with:
           tag_name: ${{ env.RELEASE_TAG_NAME }}
           name: ${{ env.RELEASE_NAME }}
