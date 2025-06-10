@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2025 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -12,7 +12,7 @@ class Trans19 extends AIInfo
 	function GetName() { return "Trans"; }
 	function GetShortName() { return "FTAI"; }
 	function GetDescription() { return "Trans is an effort to be a transporter ;-) "; }
-	function GetVersion() { return 200101; }
+	function GetVersion() { return 300101; }
 	function GetAPIVersion() { return "1.3"; }
 	/* only change the version if the structure is changed */
 	function MinVersionToLoad() { return 1; }
@@ -107,7 +107,7 @@ class Trans19 extends AIInfo
 			custom_value = 1,
 			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
 		});
-		
+
 		AddSetting( {
 			name = "debug_break",
 			description = "Allow AI to pause for debugging",
@@ -117,7 +117,7 @@ class Trans19 extends AIInfo
 			custom_value = 0,
 			flags = AICONFIG_BOOLEAN + AICONFIG_INGAME
 		});
-		
+
 		AddSetting( {
 			name = "debug_signsPF",
 			description = "Build Signs for pathfinding",
