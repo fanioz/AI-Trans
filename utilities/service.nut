@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2025 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -91,6 +91,9 @@ class Service
 			destiny.Valuate(AIIndustry.GetLocation);
 			manager = XIndustry.GetManager;
 		}
+
+		if (manager == null) return -1;
+		
 		local number = destiny.Count();
 		local counter = 0;
 		foreach(dst_id, dloc in destiny) {

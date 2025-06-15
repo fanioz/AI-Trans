@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2025 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -43,6 +43,11 @@ class XIndustry
 	}
 
 	function GetManager(id) {
+		// First, ensure the provided ID is actually a valid industry before doing anything.
+		if (!AIIndustry.IsValidIndustry(id)) {
+			Warn("XIndustry.GetManager was called with an invalid industry ID: " + id);
+			return null; // Return null to prevent a crash.
+		}
 		if (!XIndustry.Managers.rawin(id)) {
 			XIndustry.Managers.rawset(id, IndustryManager(id));
 			XIndustry.Managers[id].RefreshStations();
