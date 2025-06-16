@@ -125,8 +125,16 @@ class Task.RouteManager extends DailyTask
 			local vhc = vhcs2.Begin();
 			vhcs2.Valuate(AIVehicle.GetState);
 			
-			if (waiting > t.VhcCapacity * 2) this.AddVehicle(vhc, grp_name);
-			
+			if (waiting > t.VhcCapacity * 2) {
+				// Before adding a train, check if it's a single-track line that is already full.
+				if (t.VhcType == AIVehicle.VT_RAIL && !t.RouteBackIsBuilt && num >= 2) {
+					Warn("Route " + grp_name + " is a single track and already has " + num + " trains. Cannot add more.");
+					continue; // Skip vehicle addition and move to the next route
+				}
+				Info("Cargo is waiting. Adding a new vehicle to route " + grp_name);
+				this.AddVehicle(vhc, grp_name);
+			}
+
 			if (vhcs2.CountIfKeepValue(AIVehicle.VS_AT_STATION)) {
 				Info(grp_name, "has vehicles in un/loading state");
 				continue;
