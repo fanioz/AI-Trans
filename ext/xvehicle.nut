@@ -466,8 +466,14 @@ class XVehicle
 		for (local x=0;x<2;x++) {
 			local list = func[x](tabel.Cargo);
 			if (list.IsEmpty()) {
-				//from town
-				assert(XCargo.TownStd.HasItem(tabel.Cargo) || XCargo.TownEffect.HasItem(tabel.Cargo));
+				// This means no industry produces/accepts this cargo.
+				// Before we assume it's a town cargo, we must verify it.
+				
+				if (!XCargo.TownStd.HasItem(tabel.Cargo) && !XCargo.TownEffect.HasItem(tabel.Cargo)) {
+					// This is an industrial cargo, but its source/destination industry might be disappeared.So it is no longer valid.
+					Error("Could not find an industry for cargo '" , XCargo.Label[tabel.Cargo], "'. The industry may have closed. Marking route as invalid.");
+					return tabel;
+				}
 				tabel.IsTown[x] = true;
 				tabel.ServID[x] = XTown.GetID(tabel.Stations[x]);
 				if (!AITown.IsValidTown(tabel.ServID[x])) {
