@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2025 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -61,6 +61,20 @@ class Task.RouteManager extends DailyTask
 				continue;
 			}
 			
+			if (t.VhcType == AIVehicle.VT_AIR) {
+                local stationA = XStation.GetManager(t.StationsID[0],AIStation.STATION_AIRPORT);
+				local stationB = XStation.GetManager(t.StationsID[1],AIStation.STATION_AIRPORT);
+				
+                // Jika kendaraan menggunakan pesawat besar namun bandara yang dipilih adalah small
+                if (stationA.AllowPlaneType(t.Track) && stationB.AllowPlaneType(t.Track)) {
+                    Warn("Route", grp_name, "detected: BIG plane assigned to SMALL airport(s).");
+                    Info("Initiating disposal: Closing the routes.");
+                    // Tandai route untuk ditutup agar tidak diproses lagi
+                    Service.Data.RouteToClose.push(t);
+                    continue;
+                }
+            }
+
 			if (!XStation.IsAccepting(t.StationsID[1], cargo)) {
 				Info(grp_name, "Closing route due to not accepting");
 				Service.Data.RouteToClose.push(t);
