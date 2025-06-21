@@ -277,7 +277,7 @@ class XVehicle
 			}
 		}
 		if (!AIGroup.IsValidGroup(grp)) {
-			grp = AIGroup.CreateGroup(vt);
+			grp = AIGroup.CreateGroup(vt, AIGroup.GROUP_INVALID);
 			AIGroup.SetName(grp, name)
 		}
 		Service.Data.Routes[name].GroupID = grp;
