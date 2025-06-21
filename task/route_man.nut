@@ -67,6 +67,8 @@ class Task.RouteManager extends DailyTask
 				
                 // Jika kendaraan menggunakan pesawat besar namun bandara yang dipilih adalah small
                 if (stationA.AllowPlaneType(t.Track) && stationB.AllowPlaneType(t.Track)) {
+					// you're safe
+				} else {
                     Warn("Route", grp_name, "detected: BIG plane assigned to SMALL airport(s).");
                     Info("Initiating disposal: Closing the routes.");
                     // Tandai route untuk ditutup agar tidak diproses lagi
