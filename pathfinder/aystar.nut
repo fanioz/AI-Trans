@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2019 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2025 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -149,7 +149,8 @@ class AyStar extends Base
 		if (typeof(sources) != "array" || sources.len() == 0) throw("sources has be a non-empty array.");
 		if (typeof(goals) != "array" || goals.len() == 0) throw("goals has be a non-empty array.");
 
-		_open = Fibonacci_Heap();
+		// Use the native Priority Queue from the API.
+		_open = AIPriorityQueue();
 		_closed = AIList();
 		_goals = [];
 		_na_goals = [];
