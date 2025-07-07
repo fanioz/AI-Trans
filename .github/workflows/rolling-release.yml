@@ -5,7 +5,7 @@ name: Rolling Release
 on:
   push:
     branches:
-      - '**'
+      - master
     tags:
       - '*'
 
