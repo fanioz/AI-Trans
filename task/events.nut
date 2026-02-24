@@ -212,7 +212,7 @@ class Task.Events extends DailyTask
 					break;
 
 				case AIEvent.ET_DISASTER_ZEPPELINER_CLEARED:
-					item.push(AIEventDisasterZeppelinerCrashed.Convert(e).GetStationID());
+					item.push(AIEventDisasterZeppelinerCleared.Convert(e).GetStationID());
 					break;
 
 				case AIEvent.ET_DISASTER_ZEPPELINER_CRASHED:
