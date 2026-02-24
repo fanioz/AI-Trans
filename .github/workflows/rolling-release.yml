@@ -35,7 +35,17 @@ jobs:
       # Step 3: Generate dynamic release notes from Git history for all releases
       - name: Generate Dynamic Release Notes
         run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          # Determine the previous tag based on the trigger type
+          if [[ "${{ github.ref }}" =~ refs/tags/[Bb]ananas ]]; then
+            # For bananas releases, find the previous bananas-related tag
+            PREVIOUS_TAG=$(git tag -l "*[Bb]ananas*" --sort=-version:refname | grep -v "${{ github.ref_name }}" | head -n 1)
+            # Fallback to first commit if no previous bananas tag found
+            PREVIOUS_TAG=${PREVIOUS_TAG:-$(git rev-list --max-parents=0 HEAD)}
+          else
+            # For rolling releases, use the most recent tag
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          fi
+
           CHANGELOG_BODY=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:'* %s')
           {
             echo "CHANGELOG_BODY<<EOF"
