@@ -209,3 +209,21 @@ Fix: Assertion failed due to invalid Industry (thanks to MatthijsH)
 
 * 190720
 Fixes: Aircraft did not respect NewGRF maximum distance (thanks to ssmit132)
+
+* 250609
+CodeChange: Supporting API 14
+Codechange: Uses AIPriorityQueue
+Release only on master branch
+
+* 250707
+Fixes: AIEngine.GetMaximumOrderDistance returns 0 for unlimited distance, which is the case for vanilla aircraft.
+Fix: adjacent_stations settings no longer exists
+
+* 260224
+fixes #8, crash from stale data
+fixes #5: Before adding a train, check if it's a single-track line that is already full
+fixes #7: Prevent assert crash in XVehicle.ReadRoute after fail cargo detection
+fixes #6: Ensure the correct airplane for a route
+fixes inversed logic in e0a7d5ecc4ac06fdd8ec5b6f7880be7163cdbceb during fixes #6
+Fix: Crash when converting AIEventDisasterZeppelinerCleared event
+fix: Generate changelog from previous bananas tag for bananas releases
