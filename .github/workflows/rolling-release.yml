@@ -85,6 +85,16 @@ jobs:
       - name: Update Version in info.nut
         run: sed -i 's/return 300101/return ${{ env.VERSION }}/g' staging/Trans-AI_${{ env.VERSION }}/info.nut
 
+      # Step 7.5: Generate changelog.txt for bananas releases
+      - name: Generate changelog.txt for Bananas Release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          CHANGELOG_FILE="staging/Trans-AI_${{ env.VERSION }}/changelog.txt"
+          echo "Trans AI Changelog" > "$CHANGELOG_FILE"
+          echo "" >> "$CHANGELOG_FILE"
+          echo "* ${{ env.VERSION }} ($(date +'%Y-%m-%d'))" >> "$CHANGELOG_FILE"
+          echo "${{ env.CHANGELOG_BODY }}" >> "$CHANGELOG_FILE"
+
       # Step 8: Create the final release archives (tar and zip)
       - name: Create Final Release Archives
         run: |
