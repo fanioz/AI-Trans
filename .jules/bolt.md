@@ -1,0 +1,5 @@
+## 2024-05-18 - Brute-Force Area Calculations in Squirrel
+
+**Learning:** When writing OpenTTD AI scripts in Squirrel, the `AITileList` API functions (like `AddList`, `Valuate`, and `RemoveValue`) can be expensive operations when called iteratively over expanding areas. In `TownManager::ValidateArea`, a `while` loop starting at radius 20 recalculates the *entire* list of tiles within a town's influence, incrementing the radius by just 1 each time. This results in massive redundant processing.
+
+**Action:** Look out for loops that iteratively expand search areas. They should try to grow by larger step increments (e.g., +5 or more) or use a binary search approach along the axes first to define boundaries before evaluating the entire area at once. Avoid repeatedly clearing and re-building large lists of tiles inside loops.
