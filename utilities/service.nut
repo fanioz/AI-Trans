@@ -64,7 +64,7 @@ class Service
 
 	function GetSubsidyPrice(loc1, loc2, cargo) {
 		foreach(s_id, v in My._Subsidies) {
-			if (!AISubsidy.GetCargoType(s_id) == cargo) continue;
+			if (AISubsidy.GetCargoType(s_id) != cargo) continue;
 			if (!Service.IsSubsidyLocationWas(s_id, loc1, true)) continue;
 			if (!Service.IsSubsidyLocationWas(s_id, loc2, false)) continue;
 			My.Info("found a subsidy service for", XCargo.Label[cargo]);
