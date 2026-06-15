@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -50,7 +50,7 @@ class XAirport
 			switch (AIError.GetLastError()) {
 				case AIError.ERR_AREA_NOT_CLEAR :
 				case AIError.ERR_FLAT_LAND_REQUIRED:
-					if (!XTile.MakeLevel(tile, x y)) return -1;;
+					if (!XTile.MakeLevel(tile, x, y)) return -1;
 					break;
 				case AIError.ERR_LOCAL_AUTHORITY_REFUSES:
 					if (!self.ImproveRating()) return -1;
