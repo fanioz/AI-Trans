@@ -17,10 +17,14 @@ jobs:
 
     steps:
       - name: Debug Context Variables
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          echo "Triggering Ref: ${{ github.ref }}"
-          echo "Ref Name: ${{ github.ref_name }}"
-          echo "Event Name: ${{ github.event_name }}"
+          echo "Triggering Ref: $GITHUB_REF"
+          echo "Ref Name: $GITHUB_REF_NAME"
+          echo "Event Name: $GITHUB_EVENT_NAME"
 
       # Step 1: Checkout the code
       - name: Checkout Code
@@ -34,11 +38,14 @@ jobs:
 
       # Step 3: Generate dynamic release notes from Git history for all releases
       - name: Generate Dynamic Release Notes
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
           # Determine the previous tag based on the trigger type
-          if [[ "${{ github.ref }}" =~ refs/tags/[Bb]ananas ]]; then
+          if [[ "$GITHUB_REF" =~ refs/tags/[Bb]ananas ]]; then
             # For bananas releases, find the previous bananas-related tag
-            PREVIOUS_TAG=$(git tag -l "*[Bb]ananas*" --sort=-version:refname | grep -v "${{ github.ref_name }}" | head -n 1)
+            PREVIOUS_TAG=$(git tag -l "*[Bb]ananas*" --sort=-version:refname | grep -v "$GITHUB_REF_NAME" | head -n 1)
             # Fallback to first commit if no previous bananas tag found
             PREVIOUS_TAG=${PREVIOUS_TAG:-$(git rev-list --max-parents=0 HEAD)}
           else
@@ -47,59 +54,75 @@ jobs:
           fi
 
           CHANGELOG_BODY=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:'* %s')
+          EOF_DELIMITER=$(openssl rand -hex 12)
           {
-            echo "CHANGELOG_BODY<<EOF"
+            echo "CHANGELOG_BODY<<$EOF_DELIMITER"
             echo -e "Changes since ${PREVIOUS_TAG}:\n"
             echo "${CHANGELOG_BODY}"
-            echo "EOF"
+            echo "$EOF_DELIMITER"
           } >> "$GITHUB_ENV"
       
       # Step 4: Set up release parameters based on the trigger
       - name: Prepare Release Parameters
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          VERSION: ${{ env.VERSION }}
         run: |
-          case "${{ github.ref }}" in
+          case "$GITHUB_REF" in
             refs/heads/*)
-              echo "RELEASE_TAG_NAME=${{ env.VERSION }}" >> $GITHUB_ENV
-              echo "RELEASE_NAME=Trans AI Rolling Release (Branch: ${{ github.ref_name }}) ${{ env.VERSION }}" >> $GITHUB_ENV
+              echo "RELEASE_TAG_NAME=$VERSION" >> $GITHUB_ENV
+              echo "RELEASE_NAME=Trans AI Rolling Release (Branch: $GITHUB_REF_NAME) $VERSION" >> $GITHUB_ENV
               ;;
             refs/tags/*)
-              TAG_NAME=${{ github.ref_name }}
-              echo "RELEASE_TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
-              echo "RELEASE_NAME=Trans AI Release ${TAG_NAME} for Bananas Content Service" >> $GITHUB_ENV
+              TAG_NAME=$GITHUB_REF_NAME
+              echo "RELEASE_TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+              echo "RELEASE_NAME=Trans AI Release $TAG_NAME for Bananas Content Service" >> $GITHUB_ENV
               ;;
             *)
-              echo "::error::Unexpected trigger ref: ${{ github.ref }}. Could not determine release parameters."
+              echo "::error::Unexpected trigger ref: $GITHUB_REF. Could not determine release parameters."
               exit 1
               ;;
           esac
 
       # Step 5: Prepare the staging directory
       - name: Prepare Staging Directory
-        run: mkdir -p staging/Trans-AI_${{ env.VERSION }}
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: mkdir -p staging/Trans-AI_$VERSION
 
       # Step 6: Copy project files using git archive to respect .gitignore
       - name: Copy Project Files via Git Archive
-        run: git archive --format=tar HEAD | tar -x -C staging/Trans-AI_${{ env.VERSION }}/
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: git archive --format=tar HEAD | tar -x -C staging/Trans-AI_$VERSION/
 
       # Step 7: Update the version number inside info.nut
       - name: Update Version in info.nut
-        run: sed -i 's/return 300101/return ${{ env.VERSION }}/g' staging/Trans-AI_${{ env.VERSION }}/info.nut
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: sed -i "s/return 300101/return $VERSION/g" staging/Trans-AI_$VERSION/info.nut
 
       # Step 7.5: Generate changelog.txt for bananas releases
       - name: Generate changelog.txt for Bananas Release
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          VERSION: ${{ env.VERSION }}
+          CHANGELOG_BODY: ${{ env.CHANGELOG_BODY }}
         run: |
-          CHANGELOG_FILE="staging/Trans-AI_${{ env.VERSION }}/changelog.txt"
+          CHANGELOG_FILE="staging/Trans-AI_$VERSION/changelog.txt"
           echo "Trans AI Changelog" > "$CHANGELOG_FILE"
           echo "" >> "$CHANGELOG_FILE"
-          echo "* ${{ env.VERSION }} ($(date +'%Y-%m-%d'))" >> "$CHANGELOG_FILE"
-          echo "${{ env.CHANGELOG_BODY }}" >> "$CHANGELOG_FILE"
+          echo "* $VERSION ($(date +'%Y-%m-%d'))" >> "$CHANGELOG_FILE"
+          echo "$CHANGELOG_BODY" >> "$CHANGELOG_FILE"
 
       # Step 8: Create the final release archives (tar and zip)
       - name: Create Final Release Archives
+        env:
+          VERSION: ${{ env.VERSION }}
         run: |
           cd staging
-          tar -cf ../Trans-AI_${{ env.VERSION }}.tar Trans-AI_${{ env.VERSION }}
+          tar -cf ../Trans-AI_$VERSION.tar Trans-AI_$VERSION
           cd ..
 
       # Step 9: Create GitHub Release using the official GitHub CLI
@@ -107,18 +130,22 @@ jobs:
         if: env.RELEASE_TAG_NAME != '' # Ensure parameters were set
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG_NAME: ${{ env.RELEASE_TAG_NAME }}
+          RELEASE_NAME: ${{ env.RELEASE_NAME }}
+          CHANGELOG_BODY: ${{ env.CHANGELOG_BODY }}
+          VERSION: ${{ env.VERSION }}
         run: |
           # Hapus rilis dengan tag yang sama jika sudah ada, untuk memungkinkan penimpaan.
           # '|| true' memastikan langkah ini tidak gagal jika rilisnya belum ada.
-          gh release delete "${{ env.RELEASE_TAG_NAME }}" --yes || true
+          gh release delete "$RELEASE_TAG_NAME" --yes || true
 
           # Buat rilis baru, tandai sebagai "Latest", dan isi dengan detail yang sudah disiapkan.
-          gh release create "${{ env.RELEASE_TAG_NAME }}" \
+          gh release create "$RELEASE_TAG_NAME" \
             --latest \
-            --title "${{ env.RELEASE_NAME }}" \
-            --notes "${{ env.CHANGELOG_BODY }}"
+            --title "$RELEASE_NAME" \
+            --notes "$CHANGELOG_BODY"
 
           # Unggah file-file aset ke rilis yang baru dibuat.
-          gh release upload "${{ env.RELEASE_TAG_NAME }}" \
-            "Trans-AI_${{ env.VERSION }}.tar"
+          gh release upload "$RELEASE_TAG_NAME" \
+            "Trans-AI_$VERSION.tar"
             
