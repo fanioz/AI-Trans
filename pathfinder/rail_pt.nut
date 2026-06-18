@@ -1,3 +1,10 @@
+/*
+ *  This file is part of Trans AI
+ *
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
+ *
+ *  @see license.txt
+ */
 
 class Rail_PT extends Rail_PF{
 	
@@ -50,7 +57,7 @@ class Rail_PT extends Rail_PF{
 						continue;
 					}
 				} else {
-					tiles.push([next_tile, this._GetDirection(null, cur_node, next_tile, false), buildCost]);
+					tiles.push([next_tile, this._GetDirection(null, cur_node, next_tile, false), 0]);
 				}
 				/* We add them to the to the neighbours-list if the rail exists there. */
 			}
