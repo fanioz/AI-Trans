@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -183,8 +183,21 @@ class RailFirstConnector extends DailyTask
 				return;
 			}
 			switch (InitService()) {
-				case 1 : this._Mgr_A = null; this._current.ServID[0] = -1;
-				case 2 : this._Mgr_B = null; this._current.ServID[1] = -1;
+				case 1 :
+					// source station unbuildable: move to the next source and recompute
+					// its best dest. Clearing the pool forces a fresh ranking for the
+					// new source's location (dest profitability is source-specific).
+					this._Mgr_A = null;
+					this._current.ServID[0] = -1;
+					this._Mgr_B = null;
+					this._current.ServID[1] = -1;
+					if (this._Possible_Dests.rawin(this._current.Cargo)) this._Possible_Dests[this._current.Cargo].Clear();
+					break;
+				case 2 :
+					// dest station unbuildable: re-pick the next dest for the same source
+					this._Mgr_B = null;
+					this._current.ServID[1] = -1;
+					break;
 			}
 		}
 		this.UpdateDistance(this);
