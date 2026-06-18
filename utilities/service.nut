@@ -383,8 +383,8 @@ class Service
 			conn._Route_Found = false;
 			conn._Mgr_B = null;
 			conn._current.ServID[1] = -1;
-			this._current.StartPoint.clear();
-			this._current.EndPoint.clear();
+			conn._current.StartPoint.clear();
+			conn._current.EndPoint.clear();
 			conn._PF.Reset();
 			Assist.RemoveAllSigns();
 		}
