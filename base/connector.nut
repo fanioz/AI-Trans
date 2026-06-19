@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -210,11 +210,11 @@ class Connector extends DailyTask
 		if (self._Mgr_A == null) return false;
 		if (self._PF.IsRunning()) {
 			self.Info("still finding", self._Mgr_A.GetName(), "=>", self._Mgr_B.GetName());
-			self._Line = _PF.FindPath(200);
+			self._Line = self._PF.FindPath(200);
 			return true;
 		}
 		if (typeof self._Line == "instance") {
-			self._RouteCost = _Line.GetBuildCost();
+			self._RouteCost = self._Line.GetBuildCost();
 			self._Route_Found = true;
 			Assist.RemoveAllSigns();
 		} else if (self._Line == null) {
