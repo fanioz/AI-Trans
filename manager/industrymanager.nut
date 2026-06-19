@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -33,7 +33,8 @@ class IndustryManager extends Servable
 
 	function ImproveRating() {
 		// try to improve current rating until it is enough
-		if (XTile.HasEnoughRating(GetLocation())) return true;
+		local tile = GetLocation();
+		if (XTile.HasEnoughRating(tile)) return true;
 		local mgr = XTown.GetManager(AITile.GetClosestTown(tile));
 		return mgr.ImproveRating();
 	}
