@@ -221,7 +221,7 @@ class RailFirstConnector extends DailyTask
 	 */
 	function UpdateDistance(self) {
 		local date = AIDate.GetCurrentDate() - 365;
-		if (date < self._Last_Year) {
+		if (date >= self._Last_Year) { // a year or more since _Last_Year (yearly +3)
 			self._Max_Distance += 3;
 			self._Last_Year += 365;
 		}
