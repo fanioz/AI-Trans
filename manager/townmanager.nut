@@ -13,7 +13,6 @@ class TownManager extends Servable
 {
 	_Tried_Airport = null;	// type - date
 	_Airports = null;		// Tile - ID of airports
-	_Stations = null;		// Tile - ID of of common station
 	_lastHouses = -1;		// house count when _Area[0] was last computed
 	_lastCenter = -1;		// town center tile when _Area[0] was last computed
 

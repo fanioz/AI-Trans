@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2025 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -28,7 +28,6 @@ try
 require("utilities/enum.nut");
 /* base */
 require("base/base.nut");
-require("base/memory.nut");
 require("base/location_id.nut");
 require("base/servable.nut");
 require("base/infrastructure.nut");
