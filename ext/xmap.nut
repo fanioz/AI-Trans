@@ -77,7 +77,7 @@ class XMap {
 		local list = CLList();
 		list.AddTile(point);
 		list.AddTile(XTile.SW_Of(point, XMap.sizeX));
-		list.AddTile(XTile.S_Of(point, XMap.sizeY));
+		list.AddTile(XTile.AddOffset(point, XMap.sizeX, XMap.sizeY)); // far corner: use both sizeX and sizeY
 		list.AddTile(XTile.SE_Of(point, XMap.sizeY));
 		return list;
 	}

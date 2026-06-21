@@ -13,46 +13,6 @@
 class XTile
 {
 	/**
-	 * Get North tile(s) Of a tile
-	 * @param tile tile to check
-	 * @param num number of tile from 'tile'
-	 * @return amount 'num' North of 'tile'
-	 */
-	function N_Of(tile, num) {
-		return tile + AIMap.GetTileIndex(-num, -num);
-	}
-
-	/**
-	* Get West tile(s) Of a tile
-	* @param tile tile to check
-	* @param num number of tile from 'tile'
-	* @return amount 'num' West of 'tile'
-	*/
-	function W_Of(tile, num) {
-		return XTile.AddOffset(tile, num, -num);
-	}
-
-	/**
-	* Get South tile(s) Of a tile
-	* @param tile tile to check
-	* @param num number of tile from 'tile'
-	* @return amount 'num' South of 'tile'
-	*/
-	function S_Of(tile, num) {
-		return XTile.AddOffset(tile, num, num);
-	}
-
-	/**
-	* Get East tile(s) Of a tile
-	* @param tile tile to check
-	* @param num number of tile from 'tile'
-	* @return amount 'num' East of 'tile'
-	*/
-	function E_Of(tile, num) {
-		return XTile.AddOffset(tile, -num, num);
-	}
-
-	/**
 	* Get North East tile(s) Of a tile
 	* @param tile tile to check
 	* @param num number of tile from 'tile'
@@ -387,16 +347,6 @@ class XTile
 	}
 
 	/**
-	 * Check if tile is competitor tile
-	 * @param tile to check
-	 * @return true if its owned by competitor
-	 */
-	function IsCompetitorTile(tile) {
-		local owner = AITile.GetOwner(tile);
-		return AICompany.COMPANY_INVALID != owner && !AICompany.IsMine(owner);
-	}
-
-	/**
 	 * Gets the TileIndex relatively from given offset.
 	 * @param tile Start tile.
 	 * @param x The X offset.
@@ -427,11 +377,6 @@ class XTile
 		if (XRail.HasRail(from) && AIRail.AreTilesConnected(pre, from, to)) return true;
 		if (AITile.GetMaxHeight(from) < 1) return false;
 		return AIRail.BuildRail(pre, from, to);
-	}
-
-	function IsWaterable(from, to) {
-		if (AIMarine.AreWaterTilesConnected(from, to)) return true;
-		return AIMarine.BuildCanal(from);
 	}
 
 	/**
@@ -564,48 +509,4 @@ class XTile
 		return path.GetBuildCost() + 1;
 	}
 
-	/**
-	 * Calculate cost of using this bridge tile as path
-	 * @param self PF call back
-	 * @param path current path
-	 * @param new_tile current tile
-	 * @return cost factor of bridge tile
-	 */
-	function BridgeCost(self, path, new_tile) {
-		/* path == null means this is the first node of a path, so the cost is 0. */
-		if (path == null) return 0;
-		/* if vhc speed not set, return */
-		if (self._vhc_max_spd == 0) return 0;
-		local prev_tile = path.GetTile();
-		local cost = 0;
-
-		/* If the new tile is a bridge tile, check whether we came from the other
-		 * end of the bridge. */
-		if (AIBridge.IsBridgeTile(new_tile) && AIBridge.GetOtherBridgeEnd(new_tile) == prev_tile) {
-			local old_spd = AIBridge.GetMaxSpeed(AIBridge.GetBridgeID(new_tile));
-			if (self._vhc_max_spd < old_spd) return 0;
-			local cur_len = AIMap.DistanceManhattan(new_tile, prev_tile);
-			local b_list = AIBridgeList_Length(cur_len);
-			b_list.Valuate(AIBridge.GetMaxSpeed);
-			foreach(b, speed in b_list) {
-				if (self._vhc_max_spd > speed) return (10 * speed / old_spd).tointeger();
-			}
-		}
-		/* dont call path.getcost */
-		return cost;
-	}
-
-	function NextNeighbour(pre_from, from, to) {
-		if (pre_from == null) pre_from = PFHelper.NextTile(to, from);
-		foreach(next in XTile.Adjacent(to)) {
-			/* Don't turn back */
-			if (next == from) continue;
-			/* Disallow 90 degree turns */
-			if (next - to == pre_from - from) continue;
-			/* can only pass a twoway or PBS signal */
-			if (!(::PFHelper.IsMatchSignal(to, next) || PFHelper.IsReversableSignal(to, next))) continue;
-			/* assume we can go to next tile */
-			yield next;
-		}
-	}
 }

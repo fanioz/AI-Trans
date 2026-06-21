@@ -35,7 +35,7 @@ class Water_PT extends Road_PT
 			local other_end = XTile.GetBridgeTunnelEnd(cur_node);
 			if (prev_tile && _CheckTunnelBridge(prev_tile, cur_node)) {
 				//in
-				local cost = 0; // XTile.BridgeCost(this, path, cur_node);
+				local cost = 0;
 				tiles.push([other_end, _GetDirection(prev_tile, cur_node, true) << 4, cost]);
 			} else {
 				//out
