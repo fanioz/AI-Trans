@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2013 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -106,10 +106,6 @@ class XVehicle
 
 	function IsRoad(vhc_ID) {
 		return AIVehicle.GetVehicleType(vhc_ID) == AIVehicle.VT_ROAD;
-	}
-
-	function IsAircraft(vhc_ID) {
-		return AIVehicle.GetVehicleType(vhc_ID) == AIVehicle.VT_AIR;
 	}
 
 	function IsShip(vhc_ID) {
@@ -240,13 +236,6 @@ class XVehicle
 		return false;
 	}
 
-	function CanJoinOrder (new_v, old_v) {
-		/* ordering */
-		if (! (AIVehicle.IsValidVehicle (new_v) && AIVehicle.IsValidVehicle (old_v))) return false;
-		while (AIOrder.GetOrderCount (new_v)) AIOrder.RemoveOrder (new_v, 0);
-		return AIOrder.CopyOrders (new_v, old_v);
-	}
-
 	function Register (vhc_id) {
 		local route = XVehicle.ReadRoute(vhc_id);
 		if (route.IsValid) {
@@ -291,120 +280,6 @@ class XVehicle
 		if (XVehicle.IsRoad(vhc_id)) return AIVehicle.GetRoadType(vhc_id);
 		if (XVehicle.IsShip(vhc_id)) return 1;
 		return XEngine.GetTrack(AIVehicle.GetEngineType(vhc_id));
-	}
-	
-	/**
-	* Get orders of vehicle in array
-	* structure
-	Stations = [{tile, pos},{tile, pos}]
-	Depots = [[tile, pos],[tile, pos]]
-	Waypoints = [[tile, pos],[tile, pos],..]
-	StopLocations = [[stop, pos],..]
-	Flags = [[flags, pos],..]
-	Conditional =[
-	{	conditional = pos
-		jumpTo = tile
-		condition = condition
-		cmpFunction = function
-		cmpValue = value
-	}]
-	*/
-	function GetOrders(vhc_id) {
-		local t = { Stations = [], Depots = [], Waypoints = [], StopLocations = [], Flags = [], Conditional =[]};
-		for (local c = 0; c < AIOrder.GetOrderCount(vhc_id); c++) {
-			local dest = {Tile = AIOrder.GetOrderDestination(vhc_id, c), Pos = c};
-			if (AIOrder.IsGotoStationOrder(vhc_id, c)) {
-				t.Stations.push(dest);
-				t.StopLocations.push({Stop = AIOrder.GetStopLocation(vhc_id, c), Pos = c});
-				//Info("station pos:", dest.Pos, "dest:", dest.Tile, "flags:", AIOrder.GetOrderFlags(vhc_id, c));
-			}
-			if (AIOrder.IsGotoDepotOrder(vhc_id, c)) {
-				t.Depots.push(dest);
-			}
-			if (AIOrder.IsGotoWaypointOrder(vhc_id, c)) {
-				t.Waypoints.push(dest);
-			}
-			t.Flags.push({Flags = AIOrder.GetOrderFlags(vhc_id, c), Pos = c });
-			if (AIOrder.IsConditionalOrder(vhc_id, c)) {
-				t.Conditional.push({ Pos = c,
-					JumpTo = AIOrder.GetOrderJumpTo(vhc_id, c),
-					Condition = AIOrder.GetOrderCondition(vhc_id, c),
-					CmpFunction = AIOrder.GetOrderCompareFunction(vhc_id, c),
-					CmpValue = AIOrder.GetOrderCompareValue(vhc_id, c)
-				});
-			}
-		}
-		t.Total <- AIOrder.GetOrderCount(vhc_id);
-		return t;
-	}
-	/**
-	* @param orders use orders returned from GetOrders()
-	*/
-	function SetOrders(vhc_id, orders) {
-		local conditionalOrd = [];
-		local neworder = array(orders.Total, {});
-		//new pos
-		while (orders.Stations.len() > 0) {
-			local item = orders.Stations.pop();
-			neworder[item.Pos] = { Tile = item.Tile};
-			//Info("station pos:", item.Pos, "tile:", item.Tile);
-		}
-		while (orders.Depots.len() > 0) {
-			local item = orders.Depots.pop();
-			neworder[item.Pos] = { Tile = item.Tile};
-			//Info("depot pos:", item.Pos, "tile:", item.Tile);
-		}
-		while (orders.Waypoints.len() > 0) {
-			local item = orders.Waypoints.pop();
-			neworder[item.Pos] = { Tile = item.Tile};
-			//Info("wp pos:", item.Pos, "tile:", item.Tile);
-		}
-		while (orders.Conditional.len() > 0) {
-			local item = orders.Conditional.pop();
-			neworder[item.Pos] = {
-				conditional = item.Pos,
-				jumpTo = item.JumpTo,
-				condition = item.Condition,
-				cmpFunction = item.CmpFunction,
-				cmpValue = item.CmpValue
-			};
-		}
-		//existing pos
-		while (orders.StopLocations.len() > 0) {
-			local item = orders.StopLocations.pop();
-			neworder[item.Pos].stopLocation <- item.Stop;
-		}
-		while (orders.Flags.len() > 0) {
-			local item = orders.Flags.pop();
-			neworder[item.Pos].flags <- item.Flags;
-			//Info("flag pos:", item.Pos, "flag:", item.Flags);
-		}
-		
-		AIController.Sleep(1);
-		while(AIOrder.GetOrderCount(vhc_id) > 0) AIOrder.RemoveOrder(vhc_id, 0);
-		while (neworder.len() > 0) {
-			local t = neworder.pop();
-			if (t.rawin("conditional")) {
-				conditionalOrd.push(t);
-				continue;
-			}
-			local dest = -1;
-			local flags = AIOrder.OF_NONE;
-			if (t.rawin("Tile")) dest = t.Tile;
-			if (t.rawin("flags")) flags = t.flags;
-			//Info("Setting dest:", dest, "flags:", flags);
-			//Debug.Echo(AIOrder.AreOrderFlagsValid(dest, flags),"flag valid");
-			Debug.Echo(AIOrder.InsertOrder(vhc_id, 0, dest, flags),"re-Setting order");
-			if (t.rawin("stopLocation")) AIOrder.SetStopLocation(vhc_id, 0, t.stopLocation);
-		}
-		
-		while (conditionalOrd.len() > 0) {
-			local t = conditionalOrd.pop();
-			AIOrder.InsertConditionalOrder(vhc_id, t.conditional, t.jumpTo);
-			AIOrder.SetOrderCondition(vhc_id, t.conditional, t.condition);
-			AIOrder.SetOrderCompareFunction(vhc_id, t.conditional, t.cmpFunction);
-			AIOrder.SetOrderCompareValue(vhc_id, t.conditional, t.cmpValue);
-		}
 	}
 	
 	/**

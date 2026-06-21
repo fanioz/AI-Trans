@@ -1,3 +1,11 @@
+/*
+ *  This file is part of Trans AI
+ *
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
+ *
+ *  @see license.txt
+ */
+
 /**
  Project XMap for Buoys grid
 */
