@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2010 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -74,16 +74,6 @@ class Servable extends CIDLocation
 
 	function HasCoast() {
 		return GetCoast().Count();
-	}
-
-	function GetWaterPoint() {
-		local list = GetArea();
-		list.Valuate(AITile.HasTransportType, AITile.TRANSPORT_WATER);
-		list.KeepValue(1);
-		list.Valuate(XMarine.GetWaterSide);
-		list.RemoveValue(-1);
-		list.Valuate(AIMap.DistanceMax, GetLocation());
-		return list;
 	}
 
 	function GetExistingRoadStop(dtrs, cargo, s_type, is_source) {
@@ -183,14 +173,6 @@ class Servable extends CIDLocation
 		local num = (GetArea().Count() - airports.Count()) / XAirport.GetDivisorNum(type);
 		Info("airport counts", airports.Count(), "::num", num);
 		return num > 0;
-	}
-
-	function GetAreaForWaterDepot() {
-		local list = GetArea();
-		list.Valuate(AITile.IsWaterTile);
-		list.KeepValue(1);
-		list.Valuate(AIMap.DistanceMax, GetLocation());
-		return list;
 	}
 
 	// TODO :: Dock terraform-ability

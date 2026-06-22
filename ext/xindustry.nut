@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2025 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -53,19 +53,6 @@ class XIndustry
 			XIndustry.Managers[id].RefreshStations();
 		}
 		return XIndustry.Managers[id];
-	}
-
-	function GetDest(industryid) {
-		local ret = {};
-		foreach(cargo , v in AICargoList_IndustryProducing(industryid)) {
-			local targets = AIIndustryList_CargoAccepting(cargo);
-			targets.Valuate(AIIndustry.GetLocation);
-			foreach(id, loc in targets) {
-				ret[loc] <- IndustryManager(id);
-				ret[loc]._Dests = XIndustry.GetDest(id);
-			}
-		}
-		return ret;
 	}
 
 	function IsOnLocation(id, loc) {

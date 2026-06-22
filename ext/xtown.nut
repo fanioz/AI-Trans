@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -44,14 +44,6 @@ class XTown
 				return false;
 			default :return true;
 		}
-	}
-
-	/**
-	 * Get the maximum number of station on town.
-	 * @return The maximum number
-	 */
-	function MaxStation(townID, divisor) {
-		return max(1, AITown.GetPopulation(townID) / divisor);
 	}
 
 	function IsOnLocation(id, loc) {
