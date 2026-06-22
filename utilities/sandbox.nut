@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -51,7 +51,6 @@ class Assist
 				}
 				if (ct[0] != ct[1]) AIRoad.SetCurrentRoadType(ct[0]); 
 				return depot;
-				break;
 			case AIVehicle.VT_WATER:
 				local depot = -1;
 				depots.Valuate(AIMarine.IsWaterDepotTile);
@@ -64,7 +63,6 @@ class Assist
 					if (path) depot = path.GetTile();
 				}
 				return depot;
-				break;
 			default :
 				return -1;
 		}
