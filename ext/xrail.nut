@@ -1,7 +1,7 @@
 /*
  *  This file is part of Trans AI
  *
- *  Copyright 2009-2018 fanio zilla <fanio.zilla@gmail.com>
+ *  Copyright 2009-2026 fanio zilla <fanio.zilla@gmail.com>
  *
  *  @see license.txt
  */
@@ -118,7 +118,7 @@ class XRail
 		return -1;
 	}
 	
-	function BuildSignal(start, end, each) {
+	function BuildSignal(start, end, each, signal_type = AIRail.SIGNALTYPE_PBS) {
 		local pt = Rail_PT();
 		pt.InitializePath(start, end, []);
 		local path = pt.FindPath(10000);
@@ -134,7 +134,7 @@ class XRail
 					//
 				} else {
 					if (c % each == 0)
-						if (!AIRail.BuildSignal(prev, path.GetTile(), AIRail.SIGNALTYPE_PBS)) c--; 
+						if (!AIRail.BuildSignal(prev, path.GetTile(), signal_type)) c--; 
 				}
 			}
 			if (path != null) {
