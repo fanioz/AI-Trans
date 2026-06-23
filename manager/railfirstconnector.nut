@@ -430,9 +430,9 @@ class RailFirstConnector extends DailyTask
 		
 		if (this._current.Depots.len() > 1) {
 			XRail.BuildSignal([[AIRail.GetRailDepotFrontTile(this._current.Depots[0]), this._current.Depots[0]]], 
-				[[AIRail.GetRailDepotFrontTile(this._current.Depots[1]), this._current.Depots[1]]], 10);
+				[[AIRail.GetRailDepotFrontTile(this._current.Depots[1]), this._current.Depots[1]]], 2);
 		} else {
-			XRail.BuildSignal(this._current.StartPoint, this._current.EndPoint, 10);
+			XRail.BuildSignal(this._current.StartPoint, this._current.EndPoint, 2);
 		}
 		
 		this._Line = null;
