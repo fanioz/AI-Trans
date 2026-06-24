@@ -393,7 +393,6 @@ class XVehicle
 			if (t.rawin("Tile")) dest = t.Tile;
 			if (t.rawin("flags")) flags = t.flags;
 			//Info("Setting dest:", dest, "flags:", flags);
-			//Debug.Echo(AIOrder.AreOrderFlagsValid(dest, flags),"flag valid");
 			Debug.Echo(AIOrder.InsertOrder(vhc_id, 0, dest, flags),"re-Setting order");
 			if (t.rawin("stopLocation")) AIOrder.SetStopLocation(vhc_id, 0, t.stopLocation);
 		}

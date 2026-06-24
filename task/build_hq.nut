@@ -41,7 +41,6 @@ class Task.BuildHQ extends DailyTask
 			Info("found a spot at", AITown.GetName(town));
 			local tl = AITown.GetLocation(town);
 			local tiles = XTile.Radius(tl, 10, 10);
-			//Debug.Say(["c=" + tiles.Count());
 			local acc = AIAccounting();
 			tiles.Valuate(AITile.IsBuildable);
 			tiles.KeepValue(1);

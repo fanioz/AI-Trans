@@ -107,7 +107,6 @@ class Debug
 			if (lst.Count()) AISign.RemoveSign(lst.Begin());
 			return AISign.BuildSign(tile, txt);
 		}
-		//Debug.Say (["Build sign is disabled"], 1);
 		return -1;
 	}
 	

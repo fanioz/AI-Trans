@@ -142,8 +142,6 @@ class Road_PF extends Road_PT
 	function DebugOn(cur_node, next_tile) {
 		if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) return;
 		Warn("fail", AIError.GetLastErrorString());
-		//Debug.Sign(cur_node, "c");
-		//Debug.Sign(next_tile, "n");
 	}
 
 	function _Cost(path, cur_tile, new_direction) {
