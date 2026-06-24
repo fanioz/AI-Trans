@@ -69,7 +69,8 @@ class XVehicle
 		Info("Try To Send");
 		if (!::XVehicle.IsRegistered(vhc_ID)) return XVehicle.IsSendToDepot(vhc_ID);
 		local flagset = false;
-		for (local c = 0; c < AIOrder.GetOrderCount(vhc_ID); c++) {
+		local count = AIOrder.GetOrderCount(vhc_ID);
+		for (local c = 0; c < count; c++) {
 			local dest = AIOrder.GetOrderDestination(vhc_ID, c);
 			if (AIOrder.IsGotoStationOrder(vhc_ID, c)) {
 				if (Assist.HasBit(AIOrder.GetOrderFlags(vhc_ID, c), AIOrder.OF_NO_LOAD)) {
@@ -181,14 +182,15 @@ class XVehicle
 	 * Reset flag orders
 	*/
 	function ResetFlag(vhc) {
-		for (local c = 0; c < AIOrder.GetOrderCount(vhc); c++) {
+		local count = AIOrder.GetOrderCount(vhc);
+		for (local c = 0; c < count; c++) {
 			if (AIOrder.IsGotoStationOrder(vhc, c)) {
 				local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, c), AIOrder.OF_NO_LOAD);
 				Debug.ResultOf(AIOrder.SetOrderFlags(vhc, c, flags), "loading flag re-set");
 				break;
 			}
 		}
-		for (local c = 0; c < AIOrder.GetOrderCount(vhc); c++) {
+		for (local c = 0; c < count; c++) {
 			if (AIOrder.IsGotoDepotOrder(vhc, c)) {
 				local flags = Assist.SetBitOff(AIOrder.GetOrderFlags(vhc, c), AIOrder.OF_STOP_IN_DEPOT) | AIOrder.OF_SERVICE_IF_NEEDED;
 				Debug.ResultOf(AIOrder.SetOrderFlags(vhc, c, flags), "depot flag re-set");
@@ -311,7 +313,8 @@ class XVehicle
 	*/
 	function GetOrders(vhc_id) {
 		local t = { Stations = [], Depots = [], Waypoints = [], StopLocations = [], Flags = [], Conditional =[]};
-		for (local c = 0; c < AIOrder.GetOrderCount(vhc_id); c++) {
+		local count = AIOrder.GetOrderCount(vhc_id);
+		for (local c = 0; c < count; c++) {
 			local dest = {Tile = AIOrder.GetOrderDestination(vhc_id, c), Pos = c};
 			if (AIOrder.IsGotoStationOrder(vhc_id, c)) {
 				t.Stations.push(dest);
@@ -334,7 +337,7 @@ class XVehicle
 				});
 			}
 		}
-		t.Total <- AIOrder.GetOrderCount(vhc_id);
+		t.Total <- count;
 		return t;
 	}
 	/**
@@ -427,7 +430,8 @@ class XVehicle
 		tabel.Track = XVehicle.GetTrack(idx);
 		tabel.GroupID = AIVehicle.GetGroupID(idx);
 		
-		for (local c=0;c<AIOrder.GetOrderCount(idx);c++) {
+		local count = AIOrder.GetOrderCount(idx);
+		for (local c=0;c<count;c++) {
 			local dest = AIOrder.GetOrderDestination(idx, c);
 			if (AIOrder.IsGotoStationOrder(idx, c))
 				tabel.Stations.push(dest);
@@ -441,7 +445,8 @@ class XVehicle
 			return tabel;
 		}
 		tabel.StationsID = clone tabel.Stations;
-		for(local c=0;c<tabel.Stations.len();c++) {
+		local station_len = tabel.Stations.len();
+		for(local c=0;c<station_len;c++) {
 			tabel.StationsID[c] = AIStation.GetStationID(tabel.Stations[c]);
 			if (!AIStation.IsValidStation(tabel.StationsID[c])) {
 				Warn(AIVehicle.GetName(idx), "has an invalid station");

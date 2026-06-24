@@ -161,7 +161,8 @@ class Task.CleanUp extends DailyTask
 			}
 
 			local closed = true;
-			for (local c=0;c<t.StationsID.len();c++) {
+			local station_count = t.StationsID.len();
+			for (local c=0;c<station_count;c++) {
 				if (AIStation.IsValidStation(t.StationsID[c])) {
 					if (AIStation.HasStationType(t.StationsID[c], t.StationType)) {
 						local vhcList = XStation.GetVehicleListType(t.StationsID[c], t.StationType);
