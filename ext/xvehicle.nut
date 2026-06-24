@@ -61,6 +61,14 @@ class XVehicle
 	}
 
 	/**
+	 * Start a vehicle
+	 * @param v The ID of vehicle to handle
+	 */
+	function Start(v) {
+		AIVehicle.StartStopVehicle(v);
+	}
+
+	/**
 	 * Try to send vehicle to depot
 	 * @param vhc_ID The ID of vehicle to handle
 	 * @return false if can't sell right now, true if can send to depot or already there
