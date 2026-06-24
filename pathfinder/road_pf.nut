@@ -29,7 +29,6 @@ class Road_PF extends Road_PT
 		if (path.GetLength() > _max_len) return n_tiles;
 		/* _max_cost is the maximum path cost, if we go over it, the path isn't valid. */
 		if (path.GetCost() >= this._max_cost) return [];
-		//if (n_tiles.len()) Info("existing have:", n_tiles.len());
 		local parn = path.GetParent();
 		local prev_tile = parn ? parn.GetTile() : null;
 		local pp_tile = prev_tile ? (parn.GetParent() ? parn.GetParent().GetTile() : null) : null;
@@ -128,7 +127,6 @@ class Road_PF extends Road_PT
 		local tiles = [];
 		local other_tunnel_end = AITunnel.GetOtherTunnelEnd(cur_node);
 		if (XTile.NextTile(other_tunnel_end, cur_node) == last_node) {
-			//assert(AITunnel.GetOtherTunnelEnd (other_tunnel_end) == cur_node);
 			if (Assist.IsBetween(AIMap.DistanceManhattan(cur_node, other_tunnel_end), 2, _max_tunnel_length)) {
 				_accountant.ResetCosts();
 				if (AITunnel.BuildTunnel(AIVehicle.VT_ROAD, cur_node)) {
@@ -142,8 +140,6 @@ class Road_PF extends Road_PT
 	function DebugOn(cur_node, next_tile) {
 		if (AIError.GetLastError() == AIError.ERR_NOT_ENOUGH_CASH) return;
 		Warn("fail", AIError.GetLastErrorString());
-		//Debug.Sign(cur_node, "c");
-		//Debug.Sign(next_tile, "n");
 	}
 
 	function _Cost(path, cur_tile, new_direction) {
@@ -194,13 +190,7 @@ class Road_PF extends Road_PT
 			cost += this._cost_tile;
 			
 			/* Check if the new tile is a high cost tile.*/
-			if (AITile.IsCoastTile(cur_tile) /*||
-                    AITile.IsFarmTile(cur_tile) ||
-                    AITile.IsRockTile(cur_tile) ||
-                    AITile.IsRoughTile(cur_tile) ||
-                    AITile.IsDesertTile(cur_tile) ||
-                    AITile.IsSnowTile(cur_tile)*/
-			   ) {
+			if (AITile.IsCoastTile(cur_tile)) {
 				cost += this._cost_coast;
 			}
 		
