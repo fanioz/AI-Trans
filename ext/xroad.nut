@@ -143,11 +143,23 @@ class XRoad
 		return AIRoad.IsRoadStationTile(tile);
 	}
 
+	function IsStraightRoadBuilt(from, to) {
+		if (from == to) return true;
+		local dist = AIMap.DistanceManhattan(from, to);
+		local step = (to - from) / dist;
+		for (local i = 0; i < dist; i++) {
+			local current = from + i * step;
+			local next = current + step;
+			if (!AIRoad.AreRoadTilesConnected(current, next)) return false;
+		}
+		return true;
+	}
+
 	// @note exec mode only
 	function BuildStraight(from, to) {
 		local retry_num = 50;
 		while (retry_num > 0) {
-			if (AIRoad.AreRoadTilesConnected(from, to)) return true;
+			if (XRoad.IsStraightRoadBuilt(from, to)) return true;
 			if (AIRoad.BuildRoad(from, to)) return true;
 			retry_num --;
 			Warn("build road piece", AIError.GetLastErrorString());
@@ -283,10 +295,9 @@ class XRoad
 					next = next.GetParent();
 				}
 				if (!XRoad.BuildStraight(last_node, next_node)) {
-					/* An error occured while building a piece of road. TODO: handle it.
-					 * Note that is can also be the case that the road was already build. */
+					/* An error occured while building a piece of road. */
 					Debug.Pause(last_node, "Road:" + AIError.GetLastErrorString());
-					//ignore.push(next_node);
+					ignore.push(next_node);
 					return XRoad.BuildRoute(null, start, finish, ignore, num);
 				}
 			}
