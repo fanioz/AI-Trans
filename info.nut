@@ -44,6 +44,19 @@ class Trans19 extends AIInfo
 		});
 
 		AddSetting( {
+			name = "rail_train_length",
+			description = "Train length for rail service (in tiles)",
+			min_value = 2,
+			max_value = 10,
+			easy_value = 4,
+			medium_value = 4,
+			hard_value = 4,
+			custom_value = 4,
+			step_size = 1,
+			flags = 0
+		});
+
+		AddSetting( {
 			name = "allow_pax",
 			description = "Allow pax cargo",
 			easy_value = 1,
