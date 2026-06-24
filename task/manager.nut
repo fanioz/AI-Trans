@@ -17,7 +17,7 @@ class TaskManager
 	 * Insert new task into scheduler
 	 * @param task Class of TaskItem to insert
 	 */
-	function New(task) {
+	static function New(task) {
 		if (task instanceof DailyTask) {
 			TaskManager.queue.insert(0, task);
 		} else {
@@ -29,7 +29,7 @@ class TaskManager
 	 * Run the scheduler
 	 * execute scheduled task by tick
 	 */
-	function Run() {
+	static function Run() {
 		if (TaskManager.queue.len()) {
 			local task = TaskManager.queue.pop();
 			if (!task.TryToStart()) {
@@ -43,7 +43,7 @@ class TaskManager
 	/**
 	 * Run the scheduler on Load
 	 */
-	function RunLoad() {
+	static function RunLoad() {
 		foreach(task in TaskManager.queue) {
 			task.On_Load()
 		}
@@ -52,7 +52,7 @@ class TaskManager
 	/**
 	 * Run the scheduler on Save
 	 */
-	function RunSave() {
+	static function RunSave() {
 		foreach(task in TaskManager.queue) {
 			task.On_Save()
 		}
