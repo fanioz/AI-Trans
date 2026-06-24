@@ -114,12 +114,6 @@ class XCargo
 	}
 
 	function OfVehicle(vhc) {
-		/*
-		if (AIVehicle.GetVehicleType(vhc) == AIVehicle.VT_RAIL) {
-			local eng = AIVehicle.GetWagonEngineType(vhc, 0);
-			return AIEngine.GetCargoType(eng);
-		}
-		*/
 		local c = AICargoList();
 		c.Valuate(XCargo.VehicleCapacity, vhc);
 		c.RemoveBelowValue(1);
@@ -137,7 +131,6 @@ class XCargo
 	function GetCargoIncome(cargo_type, distance, days_in_transit) {
 		local ret = AICargo.GetCargoIncome(cargo_type, distance, days_in_transit);
 		if (cargo_type == XCargo.Pax_ID) ret *= 1.5;
-		//if (cargo_type == XCargo.Mail_ID) ret *= 1.2;
 		return ret.tointeger();
 	}
 }
