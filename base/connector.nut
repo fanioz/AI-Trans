@@ -194,8 +194,7 @@ class Connector extends DailyTask
 	function GetTotalCost(self) {
 		local cost = AIEngine.GetPrice(self._Engine_A);
 		if (self._V_Type == AIVehicle.VT_RAIL) {
-			/* TODO : number '4' should be changeable */
-			cost *= 4;
+			cost *= Setting.RailTrainLength;
 			cost += AIEngine.GetPrice(self._Engine_B);
 		}
 		self.Info("engine cost", cost);

@@ -34,6 +34,7 @@ class Setting
 		Setting.AllowPax <- AIController.GetSetting("allow_pax");
 		Setting.AllowFreight <- AIController.GetSetting("allow_freight");
 		Setting.Max_Transported <- AIController.GetSetting("last_transport");
+		Setting.RailTrainLength <- AIController.GetSetting("rail_train_length");
 		Setting.InfrastructureMaintenance <- Setting.Get(SetString.infrastructure_maintenance);
 		Info("Speed was", txt[need]);
 		txt = ["disabled", "enabled", "enabled"];
@@ -48,6 +49,7 @@ class Setting
 		Info("Passenger cargo was", txt[Setting.AllowPax]);
 		Info("Freight cargoes were", txt[Setting.AllowFreight]);
 		Info("Max. last month transported was", Setting.Max_Transported, "%");
+		Info("Rail Train Length was", Setting.RailTrainLength, "tiles");
 		Info("Infrastructure Maintenance", txt[Setting.InfrastructureMaintenance]);
 
 		AIGroup.EnableWagonRemoval(true);

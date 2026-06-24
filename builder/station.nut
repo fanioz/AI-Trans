@@ -34,7 +34,7 @@
 			ID = -1,
 			Base = base,
 			Cargo = cargo,
-			PlatformLength = 4,
+			PlatformLength = Setting.RailTrainLength,
 			NumPlatform = 1,
 			Orientation = AIRail.RAILTRACK_NW_SE,
 			Industries = [-1,-1],

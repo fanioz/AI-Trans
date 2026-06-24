@@ -54,8 +54,8 @@ class RailFirstConnector extends DailyTask
 		this._PF = Rail_PF();
 		this._MaxStep = 7000;
 		this._CurStep = 0;
-		this._PlatformLength = 4;
-		this._WagonNum = 7;
+		this._PlatformLength = Setting.RailTrainLength;
+		this._WagonNum = (2 * Setting.RailTrainLength) - 1;
 		this._Vhc_Price = 0;
 		this._Vhc_Yearly_Cost = 0;
 		this._Last_Year = AIDate.GetCurrentDate();
