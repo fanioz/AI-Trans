@@ -34,7 +34,7 @@ Const <- {
 	/** Airport available */
 	AirportType = [
 		AIAirport.AT_INTERCON, AIAirport.AT_INTERNATIONAL, AIAirport.AT_METROPOLITAN,
-		AIAirport.AT_LARGE,	AIAirport.AT_COMMUTER, AIAirport.AT_SMALL,
+		AIAirport.AT_CITY, AIAirport.AT_LARGE,	AIAirport.AT_COMMUTER, AIAirport.AT_SMALL,
 		AIAirport.AT_HELISTATION, AIAirport.AT_HELIDEPOT, AIAirport.AT_HELIPORT
 	],
 

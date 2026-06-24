@@ -17,6 +17,7 @@ class XAirport
 			case AIAirport.AT_INTERCON:  //"AT_INTERCON";
 			case AIAirport.AT_INTERNATIONAL:  //"AT_INTERNATIONAL";
 			case AIAirport.AT_METROPOLITAN:  //"AT_METROPOLITAN";
+			case AIAirport.AT_CITY:
 			case AIAirport.AT_LARGE:
 				if (pt == AIAirport.PT_BIG_PLANE) return true;
 			case AIAirport.AT_COMMUTER:  //"AT_COMMUTER";
@@ -50,7 +51,7 @@ class XAirport
 			switch (AIError.GetLastError()) {
 				case AIError.ERR_AREA_NOT_CLEAR :
 				case AIError.ERR_FLAT_LAND_REQUIRED:
-					if (!XTile.MakeLevel(tile, x y)) return -1;;
+					if (!XTile.MakeLevel(tile, x, y)) return -1;
 					break;
 				case AIError.ERR_LOCAL_AUTHORITY_REFUSES:
 					if (!self.ImproveRating()) return -1;
@@ -79,7 +80,8 @@ class XAirport
 		switch (at) {
 			case AIAirport.AT_INTERCON: num ++; //7
 			case AIAirport.AT_INTERNATIONAL: num ++; //6
-			case AIAirport.AT_METROPOLITAN: num ++; //5
+			case AIAirport.AT_METROPOLITAN:
+			case AIAirport.AT_CITY: num ++; //5
 			case AIAirport.AT_LARGE: num ++; //4
 			case AIAirport.AT_COMMUTER: //3
 			case AIAirport.AT_HELISTATION: num ++; //3
