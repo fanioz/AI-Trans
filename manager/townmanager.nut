@@ -111,9 +111,8 @@ class TownManager extends Servable
 			// Build trees on not yet tree'd to improve the rating
 			if (list.IsEmpty()) break;
 			local loc = list.Pop();
-			while (AITile.PlantTree(loc)) {
-				AIController.Sleep(1);
-			};
+			while (AITile.PlantTree(loc));
+			if (AIController.GetOpsTillSuspend() < 200) AIController.Sleep(1);
 		}
 		return XTown.HasEnoughRating(GetID());
 	}
