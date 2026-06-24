@@ -97,21 +97,9 @@ class Assist
 		local days = Assist.TileToDays(distance, spd) + 4;
 		local income = AICargo.GetCargoIncome(cargoID, distance, days) * mult;
 		local cap = AIEngine.GetCapacity(engID);
-		//local vhcneed = max(XVehicle.Needed (product, cap, days), 1);
-		//local price =  AIEngine.GetPrice (engID);// * vhcneed;
 		local vhc_num = Money.Maximum() / AIEngine.GetPrice(engID) * 10;
 		local cost = AIEngine.GetRunningCost(engID) * vhc_num / 10;
-		//local profit = 12 * income * product - cost;
 		local profit = 365 / days * income * cap * vhc_num / 10 - cost;
-		//local rrate = (profit * 100 / price).tointeger();
-		//print("=> :Vehicle needed: " + vhcneed + " :Cost: " + cost);
-		//print("=> at distance: " + distance);
-		//print("=> at speed: " + spd);
-		//print("=> days: " + days);
-		//print("=> base:: :income: " + income + " :Prod: " + product);
-		//My.Info("=> :Profit estimated: ", profit);
-		//print("=> :return rate: " + rrate);
-		//return rrate ;
 		return profit;
 	}
 
