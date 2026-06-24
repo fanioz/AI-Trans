@@ -5,6 +5,14 @@
 class XMap {
 	static sizeX = 20;
 	static sizeY = 20;
+
+	/**
+	 * Calculate Manhattan distance between two tiles
+	 */
+	function Length(start, finish) {
+		return AIMap.DistanceManhattan(start, finish);
+	}
+
 	/**
 	* Generate Map Points, a grid X * Y
 	
