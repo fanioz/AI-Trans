@@ -215,7 +215,6 @@ class XTile
 	function CanSetFlatHeight(tile, height) {
 		if (!AIMap.IsValidTile(tile)) return false;
 		local slope = AITile.GetSlope(tile);
-		//Debug.Say(["Max.H:" + max_h + " Target:" + height);
 		foreach(corn in Const.Corner) {
 			if (AITile.GetCornerHeight(tile, corn) < height) {
 				if (!AITile.RaiseTile(tile, 1 << corn)) return false;
@@ -259,29 +258,24 @@ class XTile
 		local tile_num = x * y;
 		local tiles = XTile.MakeArea(start_t, x, y, 0);
 		if (tiles.Count() != tile_num) {
-			//Debug.Say(["area tiles count:num==", tiles.Count(), ":", tile_num], 0);
 			return 0;
 		}
 		tiles.Valuate(XTile.IsMyTile);
 		tiles.RemoveValue(1);
 		if (tiles.Count() != tile_num) {
-			//Debug.Say(["my tiles count:num==", tiles.Count(), ":", tile_num], 0);
 			return 0;
 		}
 		tiles.Valuate(AITile.IsBuildable);
 		tiles.RemoveValue(0);
 		if (tiles.Count() != tile_num) {
-			//Debug.Say(["buildable tiles count:num==" + tiles.Count() + ":" + tile_num);
 			return 0;
 		}
 		tiles.Valuate(XTile.Height);
 		tiles.RemoveValue(0);
 		if (tiles.Count() != tile_num) {
-			//Debug.Say(["height tiles count:num==", tiles.Count(),  ":", tile_num], 1);
 			return 0;
 		}
 		if (XTile.IsLevel(tiles)) {
-			//Debug.Say(["already flat"], 1);
 			return 1;
 		}
 		local minh = 100, maxh = 0;

@@ -93,7 +93,6 @@
 			local mode = AITestMode();
 			if (!this.BuildEntry()) return 0;
 		}
-		//Debug.Pause(t,"base x:"+x+"-y:"+y);
 		return XTile.IsBuildableRange(t, x, y);
 	}
 	
@@ -232,7 +231,6 @@
 					if (Assist.HasBit(built, track)) continue;
 					if (!AIRail.BuildRailTrack(body[1], track)) {
 						AITile.DemolishTile(body[0]);
-						//Debug.Pause(body[1],"head");
 						break;
 					}
 				}

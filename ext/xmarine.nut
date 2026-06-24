@@ -123,7 +123,6 @@ class XMarine
 			if (AIMap.DistanceManhattan(last_node, next_node) > 1) {
 				Info("bridge/tunnel should not been built");
 			} else {
-				//Debug.Sign(last_node, next.GetCost());
 				if (XMap.TileIsPoint(last_node)) {
 					if (!AIMarine.IsBuoyTile(last_node)) {
 						Debug.ResultOf(AIMarine.BuildBuoy(last_node), "build a buoy piece");
