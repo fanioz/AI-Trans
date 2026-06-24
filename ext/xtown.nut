@@ -51,6 +51,7 @@ class XTown
 	 * @return The maximum number
 	 */
 	function MaxStation(townID, divisor) {
+		if (divisor <= 0) return 1;
 		return max(1, AITown.GetPopulation(townID) / divisor);
 	}
 

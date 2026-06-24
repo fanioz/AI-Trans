@@ -32,6 +32,7 @@ class XVehicle
 	 * @return number (mult by 2 if not pax)
 	 */
 	function Needed(ppm, capacity, dt) {
+		if (capacity <= 0) return 0;
 		return (ppm * dt / capacity / 30.4375).tointeger();
 	}
 

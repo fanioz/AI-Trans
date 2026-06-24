@@ -119,8 +119,9 @@ class Assist
 	// using http://wiki.openttd.org/wiki/index.php?title=Game_mechanics&oldid=30090
 	// dist_tile * 686km / (speed / 1.00584)kmph / 24h
 	function TileToDays(dist, speed) {
+		if (speed <= 0) return 0;
 		return (dist * 56.8347517166415 / speed).tointeger()
-		   }
+	}
 
 		   //return true if n is between n1 and n2 (exclusive)
 	function IsBetween(n, n1, n2) {
