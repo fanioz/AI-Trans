@@ -42,8 +42,7 @@ class Debug
 	 * No other methode found to clear last err
 	 */
 	function ClearErr() {
-		local mode = AITestMode();
-		AISign.BuildSign(AIMap.GetTileIndex(2, 2), "debugger");
+		AIError.GetLastError();
 	}
 
 	/**
