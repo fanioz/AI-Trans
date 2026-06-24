@@ -74,7 +74,8 @@ class Trans extends Base
 				TaskManager.Run();
 			}
 		} catch (msg) {
-			::print("Error catched at:" + Assist.DateStr(AIDate.GetCurrentDate()));
+			AILog.Error("Error catched at: " + Assist.DateStr(AIDate.GetCurrentDate()));
+			AILog.Error("Reason: " + msg);
 		}
 		/*
 		* ====================================
