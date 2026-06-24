@@ -250,7 +250,7 @@ class XRoad
 					if (AITunnel.GetOtherTunnelEnd(last_node) == next_node) {
 						Info("Build a tunnel");
 						if (!AITunnel.BuildTunnel(AIVehicle.VT_ROAD, last_node)) {
-							/* An error occured while building a tunnel. TODO: handle it. */
+							/* Building the tunnel failed; exclude the tile and retry pathfinding. */
 							ignore.push(next_node);
 							Debug.Pause(last_node, "Tunnel:" + AIError.GetLastErrorString());
 							return XRoad.BuildRoute(null, start, finish, ignore, num);
@@ -260,10 +260,8 @@ class XRoad
 						local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(last_node, next_node) + 1);
 						bridge_list.Valuate(AIBridge.GetMaxSpeed);
 						if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), last_node, next_node)) {
-							/* An error occured while building a bridge. TODO: handle it. */
-							if (AIError.GetLastError() == AIBridge.ERR_BRIDGE_HEADS_NOT_ON_SAME_HEIGHT) {
-								ignore.push(next_node);
-							}
+							/* Building the bridge failed; exclude the tile and retry pathfinding. */
+							ignore.push(next_node);
 							Debug.Pause(last_node, "Bridge:" + AIError.GetLastErrorString());
 							return XRoad.BuildRoute(null, start, finish, ignore, num);
 						}
@@ -283,10 +281,9 @@ class XRoad
 					next = next.GetParent();
 				}
 				if (!XRoad.BuildStraight(last_node, next_node)) {
-					/* An error occured while building a piece of road. TODO: handle it.
-					 * Note that is can also be the case that the road was already build. */
+					/* Building the road failed; exclude the tile and retry pathfinding. */
+					ignore.push(next_node);
 					Debug.Pause(last_node, "Road:" + AIError.GetLastErrorString());
-					//ignore.push(next_node);
 					return XRoad.BuildRoute(null, start, finish, ignore, num);
 				}
 			}
