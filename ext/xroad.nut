@@ -146,6 +146,7 @@ class XRoad
 	// @note exec mode only
 	function BuildStraight(from, to) {
 		local retry_num = 50;
+		local no_vehicles = AIVehicleList().IsEmpty();
 		while (retry_num > 0) {
 			if (AIRoad.AreRoadTilesConnected(from, to)) return true;
 			if (AIRoad.BuildRoad(from, to)) return true;
@@ -157,7 +158,7 @@ class XRoad
 				case AIError.ERR_ALREADY_BUILT:
 					return true;
 				case AIError.ERR_NOT_ENOUGH_CASH:
-					if (AIVehicleList().IsEmpty()) return false;
+					if (no_vehicles) return false;
 				case AIError.ERR_VEHICLE_IN_THE_WAY:
 				case AIRoad.ERR_ROAD_WORKS_IN_PROGRESS:
 					AIController.Sleep(max(retry_num * 3, 1));
