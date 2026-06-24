@@ -35,6 +35,7 @@ class Task.BuildHQ extends DailyTask
 		local counter = 0;
 		local mode = AITestMode();
 		for (local town = loc.Begin(); loc.HasNext(); town = loc.Next()) {
+			AIController.Sleep(1);
 			Info("finding#", (counter++));
 			if (counter % (My.ID + 1) != 0) continue;
 			if (skip.HasItem(town)) continue;
