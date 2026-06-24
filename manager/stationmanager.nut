@@ -80,16 +80,19 @@ class StationManager extends Infrastructure
 
 	function GetTileRadiuzed() {
 		local tiles = CLList();
+		local st_id = GetID();
 		foreach(s_type in Const.StationType) {
-			if (!AIStation.HasStationType(GetID(), s_type)) continue;
-			local tilelist = CLList(AITileList_StationType(GetID(), s_type));
+			if (!AIStation.HasStationType(st_id, s_type)) continue;
+			local tilelist = AITileList_StationType(st_id, s_type);
 			if (s_type == AIStation.STATION_AIRPORT) {
-				local type = AIAirport.GetAirportType(tilelist.Begin());
-				tiles.AddList(XTile.MakeArea(tilelist.Begin(), AIAirport.GetAirportWidth(type), AIAirport.GetAirportHeight(type), AIAirport.GetAirportCoverageRadius(type)));
+				local loc = tilelist.Begin();
+				local type = AIAirport.GetAirportType(loc);
+				local rad = AIAirport.GetAirportCoverageRadius(type);
+				tiles.AddRectangle(XTile.GetMaxNorth(loc, rad, rad), XTile.GetMaxSouth(loc, AIAirport.GetAirportWidth(type) - 1 + rad, AIAirport.GetAirportHeight(type) - 1 + rad));
 			} else {
+				local rad = AIStation.GetCoverageRadius(s_type);
 				foreach(tile, v in tilelist) {
-					local area = XTile.MakeArea(tile, 1, 1, AIStation.GetCoverageRadius(s_type));
-					tiles.AddList(area);
+					tiles.AddRectangle(XTile.GetMaxNorth(tile, rad, rad), XTile.GetMaxSouth(tile, rad, rad));
 				}
 			}
 		}
