@@ -133,8 +133,14 @@ class XRail
 				if (AIMap.DistanceManhattan(prev, path.GetTile()) > 1) {
 					//
 				} else {
-					if (c % each == 0)
-						if (!AIRail.BuildSignal(prev, path.GetTile(), signal_type)) c--; 
+					if (c % each == 0) {
+						local cur = AIRail.GetSignalType(prev, path.GetTile());
+						if (cur != signal_type) {
+							if (cur != AIRail.SIGNALTYPE_NONE)
+								AIRail.RemoveSignal(prev, path.GetTile()); // clears both signal bits on this track
+							if (!AIRail.BuildSignal(prev, path.GetTile(), signal_type)) c--;
+						}
+					}
 				}
 			}
 			if (path != null) {

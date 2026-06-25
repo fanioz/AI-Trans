@@ -53,14 +53,8 @@ class Task.TrackDoubler extends DailyTask
 					Money.Get(0);
 					t.RouteBackIsBuilt = XRail.BuildRail(obj.Line);
 					
-					// Build one-way signal for 2nd track
-					XRail.BuildSignal([obj.Points[1]], [obj.Points[0]], 2, AIRail.SIGNALTYPE_PBS_ONEWAY);
-					
-					// Modify 1st track signal to one-way
-					local t1Start = t.StartPoint[0][0] == obj.Points[0][0] ? t.StartPoint[1] : t.StartPoint[0];
-					local t1End = t.EndPoint[0][0] == obj.Points[1][0] ? t.EndPoint[1] : t.EndPoint[0];
-					XRail.BuildSignal([t1Start], [t1End], 2, AIRail.SIGNALTYPE_PBS_ONEWAY);
-					
+					// Build two-way PBS signal for 2nd track (track 1 is already signaled by RailFirstConnector)
+					XRail.BuildSignal([obj.Points[1]], [obj.Points[0]], 2);
 					Info("Done building", key); 
 				} else {
 					if (obj.StepLeft < 1) {
