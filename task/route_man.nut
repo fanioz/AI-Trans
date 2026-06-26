@@ -84,10 +84,14 @@ class Task.RouteManager extends DailyTask
 			}
 			
 			if (num == 0) {
+				if (!AIMap.IsValidTile(t.Depots[0])) {
+					t.Depots[0] = Assist.FindDepot(t.Stations[0], 20, t.VhcType, t.Track);
+				}
+
 				if (AIMap.IsValidTile(t.Depots[0])) {
 					XVehicle.GetReplacement(grp_name);
 				} else {
-					Warn("TODO:Find a nearby depot");
+					Warn("No valid depot found for", grp_name);
 				}
 				continue;
 			}
@@ -179,7 +183,11 @@ class Task.RouteManager extends DailyTask
 			
 			Info("Time to make clone");
 			if (!AIMap.IsValidTile(t.Depots[0])) {
-				Warn("TODO:Find a nearby depot");
+				t.Depots[0] = Assist.FindDepot(t.Stations[0], 20, t.VhcType, t.Track);
+			}
+
+			if (!AIMap.IsValidTile(t.Depots[0])) {
+				Warn("No valid depot found for", grp_name);
 				continue;
 			}
 			Money.Get(AIEngine.GetPrice(t.Engine) * 2);
