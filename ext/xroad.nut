@@ -220,6 +220,18 @@ class XRoad
 		return (typeof pf.FindPath(10000)) == "instance";
 	}
 
+	function EnsureConnection(depot, station) {
+		if (!AIRoad.IsRoadDepotTile(depot)) return;
+		if (!AIRoad.IsRoadStationTile(station)) return;
+		local depot_front = AIRoad.GetRoadDepotFrontTile(depot);
+		local station_side = AIRoad.IsDriveThroughRoadStationTile(station)
+			? AIRoad.GetDriveThroughBackTile(station)
+			: AIRoad.GetRoadStationFrontTile(station);
+		if (XRoad.IsConnectedTo([depot_front], [station_side])) return;
+		Info("Fixing depot-station gap");
+		XRoad.BuildRoute(null, [depot_front], [station_side], [], 4);
+	}
+
 	function FindPath(start, finish, ignored) {
 		local pf = Road_PF();
 		pf.InitializePath(start, finish, ignored);

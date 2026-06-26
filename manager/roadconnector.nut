@@ -156,6 +156,10 @@ class RoadConnector extends Connector
 			if (src_new) AIRoad.RemoveRoadStation(_S_Station);
 			return false;
 		}
-		return XRoad.BuildRoute(_Line, [_End_Point], [_Start_Point], [], 4);
+		if (!XRoad.BuildRoute(_Line, [_End_Point], [_Start_Point], [], 4)) return false;
+
+		XRoad.EnsureConnection(_D_Depot, _D_Station);
+		XRoad.EnsureConnection(_S_Depot, _S_Station);
+		return true;
 	}
 };
