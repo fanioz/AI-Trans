@@ -68,8 +68,8 @@ class TownManager extends Servable
 
 		// Served towns are population-filtered, so R >= 5 (engine: 8+ houses).
 		// Influence is an isotropic circle, so probing the axes finds the radius
-		// d; take the max over all four directions so an edge town — where one
-		// direction truncates early — still measures the true R. square(d) holds
+		// d; take the max over all four directions so an edge town - where one
+		// direction truncates early - still measures the true R. square(d) holds
 		// the whole circle (|a|,|b| <= d for any influence tile); the filter
 		// then trims to exact.
 		local d = 5; // served towns have R >= 5; floor the radius there
